@@ -146,6 +146,7 @@ input:focus{border-color:#D42027}
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('students')">학생 현황</button>
     <button class="tab-btn" onclick="switchTab('youtube')">해설영상 관리</button>
+    <button class="tab-btn" onclick="switchTab('settings')">설정</button>
   </div>
 
   <div id="students-panel">
@@ -219,6 +220,26 @@ input:focus{border-color:#D42027}
       </select>
     </div>
     <div id="yt-list"></div>
+  </div>
+
+  <!-- 설정 탭 -->
+  <div id="settings-panel" style="display:none">
+    <div class="sc2" style="max-width:500px;margin:0 auto">
+      <div style="font-size:15px;font-weight:900;margin-bottom:16px">Gemini AI 해설 설정</div>
+      <p style="font-size:12px;color:#8b95a7;margin-bottom:14px;line-height:1.6">여기에 입력한 API 키는 Firebase에 저장되어 모든 학생이 공유합니다. 학생들은 별도로 키를 입력할 필요가 없습니다.</p>
+      <label style="display:block;font-size:11px;font-weight:700;color:#8b95a7;margin-bottom:4px">Gemini API 키</label>
+      <input type="password" id="gemini-key-input" placeholder="AIzaSy..." style="width:100%;border:2px solid #e8ecf4;border-radius:10px;padding:11px 13px;font-size:14px;font-family:sans-serif;outline:none;margin-bottom:10px;color:#1a1d2e">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <button onclick="saveGeminiKey()" style="background:#D42027;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif">저장</button>
+        <button onclick="toggleShowKey()" style="background:#e8ecf4;color:#1a1d2e;border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif" id="show-key-btn">보기</button>
+        <button onclick="deleteGeminiKey()" style="background:#fff5f7;color:#ff3b5c;border:1px solid #ffd0d8;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif">삭제</button>
+      </div>
+      <div id="gemini-status" style="font-size:12px;min-height:16px;color:#26d07c"></div>
+      <div style="margin-top:16px;padding:12px;background:#f8f9fc;border-radius:8px">
+        <div style="font-size:11px;font-weight:700;color:#8b95a7;margin-bottom:4px">API 키 발급 방법</div>
+        <div style="font-size:12px;color:#555;line-height:1.7">1. <a href="https://aistudio.google.com" target="_blank" style="color:#D42027;font-weight:700">aistudio.google.com</a> 접속<br>2. 왼쪽 메뉴 "Get API key" 클릭<br>3. "Create API key" 클릭 후 복사</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -405,17 +426,69 @@ function renderList() {
 document.getElementById('pw').addEventListener('keydown', function(e){if(e.key==='Enter')doLogin();});
 
 // ── 탭 전환 ──
+// ── Gemini 설정 ──
+function loadGeminiKeyAdmin(){
+  DB.collection('settings').doc('gemini').get().then(function(doc){
+    if(doc.exists&&doc.data().apiKey){
+      document.getElementById('gemini-key-input').value=doc.data().apiKey;
+      document.getElementById('gemini-status').textContent='✓ 현재 API 키가 설정되어 있습니다';
+    } else {
+      document.getElementById('gemini-status').textContent='아직 API 키가 없습니다';
+      document.getElementById('gemini-status').style.color='#8b95a7';
+    }
+  }).catch(function(){});
+}
+
+function saveGeminiKey(){
+  var key=document.getElementById('gemini-key-input').value.trim();
+  var st=document.getElementById('gemini-status');
+  if(!key){st.style.color='#ff3b5c';st.textContent='API 키를 입력하세요';return;}
+  st.style.color='#8b95a7';st.textContent='저장 중...';
+  DB.collection('settings').doc('gemini').set({
+    apiKey:key,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function(){
+    st.style.color='#26d07c';
+    st.textContent='✓ 저장 완료! 모든 학생에게 즉시 적용됩니다';
+  }).catch(function(e){
+    st.style.color='#ff3b5c';
+    st.textContent='저장 실패: '+e.message;
+  });
+}
+
+function deleteGeminiKey(){
+  if(!confirm('API 키를 삭제하면 AI 해설 기능이 비활성화됩니다. 계속할까요?')) return;
+  DB.collection('settings').doc('gemini').delete().then(function(){
+    document.getElementById('gemini-key-input').value='';
+    var st=document.getElementById('gemini-status');
+    st.style.color='#8b95a7';
+    st.textContent='API 키가 삭제되었습니다';
+  });
+}
+
+function toggleShowKey(){
+  var inp=document.getElementById('gemini-key-input');
+  var btn=document.getElementById('show-key-btn');
+  if(inp.type==='password'){inp.type='text';btn.textContent='숨기기';}
+  else{inp.type='password';btn.textContent='보기';}
+}
+
 function switchTab(tab){
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
   document.getElementById('students-panel').style.display='none';
   document.getElementById('yt-panel').style.display='none';
+  document.getElementById('settings-panel').style.display='none';
   if(tab==='students'){
     document.getElementById('students-panel').style.display='block';
     document.querySelectorAll('.tab-btn')[0].classList.add('active');
-  } else {
+  } else if(tab==='youtube'){
     document.getElementById('yt-panel').style.display='block';
     document.querySelectorAll('.tab-btn')[1].classList.add('active');
     if(!ytLoaded) loadYtLinks();
+  } else {
+    document.getElementById('settings-panel').style.display='block';
+    document.querySelectorAll('.tab-btn')[2].classList.add('active');
+    loadGeminiKeyAdmin();
   }
 }
 
