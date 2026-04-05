@@ -5,46 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>RPM 수학 학습</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
-<script>
-// Firebase 로드 (compat 버전 - 모바일 호환)
-</script>
+<!-- Firebase compat (모바일 완전 호환) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <script>
-  const firebaseConfig = {
+  const _app = firebase.initializeApp({
     apiKey: "AIzaSyARHy35Dd2n0Fw1sUs-U4zY0BY9WVneMJ4",
     authDomain: "rpm-57f1a.firebaseapp.com",
     projectId: "rpm-57f1a",
     storageBucket: "rpm-57f1a.firebasestorage.app",
     messagingSenderId: "681087068656",
     appId: "1:681087068656:web:68c9d3ef6df32dceb89535"
-  };
-  firebase.initializeApp(firebaseConfig);
+  });
   const _auth = firebase.auth();
   const _db = firebase.firestore();
   window._fb = {
     auth: _auth,
     db: _db,
-    signInWithEmailAndPassword: (auth, em, pw) => auth.signInWithEmailAndPassword(em, pw),
-    signOut: (auth) => auth.signOut(),
-    onAuthStateChanged: (auth, cb) => auth.onAuthStateChanged(cb),
-    doc: (db, ...args) => db.doc(args.join('/')),
+    signInWithEmailAndPassword: (a,e,p) => a.signInWithEmailAndPassword(e,p),
+    signOut: (a) => a.signOut(),
+    onAuthStateChanged: (a,cb) => a.onAuthStateChanged(cb),
+    doc: (db,...parts) => db.doc(parts.join('/')),
     getDoc: (ref) => ref.get(),
-    setDoc: (ref, data, opts) => opts && opts.merge ? ref.set(data, {merge:true}) : ref.set(data),
+    setDoc: (ref,data,opts) => opts && opts.merge ? ref.set(data,{merge:true}) : ref.set(data),
     serverTimestamp: () => firebase.firestore.FieldValue.serverTimestamp()
   };
-
-  // choices.json 비동기 로드
-  fetch('choices.json')
-    .then(r=>r.json())
-    .then(data=>{
-      Object.assign(CHOICES, data);
-      console.log('CHOICES 로드 완료:', Object.keys(CHOICES).length);
-    })
-    .catch(e=>console.warn('choices.json 로드 실패:', e));
 </script>
 <style>
+
 :root{
   --bg:#F0F3F8;--surface:#fff;--dark:#1A1D2E;--navy:#252A4A;
   --primary:#FF4D1C;--green:#26D07C;--red:#FF3B5C;--gold:#FFB800;
@@ -289,9 +278,11 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;color:var(--dark);ba
     border-bottom:1px solid var(--border);margin-bottom:8px;}
   .grade-bar{margin:-20px -20px 0;}
 }
+
 </style>
 </head>
 <body>
+
 <div id="app" style="display:none;">
   <div class="topbar">
     <div class="tbar-logo">RPM 数学</div>
@@ -406,7 +397,7 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;color:var(--dark);ba
 </div>
 
 <script>
-const CHOICES={};
+// CHOICES loaded via fetch
 
 // ══════════════════════════════════════
 //  PAGE MAP: [pdf_page, [q_start, q_end], title]
@@ -823,6 +814,438 @@ function updateHeader(){
   document.getElementById('hc').textContent=all.filter(n=>records[n]?.correct===true).length;
   document.getElementById('hw').textContent=all.filter(n=>records[n]?.correct===false).length;
 }
+</script>
+
+<script>
+var CHOICES = {};
+// choices.json 비동기 로드
+fetch('choices.json')
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    Object.assign(CHOICES, data);
+    console.log('CHOICES 로드:', Object.keys(CHOICES).length + '개');
+  })
+  .catch(function(e){ console.warn('choices.json 로드 실패:', e); });
+
+
+// CHOICES loaded via fetch
+
+// ══════════════════════════════════════
+//  PAGE MAP: [pdf_page, [q_start, q_end], title]
+// ══════════════════════════════════════
+const PAGE_MAP=[
+  [9,[38,45],"유형익히기 - 다항식 덧셈/계수구하기"],
+  [10,[46,55],"유형익히기 - 곱셈공식·공통부분"],
+  [11,[56,60],"유형익히기 - 곱셈공식 활용"],
+  [12,[61,68],"유형익히기 - 변형·수의계산"],
+  [13,[69,75],"유형익히기 - 나눗셈"],
+  [14,[76,84],"유형익히기 - 나눗셈 심화"],
+  [15,[85,96],"시험에 꼭 나오는 문제"],
+  [16,[97,110],"시험에 꼭 나오는 문제 심화"],
+  [20,[124,138],"유형익히기 - 항등식"],
+  [21,[139,152],"유형익히기 - 나머지정리"],
+  [22,[153,172],"유형익히기 - 인수정리"],
+  [23,[173,195],"시험에 꼭 나오는 문제"],
+  [27,[215,230],"유형익히기 - 인수분해"],
+  [28,[231,248],"유형익히기 - 인수분해 심화"],
+  [29,[249,264],"유형익히기 - 복잡한 인수분해"],
+  [30,[265,279],"시험에 꼭 나오는 문제"],
+  [34,[300,320],"유형익히기 - 복소수 연산"],
+  [35,[321,345],"유형익히기 - 복소수 심화"],
+  [36,[346,375],"시험에 꼭 나오는 문제"],
+  [40,[396,415],"유형익히기 - 이차방정식"],
+  [41,[416,443],"유형익히기 - 이차방정식 심화"],
+  [42,[444,465],"유형익히기 - 판별식·근과계수"],
+  [43,[466,480],"시험에 꼭 나오는 문제"],
+  [47,[500,520],"유형익히기 - 이차함수"],
+  [48,[521,545],"유형익히기 - 이차함수 심화"],
+  [49,[546,566],"시험에 꼭 나오는 문제"],
+];
+(()=>{
+  const unitName=n=>n>=1093?'행렬':n>=1001?'조합':n>=911?'경우의수·순열':n>=775?'이차부등식':n>=629?'연립일차부등식':'여러가지방정식';
+  for(let s=567;s<=1184;s+=8){
+    const e=Math.min(s+7,1184);
+    PAGE_MAP.push([null,[s,e],unitName(s)]);
+  }
+})();(()=>{
+  const unitName=n=>n>=1093?'행렬':n>=1001?'조합':n>=911?'경우의수·순열':n>=775?'이차부등식':n>=629?'연립일차부등식':'여러가지방정식';
+  for(let s=567;s<=1184;s+=8){
+    const e=Math.min(s+7,1184);
+    PAGE_MAP.push([null,[s,e],unitName(s)]);
+  }
+})();
+
+const UNITS=[
+  {id:1,name:'다항식의 연산',r:[1,110],c:'#FF5722'},
+  {id:2,name:'항등식과 나머지정리',r:[111,195],c:'#8E44AD'},
+  {id:3,name:'인수분해',r:[196,279],c:'#2980B9'},
+  {id:4,name:'복소수',r:[280,375],c:'#16A085'},
+  {id:5,name:'이차방정식',r:[376,480],c:'#E67E22'},
+  {id:6,name:'이차방정식과 이차함수',r:[481,566],c:'#C0392B'},
+  {id:7,name:'여러 가지 방정식',r:[567,628],c:'#1ABC9C'},
+  {id:8,name:'연립일차부등식',r:[629,774],c:'#F39C12'},
+  {id:9,name:'이차부등식과 연립이차부등식',r:[775,910],c:'#9B59B6'},
+  {id:10,name:'경우의 수와 순열',r:[911,1000],c:'#27AE60'},
+  {id:11,name:'조합',r:[1001,1092],c:'#E74C3C'},
+  {id:12,name:'행렬',r:[1093,1184],c:'#3498DB'},
+];
+const NUMS=['①','②','③','④','⑤'];
+let YT_CHANNEL_ID='';
+function ytUrl(n){
+  const q=encodeURIComponent(`RPM 공통수학1 ${String(n).padStart(4,'0')}번 풀이`);
+  return YT_CHANNEL_ID?`https://www.youtube.com/results?search_query=${q}&channel=${YT_CHANNEL_ID}`:`https://www.youtube.com/results?search_query=${q}`;
+}
+
+// ── STATE ──
+let curUser=null,records={};
+let curUnit=null,curUnitPages=[];  // 현재 단원의 페이지들
+let curPageIdx=0;                  // 현재 페이지 인덱스 (curUnitPages 내)
+let curPageQs=[];                  // 현재 페이지의 문제번호들
+let userSelections={};             // { qNum: choiceIdx }
+let graded=false;
+
+// ── AUTH ──
+async function doLogin(){
+  const em=document.getElementById('lemail').value.trim();
+  const pw=document.getElementById('lpassword').value;
+  document.getElementById('lerr').textContent='';
+  try{ await window._fb.signInWithEmailAndPassword(window._fb.auth,em,pw); }
+  catch(e){ document.getElementById('lerr').textContent='이메일 또는 비밀번호가 올바르지 않습니다.'; }
+}
+async function doLogout(){ await window._fb.signOut(window._fb.auth); location.reload(); }
+
+window.addEventListener('load',()=>{
+  const {auth,onAuthStateChanged,db,doc,getDoc}=window._fb;
+  onAuthStateChanged(auth,async user=>{
+    if(!user){
+      document.getElementById('s-login').style.display='flex';
+      document.getElementById('app').style.display='none';
+      return;
+    }
+    curUser=user;
+    document.getElementById('s-login').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('tbarName').textContent=user.displayName||user.email.split('@')[0];
+    document.getElementById('hbName').textContent=`${user.displayName||user.email.split('@')[0]}님, 안녕하세요!`;
+    await loadRecords();
+    try{
+      const snap=await getDoc(doc(db,'settings','youtube'));
+      if(snap.exists()) YT_CHANNEL_ID=snap.data().channelId||'';
+    }catch(e){}
+    renderHome(); updateHeader();
+  });
+});
+
+async function loadRecords(){
+  const {db,doc,getDoc}=window._fb;
+  try{
+    const snap=await getDoc(doc(db,'students',curUser.uid,'data','records'));
+    records=snap.exists()?(snap.data().records||{}):{};
+  }catch(e){ records={}; }
+}
+async function saveRecords(batch){
+  const {db,doc,setDoc,serverTimestamp}=window._fb;
+  Object.assign(records,batch);
+  try{ await setDoc(doc(db,'students',curUser.uid,'data','records'),{records,updatedAt:serverTimestamp()},{merge:true}); }
+  catch(e){}
+}
+
+// ── NAV ──
+function navTo(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.bn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('s-'+name).classList.add('on');
+  const bnEl=document.getElementById('bn-'+name);
+  if(bnEl) bnEl.classList.add('on');
+  document.getElementById('scrollEl').scrollTop=0;
+  if(name==='wrong') renderWrong();
+  if(name==='stats') renderStats();
+  updateHeader();
+}
+
+// ── HOME ──
+function renderHome(){
+  navTo('home');
+  const all=Object.keys(records).map(Number);
+  const tot=all.length,ok=all.filter(n=>records[n]?.correct===true).length;
+  document.getElementById('hs-tot').textContent=tot;
+  document.getElementById('hs-ok').textContent=ok;
+  document.getElementById('hs-ng').textContent=tot-ok;
+  document.getElementById('hs-rt').textContent=tot>0?Math.round(ok/tot*100)+'%':'-';
+  const grid=document.getElementById('unitGrid'); grid.innerHTML='';
+  UNITS.forEach(u=>{
+    const total=u.r[1]-u.r[0]+1;
+    const solved=all.filter(n=>n>=u.r[0]&&n<=u.r[1]).length;
+    const okCnt=all.filter(n=>n>=u.r[0]&&n<=u.r[1]&&records[n]?.correct===true).length;
+    const el=document.createElement('div'); el.className='unit-card';
+    el.style.setProperty('--unit-c',u.c);
+    el.innerHTML=`
+      <div class="ubadge">${String(u.id).padStart(2,'0')}</div>
+      <div class="uinfo">
+        <div class="uname">${u.name}</div>
+        <div class="urange">${u.r[0]}~${u.r[1]}번 · ${total}문제</div>
+        <div class="ubar"><div class="ubar-fill" style="width:${Math.round(solved/total*100)}%"></div></div>
+      </div>
+      <div class="uright">
+        <div class="upct">${solved>0?Math.round(okCnt/solved*100)+'%':'-'}</div>
+        <div class="ucnt">${solved}/${total}</div>
+      </div>`;
+    el.onclick=()=>openUnit(u);
+    grid.appendChild(el);
+  });
+}
+
+// ── UNIT 페이지 목록 ──
+function openUnit(u){
+  curUnit=u;
+  curUnitPages=PAGE_MAP.filter(p=>p[1][0]>=u.r[0]&&p[1][1]<=u.r[1]);
+  document.getElementById('unitPageTitle').textContent=`${String(u.id).padStart(2,'0')}. ${u.name}`;
+  renderPageList();
+  navTo('unit');
+}
+
+function renderPageList(){
+  const all=Object.keys(records).map(Number);
+  const list=document.getElementById('pageList'); list.innerHTML='';
+  curUnitPages.forEach((p,i)=>{
+    const [pdf,[qs,qe],title]=p;
+    const qNums=[];
+    for(let n=qs;n<=qe;n++) qNums.push(n);
+    const solved=qNums.filter(n=>records[n]).length;
+    const ok=qNums.filter(n=>records[n]?.correct===true).length;
+    const allDone=solved===qNums.length;
+    const el=document.createElement('div');
+    el.className=`page-item${allDone?' done':solved>0?' partial':''}`;
+    const scoreColor=allDone&&ok===qNums.length?'var(--green)':solved>0?'var(--primary)':'var(--muted)';
+    el.innerHTML=`
+      <div class="pi-num">P${i+1}</div>
+      <div class="pi-info">
+        <div class="pi-title">${title}</div>
+        <div class="pi-range">${qs}~${qe}번 · ${qNums.length}문제${pdf?` (교재 ${pdf}쪽)`:''}</div>
+      </div>
+      <div class="pi-right">
+        <div class="pi-score" style="color:${scoreColor}">${solved>0?ok+'/'+qNums.length:'-'}</div>
+        <div class="pi-cnt">${solved>0?Math.round(ok/qNums.length*100)+'%':''}</div>
+      </div>`;
+    el.onclick=()=>startPage(i);
+    list.appendChild(el);
+  });
+}
+
+// ── QUIZ - 페이지 단위 ──
+function startPage(pageIdx){
+  curPageIdx=pageIdx;
+  const [pdf,[qs,qe],title]=curUnitPages[pageIdx];
+  curPageQs=[];
+  for(let n=qs;n<=qe;n++) curPageQs.push(n);
+  userSelections={};
+  graded=false;
+
+  document.getElementById('qPageTitle').textContent=title;
+  document.getElementById('qPageCounter').textContent=`${pageIdx+1}/${curUnitPages.length}`;
+  document.getElementById('progFill').style.width=Math.round((pageIdx+1)/curUnitPages.length*100)+'%';
+  document.getElementById('resultSummary').style.display='none';
+  document.getElementById('gradeBtn').className='grade-btn';
+  document.getElementById('gradeBtn').disabled=true;
+  document.getElementById('gradeBtn').textContent='채점하기';
+
+  renderQItems();
+  navTo('quiz');
+}
+
+function renderQItems(){
+  const wrap=document.getElementById('qItemsWrap'); wrap.innerHTML='';
+  curPageQs.forEach(n=>{
+    const cd=CHOICES[n];
+    const rec=records[n];
+    const item=document.createElement('div');
+    item.className='q-item'+(rec?.correct===true?' correct':rec?.correct===false?' wrong':'');
+    item.id=`qi-${n}`;
+
+    const statusTxt=rec?.correct===true?'✅ 정답':rec?.correct===false?'❌ 오답':'미풀이';
+    const statusCls=rec?.correct===true?'ok':rec?.correct===false?'ng':'';
+    item.innerHTML=`
+      <div class="q-head">
+        <div class="q-head-left">
+          <div class="q-num">${String(n).padStart(4,'0')}</div>
+        </div>
+        <div class="q-status ${statusCls}" id="qs-${n}">${statusTxt}</div>
+      </div>
+      <div class="q-choices" id="qc-${n}"></div>`;
+    wrap.appendChild(item);
+
+    // 선택지 렌더링
+    const choiceWrap=document.getElementById(`qc-${n}`);
+    if(cd){
+      const row=document.createElement('div'); row.className='choice-row-q';
+      cd.c.forEach((txt,i)=>{
+        const btn=document.createElement('button');
+        btn.className='choice-btn-q';
+        btn.dataset.n=n; btn.dataset.i=i;
+        // 이전 기록 반영
+        if(rec&&rec.correct!==null){
+          if(i===cd.a) btn.classList.add('correct');
+          else if(rec.userAns===cd.c[i]&&rec.correct===false) btn.classList.add('wrong');
+          btn.disabled=true;
+        }
+        btn.innerHTML=`<div class="cn">${NUMS[i]}</div><div class="ct">${esc(txt)}</div>`;
+        btn.onclick=()=>selectQ(n,i);
+        row.appendChild(btn);
+      });
+      choiceWrap.appendChild(row);
+    } else {
+      choiceWrap.innerHTML='<div style="padding:10px;font-size:12px;color:var(--muted);">교재에서 확인하세요</div>';
+    }
+  });
+  updateGradeBar();
+}
+
+function selectQ(n,idx){
+  if(graded) return;
+  userSelections[n]=idx;
+  // 버튼 UI 업데이트
+  document.querySelectorAll(`.choice-btn-q[data-n="${n}"]`).forEach((btn,i)=>{
+    btn.classList.toggle('selected', i===idx);
+  });
+  updateGradeBar();
+}
+
+function updateGradeBar(){
+  const total=curPageQs.length;
+  const answered=Object.keys(userSelections).length;
+  // 이미 채점된 문제 포함
+  const prevAnswered=curPageQs.filter(n=>records[n]&&records[n].correct!==null).length;
+  const effectiveAnswered=answered+(prevAnswered-curPageQs.filter(n=>records[n]&&records[n].correct!==null&&userSelections[n]!==undefined).length);
+
+  const newAnswers=curPageQs.filter(n=>!records[n]||records[n].correct===null).length;
+  const myAnswers=Object.keys(userSelections).filter(n=>!records[n]||records[n].correct===null).length;
+
+  document.getElementById('gradeInfo').innerHTML=
+    `<b>${myAnswers}</b>/${newAnswers} 답 선택됨`;
+  document.getElementById('gradeBtn').disabled=(myAnswers===0);
+}
+
+function gradeAll(){
+  if(Object.keys(userSelections).length===0) return;
+  graded=true;
+  const batch={};
+  let ok=0, ng=0;
+
+  curPageQs.forEach(n=>{
+    const cd=CHOICES[n];
+    if(!cd) return;
+    const sel=userSelections[n];
+    if(sel===undefined) return; // 이미 채점된 것은 건드리지 않음
+
+    const isOk=(sel===cd.a);
+    if(isOk) ok++; else ng++;
+
+    batch[n]={correct:isOk, userAns:cd.c[sel], correctAns:cd.c[cd.a], ts:Date.now()};
+
+    // UI 반영
+    const item=document.getElementById(`qi-${n}`);
+    if(item){
+      item.classList.remove('correct','wrong');
+      item.classList.add(isOk?'correct':'wrong');
+    }
+    const statusEl=document.getElementById(`qs-${n}`);
+    if(statusEl){ statusEl.textContent=isOk?'✅ 정답':'❌ 오답'; statusEl.className=`q-status ${isOk?'ok':'ng'}`; }
+
+    document.querySelectorAll(`.choice-btn-q[data-n="${n}"]`).forEach((btn,i)=>{
+      btn.classList.remove('selected');
+      if(i===cd.a) btn.classList.add('correct');
+      else if(i===sel&&!isOk) btn.classList.add('wrong');
+      btn.disabled=true;
+    });
+  });
+
+  saveRecords(batch);
+  updateHeader();
+
+  // 결과 요약
+  const total=Object.keys(userSelections).length;
+  document.getElementById('rs-total').textContent=total;
+  document.getElementById('rs-ok').textContent=ok;
+  document.getElementById('rs-ng').textContent=ng;
+  document.getElementById('resultSummary').style.display='block';
+  document.getElementById('gradeBtn').textContent='채점 완료 ✓';
+  document.getElementById('gradeBtn').className='grade-btn done';
+  document.getElementById('gradeBtn').disabled=true;
+  document.getElementById('scrollEl').scrollTop=0;
+}
+
+function retryPage(){
+  // 현재 페이지 기록 초기화 후 다시 풀기
+  curPageQs.forEach(n=>{ delete records[n]; });
+  userSelections={};
+  graded=false;
+  document.getElementById('resultSummary').style.display='none';
+  document.getElementById('gradeBtn').className='grade-btn';
+  document.getElementById('gradeBtn').disabled=true;
+  document.getElementById('gradeBtn').textContent='채점하기';
+  renderQItems();
+}
+
+function nextPage(){
+  if(curPageIdx<curUnitPages.length-1){
+    startPage(curPageIdx+1);
+  } else {
+    alert('🎊 단원 완료! 모든 페이지를 풀었어요!');
+    renderPageList();
+    navTo('unit');
+  }
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── WRONG ──
+function renderWrong(){
+  const wrong=Object.keys(records).filter(k=>records[k]?.correct===false).map(Number).sort((a,b)=>a-b);
+  document.getElementById('wrongSub').textContent=wrong.length>0?`틀린 문제 ${wrong.length}개`:'틀린 문제 없음 👍';
+  const list=document.getElementById('wrongList'); list.innerHTML='';
+  if(!wrong.length){ list.innerHTML='<div class="empty"><div class="ei">✅</div><p>오답 노트가 비어있어요!</p></div>'; return; }
+  wrong.forEach(n=>{
+    const rec=records[n];
+    const u=UNITS.find(u=>n>=u.r[0]&&n<=u.r[1])||{name:'?'};
+    const el=document.createElement('div'); el.className='wi';
+    el.innerHTML=`
+      <div class="wi-top"><span class="wi-num">문항 ${String(n).padStart(4,'0')}</span><span class="wi-unit">${u.name}</span></div>
+      <div class="wi-ans">내 답: <span class="m">${esc(rec.userAns||'?')}</span> → 정답: <span class="c">${esc(rec.correctAns||'?')}</span></div>
+      <div class="wi-btns">
+        <a class="wibtn wibtn-yt" href="${ytUrl(n)}" target="_blank">▶ 해설</a>
+      </div>`;
+    list.appendChild(el);
+  });
+}
+
+// ── STATS ──
+function renderStats(){
+  const all=Object.keys(records).map(Number);
+  const tot=all.length,ok=all.filter(n=>records[n]?.correct===true).length;
+  const ng=all.filter(n=>records[n]?.correct===false).length;
+  document.getElementById('st-tot').textContent=tot;
+  document.getElementById('st-ok').textContent=ok;
+  document.getElementById('st-ng').textContent=ng;
+  document.getElementById('st-rt').textContent=tot>0?Math.round(ok/tot*100)+'%':'0%';
+  const ul=document.getElementById('ustatList'); ul.innerHTML='';
+  UNITS.forEach(u=>{
+    const nums=all.filter(n=>n>=u.r[0]&&n<=u.r[1]);
+    const c=nums.filter(n=>records[n]?.correct===true).length;
+    const t=nums.length,total=u.r[1]-u.r[0]+1;
+    const el=document.createElement('div'); el.className='ustat';
+    el.innerHTML=`
+      <div class="ustat-top"><span>${String(u.id).padStart(2,'0')} ${u.name}</span><span style="color:${u.c}">${t}/${total} · ${t>0?Math.round(c/t*100):0}%</span></div>
+      <div class="ustat-bar"><div class="ustat-fill" style="width:${Math.round(t/total*100)}%;background:${u.c}"></div></div>`;
+    ul.appendChild(el);
+  });
+}
+
+function updateHeader(){
+  const all=Object.keys(records).map(Number);
+  document.getElementById('hc').textContent=all.filter(n=>records[n]?.correct===true).length;
+  document.getElementById('hw').textContent=all.filter(n=>records[n]?.correct===false).length;
+}
+
 </script>
 </body>
 </html>
