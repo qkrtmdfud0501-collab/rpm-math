@@ -2,246 +2,254 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RPM 수학</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RPM</title>
 <style>
-:root{--bg:#F0F3F8;--s:#fff;--dk:#1A1D2E;--nv:#252A4A;--pr:#FF4D1C;--gn:#26D07C;--rd:#FF3B5C;--gd:#FFB800;--mu:#8B95A7;--bd:#E8ECF4}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--dk)}
-#app{display:flex;flex-direction:column;height:100%;overflow:hidden}
-.scr{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.pane{display:none;padding:12px}
-.pane.on{display:block}
-/* LOGIN */
-#p-login{display:flex;align-items:center;justify-content:center;min-height:100%;padding:24px}
-.lcard{background:#fff;border-radius:20px;padding:28px 24px;width:100%;max-width:340px;box-shadow:0 4px 24px rgba(0,0,0,.1)}
-.llogo{text-align:center;margin-bottom:20px}
-.llogo b{font-family:'Bebas Neue';font-size:48px;color:var(--pr);letter-spacing:4px;display:block}
-.llogo small{font-size:11px;color:var(--mu)}
-.lf{margin-bottom:10px}
-.lf label{display:block;font-size:11px;font-weight:700;color:var(--mu);margin-bottom:4px}
-.lf input{width:100%;border:2px solid var(--bd);border-radius:9px;padding:11px;font-size:14px;font-family:inherit;outline:none}
-.lf input:focus{border-color:var(--pr)}
-.lbtn{width:100%;background:var(--pr);color:#fff;border:none;border-radius:9px;padding:12px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:4px}
-.lerr{font-size:12px;color:var(--rd);text-align:center;margin-top:6px;min-height:16px}
-/* TOPBAR */
-.topbar{background:var(--dk);height:50px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.tlogo{font-family:'Bebas Neue';font-size:20px;color:var(--pr);letter-spacing:2px}
-.tr{display:flex;align-items:center;gap:7px}
-.pill{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:3px 9px;font-size:11px;color:#fff}
-.pill b{color:var(--gd)}
+body{font-family:sans-serif;background:#f0f3f8;color:#1a1d2e;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+#wrap{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.hide{display:none!important}
+
+/* 로그인 */
+#login{display:flex;align-items:center;justify-content:center;height:100%;padding:20px}
+.card{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:320px;box-shadow:0 4px 20px rgba(0,0,0,.12)}
+.logo{text-align:center;font-size:36px;font-weight:900;color:#ff4d1c;letter-spacing:3px;margin-bottom:4px}
+.logo-sub{text-align:center;font-size:11px;color:#8b95a7;margin-bottom:20px}
+label{display:block;font-size:11px;font-weight:700;color:#8b95a7;margin-bottom:4px}
+input{width:100%;border:2px solid #e8ecf4;border-radius:8px;padding:10px;font-size:14px;font-family:sans-serif;outline:none;margin-bottom:10px}
+input:focus{border-color:#ff4d1c}
+.btn{width:100%;background:#ff4d1c;color:#fff;border:none;border-radius:8px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:sans-serif}
+.err{font-size:12px;color:#ff3b5c;text-align:center;margin-top:6px;min-height:14px}
+
+/* 상단바 */
+#topbar{background:#1a1d2e;padding:0 14px;height:48px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.tl{font-size:18px;font-weight:900;color:#ff4d1c;letter-spacing:2px}
+.tr{display:flex;align-items:center;gap:8px}
+.pill{background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px;color:#fff}
+.pill b{color:#ffb800}
 .tname{font-size:11px;color:rgba(255,255,255,.5)}
-.tbtn{background:none;border:1px solid rgba(255,255,255,.2);border-radius:7px;padding:4px 9px;color:rgba(255,255,255,.6);font-size:11px;font-family:inherit;cursor:pointer}
-/* BNAV */
-.bnav{background:#fff;border-top:1px solid var(--bd);display:flex;flex-shrink:0}
-.bn{flex:1;border:none;background:none;cursor:pointer;padding:8px 4px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:inherit;font-size:10px;color:var(--mu)}
-.bn .ico{font-size:19px}
-.bn.on{color:var(--pr)}
-/* HOME */
-.banner{background:linear-gradient(135deg,var(--dk),var(--nv));border-radius:14px;padding:16px;margin-bottom:10px;color:#fff}
-.bname{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:2px}
-.btitle{font-size:17px;font-weight:900}
-.bstats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:11px}
-.bstat{background:rgba(255,255,255,.08);border-radius:8px;padding:8px;text-align:center}
-.bstat .n{font-family:'Bebas Neue';font-size:22px;color:var(--gd);line-height:1}
-.bstat .l{font-size:9px;color:rgba(255,255,255,.4)}
-.sec{font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.sec::before{content:'';width:3px;height:15px;background:var(--pr);border-radius:2px;display:block}
-.ucards{display:flex;flex-direction:column;gap:6px}
-.uc{background:#fff;border-radius:14px;padding:11px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;border:2px solid transparent;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.ubadge{width:40px;height:40px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:16px;color:#fff;background:var(--uc)}
+.lout{background:none;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:3px 8px;color:rgba(255,255,255,.6);font-size:11px;cursor:pointer;font-family:sans-serif}
+
+/* 화면 */
+.screen{padding:12px;display:none}
+.screen.on{display:block}
+
+/* 배너 */
+.banner{background:linear-gradient(135deg,#1a1d2e,#252a4a);border-radius:12px;padding:14px;margin-bottom:10px;color:#fff}
+.bname{font-size:11px;color:rgba(255,255,255,.5);margin-bottom:2px}
+.btitle{font-size:16px;font-weight:900}
+.bstats{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:10px}
+.bs{background:rgba(255,255,255,.08);border-radius:7px;padding:7px;text-align:center}
+.bs .n{font-size:20px;font-weight:900;color:#ffb800;line-height:1}
+.bs .l{font-size:9px;color:rgba(255,255,255,.4)}
+.stitle{font-size:13px;font-weight:700;margin-bottom:8px;padding-left:8px;border-left:3px solid #ff4d1c}
+
+/* 단원 카드 */
+.uc{background:#fff;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:6px;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.ubadge{width:38px;height:38px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff}
 .ui{flex:1;min-width:0}
 .uname{font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.urange{font-size:10px;color:var(--mu)}
-.ubar{height:3px;background:var(--bg);border-radius:2px;margin-top:5px;overflow:hidden}
-.ubf{height:100%;background:var(--uc);border-radius:2px}
+.urange{font-size:10px;color:#8b95a7}
+.ubar{height:3px;background:#f0f3f8;border-radius:2px;margin-top:4px;overflow:hidden}
+.ubf{height:100%;border-radius:2px}
 .ur{text-align:right;flex-shrink:0}
-.upct{font-size:12px;font-weight:700;color:var(--uc)}
-.ucnt{font-size:10px;color:var(--mu)}
-/* PAGE LIST */
-.qhdr{display:flex;align-items:center;gap:8px;margin-bottom:9px}
-.back{width:32px;height:32px;border:none;background:#fff;border-radius:8px;cursor:pointer;font-size:15px;flex-shrink:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.06)}
-.qtitle{font-size:12px;font-weight:700;flex:1}
-.qctr{font-size:11px;color:var(--mu)}
-.plist{display:flex;flex-direction:column;gap:5px}
-.pi{background:#fff;border-radius:9px;padding:10px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;border:2px solid var(--bd)}
-.pi.done{border-color:#B2F5D0}
-.pi.partial{border-color:var(--gd)}
-.pnum{font-family:'Bebas Neue';font-size:22px;color:var(--pr);flex-shrink:0;width:36px}
+.upct{font-size:12px;font-weight:700}
+.ucnt{font-size:10px;color:#8b95a7}
+
+/* 페이지 목록 */
+.hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.back{width:30px;height:30px;border:none;background:#fff;border-radius:7px;font-size:14px;cursor:pointer;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+.htitle{font-size:12px;font-weight:700;flex:1}
+.hctr{font-size:11px;color:#8b95a7}
+.pi{background:#fff;border-radius:9px;padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:5px;border:2px solid #e8ecf4}
+.pi.done{border-color:#b2f5d0}
+.pi.partial{border-color:#ffb800}
+.pnum{font-size:20px;font-weight:900;color:#ff4d1c;flex-shrink:0;width:34px}
 .pinfo{flex:1;min-width:0}
-.ptitle{font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.prange{font-size:10px;color:var(--mu)}
-.pright{text-align:right;flex-shrink:0}
-.pscore{font-size:12px;font-weight:700}
-/* QUIZ */
-.pbar{height:5px;background:var(--bd);border-radius:3px;margin-bottom:10px;overflow:hidden}
-.pfill{height:100%;background:linear-gradient(90deg,var(--pr),var(--gd));border-radius:3px;transition:width .3s}
-.qi{background:#fff;border-radius:12px;border:2px solid var(--bd);margin-bottom:8px;overflow:hidden}
-.qi.ok{border-color:var(--gn)}
-.qi.ng{border-color:var(--rd)}
-.qhd{display:flex;align-items:center;justify-content:space-between;padding:10px 13px 8px;background:#FAFBFF;border-bottom:1px solid var(--bd)}
-.qnum{font-family:'Bebas Neue';font-size:28px;color:var(--pr);line-height:1}
-.qst{font-size:11px;color:var(--mu)}
-.qst.ok{color:var(--gn);font-weight:700}
-.qst.ng{color:var(--rd);font-weight:700}
+.ptitle{font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prange{font-size:10px;color:#8b95a7}
+.pright{text-align:right;flex-shrink:0;font-size:12px;font-weight:700}
+
+/* 퀴즈 */
+.pbar{height:4px;background:#e8ecf4;border-radius:2px;margin-bottom:10px;overflow:hidden}
+.pfill{height:100%;background:linear-gradient(90deg,#ff4d1c,#ffb800);border-radius:2px;transition:width .3s}
+.qi{background:#fff;border-radius:10px;border:2px solid #e8ecf4;margin-bottom:8px;overflow:hidden}
+.qi.ok{border-color:#26d07c}
+.qi.ng{border-color:#ff3b5c}
+.qhd{display:flex;align-items:center;justify-content:space-between;padding:9px 12px 8px;background:#fafbff;border-bottom:1px solid #e8ecf4}
+.qnum{font-size:24px;font-weight:900;color:#ff4d1c;line-height:1}
+.qst{font-size:11px;color:#8b95a7}
+.qst.ok{color:#26d07c;font-weight:700}
+.qst.ng{color:#ff3b5c;font-weight:700}
 .qch{padding:8px 10px 10px}
 .crow{display:flex;flex-direction:column;gap:5px}
-.cb{display:flex;align-items:center;gap:9px;border:2px solid var(--bd);border-radius:9px;padding:9px 12px;background:#fff;cursor:pointer;font-family:inherit;text-align:left;width:100%}
-.cb.sel{border-color:var(--pr);background:#FFF3F0}
-.cb.ok{border-color:var(--gn);background:#EDFFF5}
-.cb.ng{border-color:var(--rd);background:#FFF5F7}
-.cn{width:22px;height:22px;border-radius:50%;flex-shrink:0;background:var(--bd);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--mu)}
-.cb.sel .cn{background:var(--pr);color:#fff}
-.cb.ok .cn{background:var(--gn);color:#fff}
-.cb.ng .cn{background:var(--rd);color:#fff}
-.ct{font-size:12px;line-height:1.5;word-break:break-all}
-.gbar{position:sticky;bottom:0;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);padding:10px 12px;border-top:1px solid var(--bd);margin:-12px -12px 0;display:flex;gap:8px;align-items:center}
-.gi{flex:1;font-size:12px;color:var(--mu)}
-.gi b{color:var(--dk)}
-.gbtn{padding:11px 22px;background:var(--pr);color:#fff;border:none;border-radius:9px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
-.gbtn:disabled{background:var(--bd);color:var(--mu);cursor:not-allowed}
-.gbtn.done{background:var(--nv)}
-.rs{background:linear-gradient(135deg,var(--dk),var(--nv));border-radius:14px;padding:16px;margin-bottom:10px;color:#fff}
-.rstitle{font-size:14px;font-weight:700;margin-bottom:10px}
-.rsgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.rsc{background:rgba(255,255,255,.1);border-radius:9px;padding:10px;text-align:center}
-.rsc .n{font-family:'Bebas Neue';font-size:28px;line-height:1}
-.rsc .l{font-size:10px;color:rgba(255,255,255,.6);margin-top:2px}
-.rsact{display:flex;gap:7px;margin-top:10px}
-.rsb{flex:1;padding:10px;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700}
-.rsb.next{background:var(--pr);color:#fff}
-.rsb.retry{background:rgba(255,255,255,.15);color:#fff}
-/* WRONG */
-.wbanner{background:linear-gradient(135deg,#8B1A2E,var(--rd));border-radius:14px;padding:13px;margin-bottom:10px;color:#fff}
-.wlist{display:flex;flex-direction:column;gap:6px}
-.wi{background:#fff;border-radius:10px;border-left:4px solid var(--rd);padding:11px 13px}
-.witop{display:flex;justify-content:space-between;margin-bottom:5px}
-.winum{font-size:13px;font-weight:700;color:var(--rd)}
-.wiunit{font-size:10px;color:var(--mu)}
+.cb{display:flex;align-items:center;gap:8px;border:2px solid #e8ecf4;border-radius:8px;padding:8px 10px;background:#fff;cursor:pointer;font-family:sans-serif;width:100%;text-align:left}
+.cb.sel{border-color:#ff4d1c;background:#fff3f0}
+.cb.ok{border-color:#26d07c;background:#edfff5}
+.cb.ng{border-color:#ff3b5c;background:#fff5f7}
+.cn{width:22px;height:22px;border-radius:50%;flex-shrink:0;background:#e8ecf4;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#8b95a7}
+.cb.sel .cn{background:#ff4d1c;color:#fff}
+.cb.ok .cn{background:#26d07c;color:#fff}
+.cb.ng .cn{background:#ff3b5c;color:#fff}
+.ct{font-size:12px;line-height:1.4;word-break:break-all}
+.gbar{position:sticky;bottom:0;background:rgba(255,255,255,.96);padding:9px 12px;border-top:1px solid #e8ecf4;margin:-12px -12px 0;display:flex;gap:8px;align-items:center}
+.gi{flex:1;font-size:12px;color:#8b95a7}
+.gi b{color:#1a1d2e}
+.gbtn{padding:10px 20px;background:#ff4d1c;color:#fff;border:none;border-radius:8px;font-family:sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+.gbtn:disabled{background:#e8ecf4;color:#8b95a7;cursor:not-allowed}
+.gbtn.done{background:#252a4a}
+
+/* 결과 */
+.rbox{background:linear-gradient(135deg,#1a1d2e,#252a4a);border-radius:12px;padding:14px;margin-bottom:10px;color:#fff}
+.rtitle{font-size:13px;font-weight:700;margin-bottom:10px}
+.rgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.rc{background:rgba(255,255,255,.1);border-radius:8px;padding:9px;text-align:center}
+.rc .n{font-size:26px;font-weight:900;line-height:1}
+.rc .l{font-size:10px;color:rgba(255,255,255,.6)}
+.ract{display:flex;gap:7px;margin-top:10px}
+.rb{flex:1;padding:9px;border-radius:7px;border:none;cursor:pointer;font-family:sans-serif;font-size:12px;font-weight:700}
+.rb.next{background:#ff4d1c;color:#fff}
+.rb.retry{background:rgba(255,255,255,.15);color:#fff}
+
+/* 오답/통계 */
+.wbanner{background:linear-gradient(135deg,#6b0f1a,#ff3b5c);border-radius:12px;padding:12px;margin-bottom:10px;color:#fff}
+.wi{background:#fff;border-radius:9px;border-left:4px solid #ff3b5c;padding:10px 12px;margin-bottom:6px}
+.witop{display:flex;justify-content:space-between;margin-bottom:4px}
+.winum{font-size:13px;font-weight:700;color:#ff3b5c}
+.wiunit{font-size:10px;color:#8b95a7}
 .wians{font-size:12px;margin-bottom:6px}
-.m{color:var(--rd);font-weight:600}
-.c{color:var(--gn);font-weight:600}
-.wibtn{padding:5px 10px;border-radius:6px;border:none;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;background:var(--rd);color:#fff;text-decoration:none;display:inline-block}
-/* STATS */
+.wm{color:#ff3b5c;font-weight:600}
+.wc{color:#26d07c;font-weight:600}
+.wbtn{padding:4px 10px;border-radius:5px;border:none;font-family:sans-serif;font-size:11px;font-weight:700;cursor:pointer;background:#ff3b5c;color:#fff;text-decoration:none;display:inline-block}
 .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-.sc{background:#fff;border-radius:14px;padding:13px;text-align:center}
-.sc .sn{font-family:'Bebas Neue';font-size:38px;line-height:1}
-.sc .sl{font-size:10px;color:var(--mu)}
-.usl{display:flex;flex-direction:column;gap:5px}
-.us{background:#fff;border-radius:8px;padding:10px 12px}
+.sc{background:#fff;border-radius:12px;padding:12px;text-align:center}
+.sc .sn{font-size:34px;font-weight:900;line-height:1}
+.sc .sl{font-size:10px;color:#8b95a7}
+.us{background:#fff;border-radius:8px;padding:10px 12px;margin-bottom:5px}
 .ustop{display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:4px}
-.usbar{height:3px;background:var(--bg);border-radius:2px;overflow:hidden}
+.usbar{height:3px;background:#f0f3f8;border-radius:2px;overflow:hidden}
 .usfill{height:100%;border-radius:2px}
-.empty{text-align:center;padding:40px 20px;color:var(--mu)}
-.empty .ei{font-size:40px;margin-bottom:8px}
+.empty{text-align:center;padding:40px 20px;color:#8b95a7;font-size:13px}
+
+/* 하단 네비 */
+#nav{background:#fff;border-top:1px solid #e8ecf4;display:flex;flex-shrink:0}
+.nb{flex:1;border:none;background:none;cursor:pointer;padding:8px 4px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:sans-serif;font-size:10px;color:#8b95a7}
+.nb.on{color:#ff4d1c}
+.nbi{font-size:20px;line-height:1}
 </style>
 </head>
 <body>
-<div id="app" style="display:none">
-  <div class="topbar">
-    <div class="tlogo">RPM</div>
-    <div class="tr">
-      <div class="pill">O <b id="hc">0</b></div>
-      <div class="pill">X <b id="hw">0</b></div>
-      <div class="tname" id="tname"></div>
-      <button class="tbtn" onclick="doLogout()">로그아웃</button>
-    </div>
-  </div>
-  <div class="scr" id="scr">
-    <div id="p-login" style="display:none">
-      <div class="lcard">
-        <div class="llogo"><b>RPM</b><small>공통수학 1 · 학습</small></div>
-        <div class="lf"><label>이메일</label><input type="email" id="em" placeholder="student@school.com"></div>
-        <div class="lf"><label>비밀번호</label><input type="password" id="pw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doLogin()"></div>
-        <button class="lbtn" onclick="doLogin()">로그인</button>
-        <div class="lerr" id="lerr"></div>
-      </div>
-    </div>
-    <div class="pane on" id="p-home">
-      <div class="banner">
-        <div class="bname" id="bname">안녕하세요</div>
-        <div class="btitle">오늘도 열심히! </div>
-        <div class="bstats">
-          <div class="bstat"><div class="n" id="hs0">0</div><div class="l">총 풀이</div></div>
-          <div class="bstat"><div class="n" id="hs1">0</div><div class="l">정답</div></div>
-          <div class="bstat"><div class="n" id="hs2">0</div><div class="l">오답</div></div>
-          <div class="bstat"><div class="n" id="hs3">-</div><div class="l">정답률</div></div>
-        </div>
-      </div>
-      <div class="sec">단원 선택</div>
-      <div class="ucards" id="ucards"></div>
-    </div>
-    <div class="pane" id="p-unit">
-      <div class="qhdr">
-        <button class="back" onclick="go('home');renderHome()">←</button>
-        <div class="qtitle" id="utitle"></div>
-      </div>
-      <div class="plist" id="plist"></div>
-    </div>
-    <div class="pane" id="p-quiz">
-      <div class="qhdr">
-        <button class="back" onclick="go('unit')">←</button>
-        <div class="qtitle" id="ptitle"></div>
-        <div class="qctr" id="pctr"></div>
-      </div>
-      <div class="pbar"><div class="pfill" id="pfill" style="width:0%"></div></div>
-      <div id="rsbox" style="display:none">
-        <div class="rs">
-          <div class="rstitle"> 채점 결과</div>
-          <div class="rsgrid">
-            <div class="rsc"><div class="n" id="rs0">0</div><div class="l">전체</div></div>
-            <div class="rsc"><div class="n" id="rs1" style="color:var(--gn)">0</div><div class="l">정답</div></div>
-            <div class="rsc"><div class="n" id="rs2" style="color:var(--rd)">0</div><div class="l">오답</div></div>
-          </div>
-          <div class="rsact">
-            <button class="rsb retry" onclick="retryPage()">↺ 다시</button>
-            <button class="rsb next" onclick="nextPage()">다음 →</button>
-          </div>
-        </div>
-      </div>
-      <div id="qwrap"></div>
-      <div class="gbar">
-        <div class="gi" id="gi">답을 선택하세요</div>
-        <button class="gbtn" id="gbtn" onclick="gradeAll()" disabled>채점하기</button>
-      </div>
-    </div>
-    <div class="pane" id="p-wrong">
-      <div class="wbanner">
-        <h2 style="font-size:15px;font-weight:700">X 오답 노트</h2>
-        <p style="font-size:11px;opacity:.75;margin-top:2px" id="wsub"></p>
-      </div>
-      <div class="wlist" id="wlist"></div>
-    </div>
-    <div class="pane" id="p-stats">
-      <div style="font-size:17px;font-weight:900;margin-bottom:10px"> 학습 통계</div>
-      <div class="sgrid">
-        <div class="sc"><div class="sn" id="st0">0</div><div class="sl">총 풀이</div></div>
-        <div class="sc"><div class="sn" id="st1" style="color:var(--pr)">0%</div><div class="sl">정답률</div></div>
-        <div class="sc"><div class="sn" id="st2" style="color:var(--gn)">0</div><div class="sl">정답</div></div>
-        <div class="sc"><div class="sn" id="st3" style="color:var(--rd)">0</div><div class="sl">오답</div></div>
-      </div>
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px">단원별 성취도</div>
-      <div class="usl" id="usl"></div>
-    </div>
-  </div>
-  <div class="bnav">
-    <button class="bn on" id="bn-home" onclick="go('home');renderHome()"><span class="ico"></span><span>단원</span></button>
-    <button class="bn" id="bn-wrong" onclick="go('wrong')"><span class="ico">X</span><span>오답</span></button>
-    <button class="bn" id="bn-stats" onclick="go('stats')"><span class="ico"></span><span>통계</span></button>
+
+<div id="login">
+  <div class="card">
+    <div class="logo">RPM</div>
+    <div class="logo-sub">공통수학 1 학습</div>
+    <label>이메일</label>
+    <input type="email" id="em" placeholder="student@school.com" autocomplete="email">
+    <label>비밀번호</label>
+    <input type="password" id="pw" placeholder="비밀번호" autocomplete="current-password">
+    <button class="btn" id="lbtn">로그인</button>
+    <div class="err" id="err"></div>
   </div>
 </div>
+
+<div id="topbar" class="hide">
+  <div class="tl">RPM</div>
+  <div class="tr">
+    <div class="pill">O <b id="hc">0</b></div>
+    <div class="pill">X <b id="hw">0</b></div>
+    <div class="tname" id="tname"></div>
+    <button class="lout" id="loutbtn">로그아웃</button>
+  </div>
+</div>
+
+<div id="wrap" class="hide">
+  <div class="screen on" id="s-home">
+    <div class="banner">
+      <div class="bname" id="bname">안녕하세요</div>
+      <div class="btitle">공부 시작!</div>
+      <div class="bstats">
+        <div class="bs"><div class="n" id="hs0">0</div><div class="l">총 풀이</div></div>
+        <div class="bs"><div class="n" id="hs1">0</div><div class="l">정답</div></div>
+        <div class="bs"><div class="n" id="hs2">0</div><div class="l">오답</div></div>
+        <div class="bs"><div class="n" id="hs3">-</div><div class="l">정답률</div></div>
+      </div>
+    </div>
+    <div class="stitle">단원 선택</div>
+    <div id="ucards"></div>
+  </div>
+
+  <div class="screen" id="s-unit">
+    <div class="hdr">
+      <button class="back" id="back1">&#8592;</button>
+      <div class="htitle" id="utitle"></div>
+    </div>
+    <div id="plist"></div>
+  </div>
+
+  <div class="screen" id="s-quiz">
+    <div class="hdr">
+      <button class="back" id="back2">&#8592;</button>
+      <div class="htitle" id="ptitle"></div>
+      <div class="hctr" id="pctr"></div>
+    </div>
+    <div class="pbar"><div class="pfill" id="pfill"></div></div>
+    <div id="rsbox" class="hide">
+      <div class="rbox">
+        <div class="rtitle">채점 결과</div>
+        <div class="rgrid">
+          <div class="rc"><div class="n" id="rs0">0</div><div class="l">전체</div></div>
+          <div class="rc"><div class="n" id="rs1" style="color:#26d07c">0</div><div class="l">정답</div></div>
+          <div class="rc"><div class="n" id="rs2" style="color:#ff3b5c">0</div><div class="l">오답</div></div>
+        </div>
+        <div class="ract">
+          <button class="rb retry" id="retrybtn">다시 풀기</button>
+          <button class="rb next" id="nextbtn">다음 페이지</button>
+        </div>
+      </div>
+    </div>
+    <div id="qwrap"></div>
+    <div class="gbar">
+      <div class="gi" id="gi">답을 선택하세요</div>
+      <button class="gbtn" id="gbtn" disabled>채점하기</button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-wrong">
+    <div class="wbanner">
+      <div style="font-size:15px;font-weight:700">오답 노트</div>
+      <div style="font-size:11px;opacity:.75;margin-top:2px" id="wsub"></div>
+    </div>
+    <div id="wlist"></div>
+  </div>
+
+  <div class="screen" id="s-stats">
+    <div style="font-size:16px;font-weight:900;margin-bottom:10px">학습 통계</div>
+    <div class="sgrid">
+      <div class="sc"><div class="sn" id="st0">0</div><div class="sl">총 풀이</div></div>
+      <div class="sc"><div class="sn" id="st1" style="color:#ff4d1c">0%</div><div class="sl">정답률</div></div>
+      <div class="sc"><div class="sn" id="st2" style="color:#26d07c">0</div><div class="sl">정답</div></div>
+      <div class="sc"><div class="sn" id="st3" style="color:#ff3b5c">0</div><div class="sl">오답</div></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;margin-bottom:6px">단원별 성취도</div>
+    <div id="usl"></div>
+  </div>
+</div>
+
+<div id="nav" class="hide">
+  <button class="nb on" id="nb-home"><div class="nbi">&#127968;</div><div>단원</div></button>
+  <button class="nb" id="nb-wrong"><div class="nbi">&#10006;</div><div>오답</div></button>
+  <button class="nb" id="nb-stats"><div class="nbi">&#128202;</div><div>통계</div></button>
+</div>
+
 <script>
 const CHOICES={38:{c:["6x²+10xy-10y²","5x²+8xy-10y²","4x²+8xy-10y²","6x²+9xy-10y²","6x²+8xy-10y²"],a:4},39:{c:["x²+6xy-2y²","x²+4xy-0y²","x²+2xy-2y²","x²+4xy-3y²","x²+4xy-2y²"],a:4},40:{c:["②","①","④","③","⑤"],a:2},41:{c:["2","4","0","1","3"],a:2},42:{c:["④","②","③","①","⑤"],a:0},43:{c:["7","6","5","8","9"],a:2},44:{c:["11","13","14","10","12"],a:3},45:{c:["22","20","24","23","21"],a:1},46:{c:["④","③","⑤","②","①"],a:2},47:{c:["②","⑤","④","①","③"],a:2},48:{c:["2","-2","-1","0","1"],a:1},49:{c:["19","18","22","21","20"],a:1},50:{c:["②","⑤","④","①","③"],a:4},51:{c:["a²-b²-c⁴+4bc²","a²-b²-c⁴+3bc²","a²-b²-c⁴+2bc²","a²-b²-c⁴+0bc²","a²-b²-c⁴+1bc²"],a:2},52:{c:["x⁴-8x³+16x²+8x-15","x⁴-8x³+14x²+8x-15","x⁴-8x³+15x²+8x-15","x⁴-8x³+14x²+8x-14","x⁴-6x³+14x²+8x-15"],a:1},53:{c:["110","108","109","112","111"],a:1},54:{c:["②","⑤","④","①","③"],a:2},55:{c:["13","12","14","11","10"],a:4},56:{c:["40√3","20√3","30√3","28√3","29√3"],a:2},57:{c:["48","49","50","51","47"],a:4},58:{c:["②","③","⑤","①","④"],a:2},59:{c:["①","⑤","②","③","④"],a:0},60:{c:["①","③","⑤","④","②"],a:4},61:{c:["0","2","1","-2","-1"],a:3},62:{c:["42","43","44","40","41"],a:3},63:{c:["②","①","③","⑤","④"],a:2},64:{c:["33","32","34","36","35"],a:1},65:{c:["③","④","⑤","①","②"],a:3},66:{c:["①","②","③","⑤","④"],a:4},67:{c:["②","⑤","①","③","④"],a:3},68:{c:["8","9","12","10","11"],a:0},69:{c:["12","13","9","10","11"],a:2},70:{c:["15","17","16","18","19"],a:0},71:{c:["⑤","①","③","④","②"],a:0},72:{c:["x²-x+5","x²-x+4","x²-x+7","x²-x+6","x²-x+3"],a:0},73:{c:["몫:2x0, 나머지:0","몫:2x-1, 나머지:0","몫:1x-1, 나머지:0","몫:2x-2, 나머지:0","몫:3x-1, 나머지:0"],a:1},74:{c:["x²-5x+7","x²-2x+7","x²-4x+7","x²-4x+8","x²-4x+5"],a:2},75:{c:["몫:x+4, 나머지:3x","몫:x+5, 나머지:2x","몫:x+3, 나머지:2x","몫:x+4, 나머지:1x","몫:x+4, 나머지:2x"],a:4},76:{c:["몫:1/4Q(x), 나머지:R","몫:0/3Q(x), 나머지:R","몫:2/3Q(x), 나머지:R","몫:1/3Q(x), 나머지:R","몫:1/2Q(x), 나머지:R"],a:3},77:{c:["②","③","⑤","④","①"],a:3},78:{c:["②","④","⑤","③","①"],a:4},79:{c:["21","19","23","22","20"],a:1},80:{c:["12","10","11","8","9"],a:3},81:{c:["②","①","④","③","⑤"],a:0},82:{c:["③","⑤","④","①","②"],a:3},83:{c:["22","19","23","21","20"],a:1},84:{c:["129","127","125","128","126"],a:2},85:{c:["5","8","6","9","7"],a:0},86:{c:["52cm²","47cm²","57cm²","42cm²","62cm²"],a:0},87:{c:["49","51","48","47","50"],a:3},88:{c:["④","②","⑤","③","①"],a:0},89:{c:["153","151","154","150","152"],a:3},90:{c:["⑤","③","④","②","①"],a:3},91:{c:["①","④","③","②","⑤"],a:2},92:{c:["②","④","③","⑤","①"],a:3},93:{c:["0","1","-3","-2","-1"],a:2},94:{c:["②","⑤","④","①","③"],a:4},95:{c:["④","⑤","①","②","③"],a:0},96:{c:["④","①","②","⑤","③"],a:3},97:{c:["31-12√6","32-12√4","32-12√6","32-13√6","32-12√5"],a:2},98:{c:["x²+3x-1","x²+2x-1","x²+1x-1","x²+3x-0","x²+4x-1"],a:0},99:{c:["x+3","x+2","x+5","x+4","x+6"],a:3},100:{c:["32-12√6","몫:2Q(x), 나머지:R","몫:3Q(x), 나머지:R","몫:1Q(x), 나머지:R","x²+3x-1"],a:1},101:{c:["7","5","6","4","3"],a:4},102:{c:["⑤","③","④","①","②"],a:2},103:{c:["18","19","22","21","20"],a:0},104:{c:["2","6","5","3","4"],a:0},105:{c:["9","6","10","7","8"],a:1},106:{c:["61","64","62","60","63"],a:3},107:{c:["④","①","⑤","③","②"],a:4},108:{c:["73/8","69/8","72/8","71/8","70/8"],a:3},109:{c:["9","10","8","6","7"],a:3},110:{c:["8","4","6","5","7"],a:1},111:{c:["ㄴ,ㄹ,ㅁ,ㅂ","ㄴ,ㄷ,ㄹ,ㅁ","ㄱ,ㄴ,ㄹ,ㅁ","ㄴ,ㄹ,ㅁ","71/8"],a:3},112:{c:["a=5,b=-1","a=4,b=-1,c=2","a=3,b=-1","a=4,b=-2","a=4,b=0"],a:1},113:{c:["a=6,b=4","a=5,b=3","a=7,b=3","a=6,b=3,c=-6","a=6,b=2"],a:3},114:{c:["a=2,b=2","a=4,b=2","a=3,b=3","a=3/2,b=-2,c=-1/2","a=3,b=1"],a:3},115:{c:["a=2,b=3","a=1,b=4","a=0,b=3","a=1,b=2","a=1,b=3,c=-1"],a:4},116:{c:["a=3,b=-3","a=2,b=-2","a=1,b=-3","a=2,b=-3,c=6","a=2,b=-4"],a:3},117:{c:["a=-3,b=2","a=-2,b=1","a=-3,b=0","a=-4,b=1","a=-3,b=1"],a:4},118:{c:["a=6,b=2","a=5,b=3","a=6,b=4","a=6,b=3,c=-1","a=7,b=3"],a:3},119:{c:["(1)-1 (2)17/4","a=-3,b=1","a=2,b=-3,c=6","(1)4 (2)-20","(1)-2 (2)-66"],a:4},120:{c:["(1)-2 (2)-66","a=-3,b=1","(1)4 (2)-20","a=6,b=3,c=-1","(1)-1 (2)17/4"],a:4},121:{c:["6","5","4","7","3"],a:4},122:{c:["(1)-2 (2)-66","a=4,b=1","(1)-1 (2)17/4","(1)4 (2)-20","3"],a:3},123:{c:["a=3,b=1","a=4,b=1","a=4,b=0","a=4,b=2","a=5,b=1"],a:1},124:{c:["2","5","3","4","6"],a:0},125:{c:["6","3","4","7","5"],a:1},126:{c:["14","17","16","15","18"],a:0},127:{c:["④","⑤","②","①","③"],a:4},128:{c:["③","④","②","①","⑤"],a:3},129:{c:["85","84","87","86","88"],a:1},130:{c:["4","2","5","3","6"],a:1},131:{c:["3","0","2","-1","1"],a:3},132:{c:["⑤","④","①","②","③"],a:4},133:{c:["③","④","②","⑤","①"],a:1},134:{c:["36","35","39","38","37"],a:1},135:{c:["⑤","①","③","④","②"],a:4},136:{c:["-12","-11","-14","-13","-15"],a:4},137:{c:["36","34","33","32","35"],a:3},138:{c:["③","②","⑤","④","①"],a:2},139:{c:["④","③","②","①","⑤"],a:0},140:{c:["62","61","60","63","64"],a:2},141:{c:["②","①","④","③","⑤"],a:2},142:{c:["-1","2","1","-2","0"],a:3},143:{c:["3","6","4","5","2"],a:4},144:{c:["-1","2","0","3","1"],a:0},145:{c:["9","5","8","6","7"],a:1},146:{c:["④","①","⑤","③","②"],a:2},147:{c:["⑤","④","②","①","③"],a:0},148:{c:["-x+14","-x+17","-x+15","-x+18","-x+16"],a:4},149:{c:["5x-5","5x-6","4x-6","3x-6","5x-4"],a:1},150:{c:["-x²+0x+2","-x²+1x+2","-x²+4x+2","-x²+2x+2","-x²+3x+2"],a:3},151:{c:["4","2","5","6","3"],a:1},152:{c:["②","④","③","①","⑤"],a:0},153:{c:["-6","-3","-5","-4","-2"],a:0},154:{c:["③","②","④","⑤","①"],a:1},155:{c:["2","0","-2","1","-1"],a:2},156:{c:["①","⑤","②","③","④"],a:2},157:{c:["③","①","⑤","④","②"],a:4},158:{c:["20","21","19","22","18"],a:4},159:{c:["6","5","3","2","4"],a:3},160:{c:["-17","-18","-19","-16","-20"],a:4},161:{c:["③","①","⑤","④","②"],a:2},162:{c:["4","7","6","5","3"],a:4},163:{c:["-6","-3","-5","-2","-4"],a:0},164:{c:["④","③","②","①","⑤"],a:4},165:{c:["-2","0","-1","-4","-3"],a:3},166:{c:["②","④","①","⑤","③"],a:0},167:{c:["100","104","101","102","103"],a:0},168:{c:["-1","2","3","1","0"],a:0},169:{c:["②","③","①","④","⑤"],a:0},170:{c:["③","⑤","①","④","②"],a:0},171:{c:["97","100","99","98","101"],a:0},172:{c:["6","3","4","7","5"],a:1},173:{c:["0","3","1","2","-1"],a:4},174:{c:["7","6","4","3","5"],a:3},175:{c:["7","9","8","5","6"],a:3},176:{c:["③","⑤","①","②","④"],a:2},177:{c:["-1","-4","-2","-3","-5"],a:4},178:{c:["①","③","④","②","⑤"],a:0},179:{c:["-3","-4","-5","-2","-6"],a:4},180:{c:["-1","2","0","1","-2"],a:4},181:{c:["-7","-11","-10","-9","-8"],a:1},182:{c:["3","7","6","5","4"],a:0},183:{c:["1","4","5","3","2"],a:0},184:{c:["④","②","⑤","③","①"],a:4},185:{c:["5","3","4","6","7"],a:1},186:{c:["⑤","④","③","②","①"],a:0},187:{c:["x+3","x+1","x+-1","x+2","x+0"],a:1},188:{c:["5","2","3","4","6"],a:1},189:{c:["4","3","2","5","6"],a:2},190:{c:["10","6","7","9","8"],a:1},191:{c:["-25","-26","-24","-23","-27"],a:4},192:{c:["-16","-18","-17","-14","-15"],a:1},193:{c:["-4","-6","-3","-5","-2"],a:1},194:{c:["④","②","③","①","⑤"],a:4},195:{c:["-4","-2","-3","-1","0"],a:0},196:{c:["2a(a+2b²)","3a(a+2b²)","4a(a+2b²)","1a(a+2b²)","0a(a+2b²)"],a:0},197:{c:["(x-1)(y-1)","(x-2)(y-1)","(x--1)(y-1)","(x-0)(y-1)","(x-3)(y-1)"],a:0},198:{c:["2a(a+2b²)","(2x+5y)²","-4","(a+b)(c-d)","(x-1)(y-1)"],a:3},199:{c:["(2x+3y)²","(4x+5y)²","(3x+5y)²","(0x+5y)²","(2x+5y)²"],a:4},200:{c:["(8x+3y)(8x-3y)","(10x+3y)(8x-3y)","(8x+5y)(8x-3y)","(8x+1y)(8x-3y)","(6x+3y)(8x-3y)"],a:0},201:{c:["5(3a+4b)(3a-4b)","2(3a+4b)(3a-4b)","4(3a+4b)(3a-4b)","3(3a+4b)(3a-4b)","1(3a+4b)(3a-4b)"],a:3},202:{c:["(x+2)(x+5)","(x+3)(x+6)","(x+2)(x+6)","(x+2)(x+4)","(x+1)(x+6)"],a:2},203:{c:["(x+2)(3x-6)","(x+2)(3x-4)","(x+2)(3x-5)","(x+2)(3x-3)","(x+0)(3x-4)"],a:1},204:{c:["(2x+5y)(3x-2y)","(2x+4y)(3x-2y)","(2x+1y)(3x-2y)","(3x+3y)(3x-2y)","(2x+3y)(3x-2y)"],a:4},205:{c:["(x+2)(3x-4)","(a-b+c)²","(x+2)(x+6)","(x+y+1)²","(2x+3y)(3x-2y)"],a:1},206:{c:["(x+y+-1)²","(x+y+2)²","(x+y+1)²","(x+y+3)²","(x+y+0)²"],a:2},207:{c:["(x-1)³","(x-3)³","(x-4)³","(x-0)³","(x-2)³"],a:4},208:{c:["(x+5y)³","(x+2y)³","(x+3y)³","(x+1y)³","(x+4y)³"],a:2},209:{c:["(x-0)(x²+2x+4)","(x-3)(x²+2x+4)","(x-2)(x²+2x+4)","(x-4)(x²+2x+4)","(x-2)(x²+2x+5)"],a:2},210:{c:["(2a+3b)(4a²-6ab+8b²)","(2a+3b)(4a²-6ab+9b²)","(0a+3b)(4a²-6ab+9b²)","(2a+3b)(4a²-6ab+11b²)","(2a+3b)(3a²-6ab+9b²)"],a:1},211:{c:["(a²+a+0)(a²-a+1)","(a²+a+2)(a²-a+1)","(a²+a+3)(a²-a+1)","(a²+a+1)(a²-a+1)","(a²+a+-1)(a²-a+1)"],a:3},212:{c:["(x²+2xy+2y²)(x²-2xy+4y²)","(x²+1xy+4y²)(x²-2xy+4y²)","(x²+0xy+4y²)(x²-2xy+4y²)","(x²+2xy+4y²)(x²-2xy+4y²)","(x²+3xy+4y²)(x²-2xy+4y²)"],a:3},215:{c:["x(x-1)","x(x-0)","x(x-3)","x(x-2)","x(x--1)"],a:0},216:{c:["(x²+5x+6)(x²+5x-2)","(x²+5x+8)(x²+5x-2)","(x²+6x+8)(x²+5x-2)","(x²+7x+8)(x²+5x-2)","(x²+5x+8)(x²+5x-0)"],a:1},217:{c:["(x+3)(x-1)(x²+6)","(x+-1)(x-1)(x²+6)","(x+1)(x-1)(x²+6)","(x+1)(x-1)(x²+4)","(x+2)(x-1)(x²+6)"],a:2},218:{c:["(x²+x+5)(x²-x+5)","(x²+x+3)(x²-x+5)","(x²+x+6)(x²-x+5)","(x²+x+4)(x²-x+5)","(x²+x+7)(x²-x+5)"],a:0},219:{c:["(x-y-1)(x-y-1)","(x-y-3)(x-y-2)","(x-y--1)(x-y-2)","(x-y-1)(x-y-2)","(x-y-1)(x-y-0)"],a:3},220:{c:["(x-y-1)(x-y-2)","(x+1)(x-1)(x²+6)","(x²+x+5)(x²-x+5)","(x-1)(x+2)(x-3)","(y-a)(x+y+a)"],a:4},221:{c:["(x-1)(x+2)(x-1)","(x-1)(x+2)(x-2)","(x-1)(x+2)(x-4)","(x-1)(x+2)(x-3)","(x-1)(x+1)(x-3)"],a:3},222:{c:["(x+0)(x-2)(x²-2x+3)","(x+1)(x-4)(x²-2x+3)","(x+1)(x-2)(x²-2x+2)","(x+1)(x-2)(x²-2x+3)","(x+1)(x-3)(x²-2x+3)"],a:3},223:{c:["①","④","③","②","⑤"],a:2},224:{c:["-36","-32","-33","-34","-35"],a:0},225:{c:["①","⑤","③","④","②"],a:2},226:{c:["③","⑤","②","①","④"],a:0},227:{c:["⑤","③","②","④","①"],a:2},228:{c:["⑤","①","②","③","④"],a:1},229:{c:["③","①","②","④","⑤"],a:0},230:{c:["6","4","7","8","5"],a:1},231:{c:["③","②","④","①","⑤"],a:2},232:{c:["1","4","5","2","3"],a:0},233:{c:["0","1","-3","-1","-2"],a:2},234:{c:["13","14","11","12","10"],a:4},235:{c:["②","③","①","④","⑤"],a:4},236:{c:["7","9","6","5","8"],a:3},237:{c:["①","②","⑤","④","③"],a:3},238:{c:["(x+1)(x-3)(x-y)","(x+1)(x-4)(x-y)","(x+1)(x-1)(x-y)","(x+0)(x-3)(x-y)","(x+1)(x-5)(x-y)"],a:0},239:{c:["②","④","⑤","①","③"],a:3},240:{c:["-1","1","3","2","0"],a:0},241:{c:["(a+b)(b+c)(c+a)","-1","①","(x+1)(x-3)(x-y)","②"],a:0},242:{c:["⑤","④","①","③","②"],a:2},243:{c:["④","③","②","⑤","①"],a:2},244:{c:["7","9","10","8","6"],a:4},245:{c:["③","⑤","①","②","④"],a:1},246:{c:["①","④","②","⑤","③"],a:3},247:{c:["⑤","④","②","③","①"],a:0},248:{c:["24","22","26","25","23"],a:1},249:{c:["④","②","⑤","①","③"],a:2},250:{c:["①","⑤","②","③","④"],a:3},251:{c:["②","①","⑤","③","④"],a:4},252:{c:["②","①","⑤","③","④"],a:3},253:{c:["⑤","③","②","④","①"],a:3},254:{c:["52","55","53","54","51"],a:4},255:{c:["183","184","180","182","181"],a:2},256:{c:["25","27","28","24","26"],a:3},257:{c:["7/3","6/3","4/3","3/3","5/3"],a:4},258:{c:["10003","10002","10001","9999","10000"],a:3},259:{c:["②","④","⑤","①","③"],a:4},260:{c:["⑤","①","③","④","②"],a:2},261:{c:["527","528","524","525","526"],a:2},262:{c:["④","②","⑤","③","①"],a:2},263:{c:["a=b인 이등변삼각형","이등변삼각형","b=c인 이등변삼각형","직각삼각형","정삼각형"],a:2},264:{c:["④","②","⑤","③","①"],a:2},265:{c:["⑤","③","①","②","④"],a:3},266:{c:["②","①","④","③","⑤"],a:0},267:{c:["12","8","10","11","9"],a:1},268:{c:["⑤","④","①","③","②"],a:1},269:{c:["⑤","③","④","②","①"],a:2},270:{c:["4(x-y)(y-z)(z-x)","2(x-y)(y-z)(z-x)","5(x-y)(y-z)(z-x)","1(x-y)(y-z)(z-x)","3(x-y)(y-z)(z-x)"],a:4},271:{c:["③","⑤","①","④","②"],a:2},272:{c:["④","③","①","⑤","②"],a:3},273:{c:["10","6","7","9","8"],a:1},274:{c:["-219","-217","-218","-216","-220"],a:4},275:{c:["④","②","⑤","③","①"],a:1},276:{c:["23","25","22","26","24"],a:2},277:{c:["20","19","17","16","18"],a:3},278:{c:["7","5","4","3","6"],a:3},279:{c:["3","16","실수부분:0, 허수부분:4","22","√3"],a:4},280:{c:["실수부분:0, 허수부분:3","실수부분:1, 허수부분:4","실수부분:0, 허수부분:4","실수부분:0, 허수부분:5","실수부분:-1, 허수부분:4"],a:2},281:{c:["실수부분:1, 허수부분:3","실수부분:1+√2, 허수부분:0","실수부분:0, 허수부분:2","실수부분:1, 허수부분:1","실수부분:2, 허수부분:2"],a:1},282:{c:["실수부분:-5, 허수부분:√3","실수부분:-5, 허수부분:4","실수부분:-4, 허수부분:3","실수부분:-5, 허수부분:2","실수부분:-6, 허수부분:3"],a:0},283:{c:["(1)ㄷ,ㅁ,ㅂ (2)ㄱ,ㄴ,ㄹ (3)ㄱ,ㄴ","실수부분:1+√2, 허수부분:0","실수부분:3/2, 허수부분:-1/2","실수부분:-5, 허수부분:√3","실수부분:0, 허수부분:4"],a:2},284:{c:["ㄱ,ㄷ","(1)ㄷ,ㅁ,ㅂ (2)ㄱ,ㄴ,ㄹ (3)ㄱ,ㄴ","ㄱ,ㄴ,ㄷ","ㄴ,ㄷ","ㄴ,ㄹ"],a:1},285:{c:["x=1,y=0","x=3,y=0","x=2,y=0","x=2,y=-1","x=2,y=1"],a:2},286:{c:["x=1,y=4","x=1,y=5","x=1,y=6","x=0,y=5","x=2,y=5"],a:1},287:{c:["x=2,y=2","x=3,y=2","x=2,y=1","x=2,y=3","x=1,y=2"],a:0},288:{c:["-5-9i","-5-7i","-5-5i","-4-7i","-5-6i"],a:1},289:{c:["-3i-1","-2i-1","-1i-1","-3i-2","-3i--1"],a:0},290:{c:["-5-7i","x=2,y=2","7","-3i-1","-i"],a:4},291:{c:["7","10","11","9","8"],a:0},292:{c:["1+7i","4+7i","2+7i","3+7i","3+9i"],a:3},293:{c:["3+5i","3+6i","3+3i","3+4i","5+5i"],a:0},294:{c:["10-2i","12-2i","11-3i","9-2i","11-2i"],a:4},295:{c:["0-4i","1-6i","1-5i","1-4i","-1-4i"],a:3},296:{c:["-i","11-2i","i","3+5i","1-4i"],a:2},297:{c:["1-4i","2","-i","11-2i","i"],a:2},298:{c:["√3i","-i","2","1-4i","i"],a:4},299:{c:["5","6","2","4","3"],a:2},300:{c:["i","√3i","±2√2i","±i","-i"],a:1},301:{c:["4i","3i","5i","7i","6i"],a:2},302:{c:["-2√2i","-5√2i","-4√1i","-4√2i","-6√2i"],a:3},303:{c:["√3","±i","√3i","5i","±2√2i"],a:1},304:{c:["5i","√3","±i","±2√2i","√3i"],a:3},305:{c:["-1","-4","-2","0","-3"],a:1},306:{c:["-√3i","-√7i","-√4i","-√5i","-√6i"],a:3},307:{c:["±i","-√5i","√3","-4","±2√2i"],a:2},308:{c:["-3√4+√2/2·i","-3√0+√2/2·i","-5√2+√2/2·i","-3√2+√2/2·i","-3√1+√2/2·i"],a:3},310:{c:["7","4","6","5","3"],a:4},311:{c:["20","23","22","21","24"],a:0},312:{c:["-9+14i","-7+15i","-8+14i","-7+14i","-7+16i"],a:3},313:{c:["③","②","④","①","⑤"],a:1},314:{c:["⑤","③","④","②","①"],a:1},315:{c:["23","25","24","22","21"],a:4},316:{c:["4","2","1","3","5"],a:2},317:{c:["⑤","④","③","②","①"],a:4},318:{c:["⑤","①","③","④","②"],a:2},319:{c:["-2","-4","-1","-5","-3"],a:3},320:{c:["③","⑤","①","④","②"],a:1},321:{c:["7/25","6/25","10/25","9/25","8/25"],a:4},322:{c:["-28","-31","-30","-29","-32"],a:4},323:{c:["-292i","-291i","-290i","-294i","-293i"],a:0},324:{c:["8","5","4","7","6"],a:2},325:{c:["-1","0","-2","1","-3"],a:4},326:{c:["5","1","2","4","3"],a:1},327:{c:["①","⑤","②","④","③"],a:3},328:{c:["4","1","3","2","5"],a:1},329:{c:["-10","-8","-9","-11","-7"],a:3},330:{c:["21","22","20","23","19"],a:4},331:{c:["⑤","③","②","④","①"],a:2},332:{c:["ㄱ,ㄴ,ㅂ","ㄱ,ㄴ","ㄱ,ㄴ,ㄷ","ㄱ,ㄴ,ㄹ","ㄱ,ㄴ,ㅁ"],a:1},333:{c:["③","①","⑤","②","④"],a:3},334:{c:["2","0","3","1","-1"],a:4},335:{c:["3+4i","3+1i","5+2i","3+2i","1+2i"],a:3},336:{c:["②","⑤","①","④","③"],a:3},337:{c:["0±√3i","2±√1i","2±√2i","3±√3i","2±√3i"],a:4},338:{c:["3","6","4","5","7"],a:0},339:{c:["④","③","①","⑤","②"],a:0},340:{c:["3","-1","0","1","2"],a:1},341:{c:["④","①","③","②","⑤"],a:4},342:{c:["107","105","104","103","106"],a:3},343:{c:["⑤","③","④","①","②"],a:1},344:{c:["0","1","3","4","2"],a:0},345:{c:["2","3","5","4","1"],a:4},346:{c:["①","②","③","⑤","④"],a:2},347:{c:["⑤","③","②","①","④"],a:0},348:{c:["7","4","6","5","8"],a:1},349:{c:["3","4","2","1","0"],a:4},350:{c:["x²-4","x²-2","x²-6","x²-5","x²-3"],a:0},351:{c:["-a-2b","-a-4b","-a-0b","-a-1b","-a-3b"],a:0},352:{c:["7","3","4","6","5"],a:1},353:{c:["③","②","⑤","④","①"],a:1},354:{c:["ㄱ,ㅁ","ㄱ,ㄹ","ㄱ,ㄴ","ㄱ","ㄱ,ㄷ"],a:3},355:{c:["①","⑤","③","②","④"],a:4},356:{c:["④","①","③","⑤","②"],a:0},357:{c:["9","8","6","7","5"],a:4},358:{c:["5+15i","4+13i","3+13i","5+13i","5+11i"],a:3},359:{c:["④","⑤","①","②","③"],a:0},360:{c:["-i","④","5","5+13i","⑤"],a:0},361:{c:["⑤","④","①","③","②"],a:0},362:{c:["-4-3i","-4-5i","-3-3i","-6-3i","-2-3i"],a:0},363:{c:["0","-3","-2","-1","-4"],a:4},364:{c:["①","②","⑤","③","④"],a:3},365:{c:["5","6","7","8","9"],a:0},366:{c:["⑤","③","②","④","①"],a:0},367:{c:["16","13","17","14","15"],a:1},368:{c:["16","12","14","13","15"],a:1},369:{c:["②","①","⑤","③","④"],a:0},370:{c:["①","④","②","③","⑤"],a:3},371:{c:["4","6","5","2","3"],a:3},372:{c:["22","20","23","24","21"],a:1},373:{c:["2","③","100-i","20","-d"],a:4},374:{c:["98-i","99-i","101-i","102-i","100-i"],a:4},375:{c:["24","26","28","25","27"],a:0},376:{c:["x=2 또는 x=4","x=1 또는 x=4","x=0 또는 x=4","x=1 또는 x=5","x=1 또는 x=3"],a:1},377:{c:["x=-1 또는 x=3","x=-1/2 또는 x=3/5","x=-2 또는 x=2","x=-1 또는 x=1","x=0 또는 x=2"],a:1},378:{c:["x=3±√4","x=4±√5","x=2±√5","x=(-3±√5)/2","x=3±√6"],a:3},379:{c:["x=4±2√3i","x=4±3i","x=3±2i","x=4±1i","x=5±2i"],a:0},380:{c:["중근(실근)","서로 다른 두 실근","x=-1/2 또는 x=4, 실근","실근을 갖는다","서로 다른 두 허근"],a:2},381:{c:["서로 다른 두 허근","실근을 갖는다","중근(실근)","x=3/2, 실근","서로 다른 두 실근"],a:3},382:{c:["x=-1±√2i, 허근","실근을 갖는다","중근(실근)","서로 다른 두 실근","서로 다른 두 허근"],a:0},386:{c:["x²-x-2=0","x²-x-4=0","x²-x-0=0","x²-x-1=0","x²-x-2=-1"],a:0},387:{c:["x²-8x+1=0","x²-6x+2=0","x²-6x+1=0","x²-6x+1=-1","x²-6x+3=0"],a:2},388:{c:["x²-2x+5=0","x²-4x+6=0","x²-4x+5=0","x²-3x+5=0","x²-4x+5=2"],a:2},389:{c:["(x+-1-√5)(x+1+√5)","(x+0-√5)(x+1+√5)","(x+1-√3)(x+1+√5)","(x+1-√5)(x+1+√5)","(x+3-√5)(x+1+√5)"],a:3},390:{c:["(x+7i)(x-5i)","(x+4i)(x-5i)","(x+3i)(x-5i)","(x+6i)(x-5i)","(x+5i)(x-5i)"],a:4},392:{c:["a=-3,b=1","a=-4,b=0","a=-4,b=2","a=-4,b=1","a=-5,b=1"],a:3},393:{c:["a=-5,b=13","a=-6,b=12","a=-6,b=13","a=-7,b=13","a=-6,b=14"],a:2},394:{c:["④","⑤","②","③","①"],a:0},395:{c:["22","21","20","18","19"],a:3},396:{c:["①","④","③","⑤","②"],a:1},397:{c:["3","1","5","2","4"],a:1},398:{c:["6","5","2","3","4"],a:2},399:{c:["1","-1","-2","0","-3"],a:4},400:{c:["⑤","④","②","①","③"],a:1},401:{c:["16","17","18","14","15"],a:3},402:{c:["1","2","-1","3","0"],a:2},403:{c:["x=-2 또는 x=3","x=-1 또는 x=2","x=0 또는 x=3","x=-1 또는 x=4","x=-1-√3 또는 x=1+√3"],a:4},404:{c:["①","④","③","②","⑤"],a:2},405:{c:["-0+√2","-1+√2","-2+√2","-3+√2","-4+√2"],a:2},406:{c:["4","7","6","5","3"],a:4},408:{c:["⑤","④","③","①","②"],a:2},409:{c:["③","②","④","①","⑤"],a:1},410:{c:["①","③","②","④","⑤"],a:3},411:{c:["1","3","-1","2","0"],a:2},412:{c:["16","13","15","14","12"],a:4},413:{c:["①","③","④","②","⑤"],a:1},414:{c:["서로 다른 두 실근","실근을 갖는다","허근을 갖는다","서로 다른 두 허근","중근(실근)"],a:3},415:{c:["실근을 갖는다","서로 다른 두 허근","서로 다른 두 실근","허근을 갖는다","중근(실근)"],a:2},416:{c:["①","③","②","④","⑤"],a:0},417:{c:["4","5","7","3","6"],a:3},418:{c:["③","②","⑤","④","①"],a:2},419:{c:["20","22","19","18","21"],a:3},420:{c:["①","⑤","②","③","④"],a:1},421:{c:["4/3","3/3","0/3","1/3","2/3"],a:4},422:{c:["18","⑤","③","2/3","√13"],a:4},423:{c:["②","①","④","⑤","③"],a:4},424:{c:["44","48","45","47","46"],a:0},425:{c:["②","③","①","⑤","④"],a:1},426:{c:["20/2","23/2","21/2","22/2","19/2"],a:2},427:{c:["2","4","3","6","5"],a:0},428:{c:["④","①","②","⑤","③"],a:2},429:{c:["-8","-9","-6","-7","-10"],a:4},430:{c:["5","3","2","1","4"],a:3},431:{c:["①","③","⑤","②","④"],a:2},432:{c:["7","6","9","8","5"],a:4},433:{c:["5","6","4","3","2"],a:4},434:{c:["6","5","7","3","4"],a:3},435:{c:["③","②","①","⑤","④"],a:1},436:{c:["③","⑤","①","④","②"],a:4},437:{c:["④","①","③","②","⑤"],a:2},438:{c:["18","22","21","20","19"],a:0},439:{c:["a=-6,b=1","a=-7,b=1","a=-5,b=1","a=-6,b=0","a=-6,b=2"],a:0},440:{c:["15","16","17","13","14"],a:3},441:{c:["①","②","③","④","⑤"],a:0},442:{c:["0x²-5x+2=0","2x²-5x+2=-1","2x²-4x+2=0","2x²-5x+2=0","4x²-5x+2=0"],a:3},443:{c:["3/2","6/2","7/2","5/2","4/2"],a:3},444:{c:["6","5","2","3","4"],a:2},445:{c:["0","2","-1","-2","1"],a:3},446:{c:["x=-6 또는 x=1","x=-5 또는 x=2","x=-6 또는 x=3","x=-6 또는 x=2","x=-7 또는 x=2"],a:3},447:{c:["x=-8 또는 x=2","x=-9 또는 x=3","x=-8 또는 x=4","x=-7 또는 x=3","x=-8 또는 x=3"],a:4},448:{c:["2","4","1","3","5"],a:2},449:{c:["④","⑤","③","②","①"],a:4},450:{c:["3/2","4/2","2/2","5/2","1/2"],a:0},451:{c:["⑤","②","④","③","①"],a:4},452:{c:["-66","-65","-67","-68","-69"],a:4},453:{c:["①","⑤","②","③","④"],a:0},454:{c:["2","1","3","0","-1"],a:4},455:{c:["15초","20초","5초","10초","0초"],a:3},456:{c:["125m","120m","110m","130m","115m"],a:1},457:{c:["③","④","⑤","②","①"],a:3},458:{c:["11","8","9","12","10"],a:1},459:{c:["3","5","2","4","1"],a:4},460:{c:["ㄱ,ㄴ","ㄱ,ㄴ,ㄹ","ㄱ,ㄴ,ㅁ","ㄱ,ㄴ,ㄷ","ㄱ,ㄴ,ㅂ"],a:0},461:{c:["이등변삼각형","b=c인 이등변삼각형","정삼각형","직각삼각형","a=b인 이등변삼각형"],a:2},462:{c:["-18/10","-20/10","-21/10","-17/10","-19/10"],a:4},463:{c:["8","9","7","10","6"],a:4},464:{c:["④","③","②","⑤","①"],a:1},465:{c:["6","2","4","3","5"],a:1},466:{c:["x²-8x-20=0","x²-7x-20=0","x²-9x-20=0","x²-6x-20=0","x²-8x-22=0"],a:0},467:{c:["④","③","②","①","⑤"],a:3},468:{c:["④","③","⑤","①","②"],a:2},469:{c:["⑤","①","④","②","③"],a:4},470:{c:["x=1±√18","x=2±√17","x=(1±√17)/2","x=0±√17","x=1±√16"],a:2},471:{c:["-6/3","-4/3","-3/3","-2/3","-5/3"],a:1},472:{c:["1","0","3","2","-1"],a:4},473:{c:["③","⑤","④","①","②"],a:1},474:{c:["9","6","7","8","10"],a:1},476:{c:["x²-3x+2=2","x²-1x+2=0","x²-3x+2=-2","x²-2x+2=0","x²-3x+2=0"],a:4},477:{c:["0","1","3","-1","2"],a:3},478:{c:["ㄱ,ㄴ,ㄷ,ㅁ","ㄱ,ㄴ,ㄷ,ㄹ","x²-3x+2=0","ㄱ,ㄴ,ㄷ","ㄱ,ㄴ,ㄷ,ㅂ"],a:3},479:{c:["1","5","3","4","2"],a:0},480:{c:["0","3","-1","1","2"],a:2},481:{c:["1,3","-1","ㄱ,ㄴ,ㄷ","0,2","1"],a:3},482:{c:["0,2","-1","2","1,3","1"],a:3},483:{c:["6","4","3","2","5"],a:3},484:{c:["0","2","3","4","1"],a:0},485:{c:["2","1","3","5","4"],a:1},486:{c:["(1)k<4 (2)k=4 (3)k>4","(-1)k<4 (2)k=4 (3)k>4","(2)k<4 (2)k=4 (3)k>4","(0)k<4 (2)k=4 (3)k>4","(3)k<4 (2)k=4 (3)k>4"],a:0},487:{c:["k≤8","k≤11","k≤9","k≤7","k≤10"],a:2},489:{c:["2","6","5","3","4"],a:0},490:{c:["k≤9","한 점에서 만난다.(접한다.)","만나지 않는다.","서로 다른 두 점에서 만난다.","두 점에서 만나고 x축에 접한다."],a:2},491:{c:["서로 다른 두 점에서 만난다.","2","만나지 않는다.","한 점에서 만난다.(접한다.)","두 점에서 만나고 x축에 접한다."],a:0},492:{c:["2","서로 다른 두 점에서 만난다.","한 점에서 만난다.(접한다.)","두 점에서 만나고 x축에 접한다.","만나지 않는다."],a:2},494:{c:["k≤-7/8","k≤9/8","k≤17/8","k≤1/8","k≤-15/8"],a:3},495:{c:["최댓값:0, 최솟값:-3","최댓값:2, 최솟값:-3","최댓값:1, 최솟값:-4","최댓값:1, 최솟값:-2","최댓값:1, 최솟값:-3"],a:4},496:{c:["최댓값:7, 최솟값:-2","최댓값:7, 최솟값:-1","최댓값:6, 최솟값:-1","최댓값:8, 최솟값:-1","최댓값:7, 최솟값:0"],a:1},497:{c:["최댓값:6, 최솟값:1","최댓값:5, 최솟값:2","최댓값:6, 최솟값:3","최댓값:6, 최솟값:2","최댓값:7, 최솟값:2"],a:3},498:{c:["최댓값:8, 최솟값:-7","최댓값:9, 최솟값:-8","최댓값:9, 최솟값:-6","최댓값:10, 최솟값:-7","최댓값:9, 최솟값:-7"],a:4},499:{c:["최댓값:17/2, 최솟값:-2","최댓값:19/2, 최솟값:-2","최댓값:17/2, 최솟값:-1","최댓값:17/2, 최솟값:-3","최댓값:15/2, 최솟값:-2"],a:0},500:{c:["③","④","②","①","⑤"],a:3},501:{c:["73","76","72","74","75"],a:2},502:{c:["6","5","8","4","7"],a:3},503:{c:["-4","-6","-3","-7","-5"],a:3},504:{c:["④","②","⑤","①","③"],a:2},505:{c:["④","⑤","①","②","③"],a:4},507:{c:["⑤","④","②","③","①"],a:1},508:{c:["10","12","11","8","9"],a:3},509:{c:["-1/2","1/2","2/2","0/2","3/2"],a:1},510:{c:["0","3","2","4","1"],a:0},511:{c:["2","5","3","4","1"],a:4},512:{c:["12","8","11","10","9"],a:1},513:{c:["1","3","5","2","4"],a:0},514:{c:["19/4","21/4","20/4","23/4","22/4"],a:1},515:{c:["③","④","②","⑤","①"],a:3},516:{c:["1","-1","2","0","3"],a:1},517:{c:["31","32","29","30","28"],a:4},518:{c:["y=1","y=3","y=2","y=4","y=0"],a:2},519:{c:["1","5","4","2","3"],a:0},520:{c:["⑤","③","②","④","①"],a:3},521:{c:["123","121","124","122","120"],a:4},522:{c:["18","17","16","20","19"],a:2},523:{c:["-3","-4","-2","-5","-1"],a:3},524:{c:["1","-2","-3","-1","0"],a:2},525:{c:["3","4","2","1","5"],a:3},526:{c:["8","6","7","5","4"],a:4},527:{c:["10","12","11","9","8"],a:4},528:{c:["②","④","③","①","⑤"],a:3},529:{c:["6","5","7","8","9"],a:1},530:{c:["-3","0","-2","-1","-4"],a:4},531:{c:["③","②","⑤","①","④"],a:1},532:{c:["20","18","17","16","19"],a:3},533:{c:["⑤","③","④","②","①"],a:4},534:{c:["25","26","24","28","27"],a:2},535:{c:["2/3","1/3","0/3","4/3","3/3"],a:0},536:{c:["52","53","54","51","50"],a:4},537:{c:["0","-1","2","3","1"],a:1},538:{c:["23","20","22","21","24"],a:1},539:{c:["53m","63m","58m","68m","73m"],a:1},540:{c:["15","16","18","19","17"],a:0},542:{c:["23m","13m","18m","28m","8m"],a:2},543:{c:["35명","45명","30명","50명","40명"],a:4},544:{c:["③","①","②","⑤","④"],a:2},545:{c:["-11","-12","-10","-9","-13"],a:4},546:{c:["14","13","10","11","12"],a:2},547:{c:["①","②","③","④","⑤"],a:1},548:{c:["5","7","9","6","8"],a:0},549:{c:["⑤","②","④","③","①"],a:1},550:{c:["④","⑤","②","①","③"],a:4},551:{c:["1","2","0","-2","-1"],a:3},552:{c:["-7/3","-10/3","-8/3","-6/3","-9/3"],a:2},553:{c:["9","10","8","7","11"],a:3},554:{c:["10","14","13","11","12"],a:0},555:{c:["8","6","7","5","4"],a:4},556:{c:["⑤","③","②","①","④"],a:0},557:{c:["3","7","6","5","4"],a:0},558:{c:["1","0","-2","-1","2"],a:2},559:{c:["②","⑤","①","③","④"],a:1},560:{c:["4","5","2","3","1"],a:4},561:{c:["8b","9b","10b","7b","11b"],a:1},562:{c:["-23","-20","-22","-19","-21"],a:0},563:{c:["10/2","9/2","12/2","13/2","11/2"],a:4},564:{c:["5/9","3/9","6/9","2/9","4/9"],a:4},565:{c:["⑤","④","③","①","②"],a:2},566:{c:["5","3","4","2","6"],a:3},567:{c:["①","④","⑤","③","②"],a:3},568:{c:["①","③","④","⑤","②"],a:4},569:{c:["④","③","⑤","②","①"],a:0},570:{c:["②","③","①","⑤","④"],a:2},571:{c:["⑤","④","①","③","②"],a:3},572:{c:["②","⑤","④","③","①"],a:1},573:{c:["⑤","④","③","②","①"],a:3},574:{c:["①","②","③","④","⑤"],a:2},575:{c:["④","②","①","③","⑤"],a:2},576:{c:["①","⑤","④","③","②"],a:2},577:{c:["④","③","⑤","①","②"],a:2},578:{c:["②","③","⑤","④","①"],a:0},579:{c:["③","④","②","⑤","①"],a:0},580:{c:["②","①","③","④","⑤"],a:1},581:{c:["②","⑤","①","④","③"],a:1},582:{c:["③","④","①","②","⑤"],a:1},583:{c:["③","④","①","②","⑤"],a:0},584:{c:["⑤","④","③","①","②"],a:4},585:{c:["③","①","⑤","④","②"],a:1},586:{c:["⑤","④","③","②","①"],a:0},587:{c:["②","①","③","⑤","④"],a:4},588:{c:["⑤","②","①","③","④"],a:3},589:{c:["④","①","②","③","⑤"],a:2},590:{c:["⑤","④","②","①","③"],a:3},591:{c:["⑤","②","③","④","①"],a:0},592:{c:["③","②","⑤","①","④"],a:4},593:{c:["⑤","②","③","①","④"],a:2},594:{c:["②","④","①","③","⑤"],a:0},595:{c:["④","②","⑤","③","①"],a:3},596:{c:["④","③","⑤","①","②"],a:3},597:{c:["②","①","⑤","④","③"],a:0},598:{c:["③","①","⑤","②","④"],a:0},599:{c:["③","⑤","①","④","②"],a:0},600:{c:["⑤","③","④","①","②"],a:4},601:{c:["④","③","②","①","⑤"],a:0},602:{c:["④","③","②","⑤","①"],a:4},603:{c:["①","④","③","②","⑤"],a:4},604:{c:["⑤","④","①","③","②"],a:3},605:{c:["②","①","⑤","③","④"],a:0},606:{c:["③","①","④","⑤","②"],a:2},607:{c:["②","④","③","①","⑤"],a:3},608:{c:["①","⑤","④","②","③"],a:1},609:{c:["③","②","④","⑤","①"],a:0},610:{c:["⑤","④","①","③","②"],a:4},611:{c:["⑤","②","③","④","①"],a:3},612:{c:["④","①","③","⑤","②"],a:1},613:{c:["③","①","④","②","⑤"],a:0},614:{c:["③","①","④","②","⑤"],a:4},615:{c:["⑤","①","②","④","③"],a:2},616:{c:["①","⑤","④","②","③"],a:2},617:{c:["③","⑤","②","①","④"],a:0},618:{c:["②","①","⑤","③","④"],a:1},619:{c:["④","②","⑤","③","①"],a:1},620:{c:["②","③","⑤","④","①"],a:2},621:{c:["①","④","③","②","⑤"],a:1},622:{c:["④","③","①","②","⑤"],a:1},623:{c:["④","①","③","②","⑤"],a:3},624:{c:["④","③","②","①","⑤"],a:3},625:{c:["②","④","③","⑤","①"],a:3},626:{c:["②","④","③","⑤","①"],a:1},627:{c:["②","④","③","①","⑤"],a:2},628:{c:["⑤","④","①","③","②"],a:4},629:{c:["④","⑤","②","①","③"],a:4},630:{c:["④","⑤","②","①","③"],a:2},631:{c:["⑤","①","③","④","②"],a:3},632:{c:["②","⑤","①","④","③"],a:2},633:{c:["③","④","②","①","⑤"],a:4},634:{c:["④","⑤","③","②","①"],a:2},635:{c:["③","④","①","⑤","②"],a:4},636:{c:["②","⑤","④","③","①"],a:2},637:{c:["④","①","③","⑤","②"],a:1},638:{c:["①","③","⑤","②","④"],a:2},639:{c:["④","②","①","⑤","③"],a:4},640:{c:["③","④","①","②","⑤"],a:3},641:{c:["②","①","⑤","③","④"],a:4},642:{c:["④","①","⑤","②","③"],a:4},643:{c:["③","②","④","⑤","①"],a:1},644:{c:["①","②","⑤","④","③"],a:0},645:{c:["①","③","②","④","⑤"],a:4},646:{c:["④","⑤","②","③","①"],a:3},647:{c:["⑤","④","③","②","①"],a:3},648:{c:["⑤","②","④","①","③"],a:2},649:{c:["④","⑤","①","③","②"],a:2},650:{c:["⑤","②","④","③","①"],a:0},651:{c:["①","⑤","③","④","②"],a:2},652:{c:["③","④","⑤","②","①"],a:3},653:{c:["①","⑤","②","④","③"],a:3},654:{c:["③","⑤","②","①","④"],a:3},655:{c:["①","④","③","⑤","②"],a:2},656:{c:["①","④","⑤","②","③"],a:3},657:{c:["②","①","④","⑤","③"],a:2},658:{c:["⑤","④","②","③","①"],a:4},659:{c:["⑤","①","④","③","②"],a:0},660:{c:["④","②","③","⑤","①"],a:2},661:{c:["⑤","②","③","①","④"],a:1},662:{c:["③","①","④","②","⑤"],a:2},663:{c:["①","④","③","⑤","②"],a:0},664:{c:["②","⑤","①","④","③"],a:1},665:{c:["③","④","⑤","①","②"],a:0},666:{c:["①","③","④","⑤","②"],a:4},667:{c:["④","⑤","①","③","②"],a:0},668:{c:["④","⑤","①","②","③"],a:2},669:{c:["④","①","②","③","⑤"],a:4},670:{c:["④","②","③","①","⑤"],a:2},671:{c:["⑤","①","④","②","③"],a:3},672:{c:["①","②","⑤","③","④"],a:4},673:{c:["②","④","③","⑤","①"],a:4},674:{c:["②","④","①","③","⑤"],a:4},675:{c:["③","②","④","⑤","①"],a:0},676:{c:["③","②","④","①","⑤"],a:1},677:{c:["⑤","③","①","②","④"],a:4},678:{c:["⑤","②","④","①","③"],a:3},679:{c:["①","④","③","⑤","②"],a:3},680:{c:["①","⑤","③","②","④"],a:2},681:{c:["⑤","④","①","③","②"],a:4},682:{c:["④","②","①","③","⑤"],a:0},683:{c:["⑤","②","④","③","①"],a:4},684:{c:["①","②","④","③","⑤"],a:3},685:{c:["②","⑤","①","④","③"],a:0},686:{c:["③","⑤","①","②","④"],a:4},687:{c:["④","⑤","③","①","②"],a:3},688:{c:["①","③","②","⑤","④"],a:3},689:{c:["①","②","③","④","⑤"],a:2},690:{c:["③","④","①","②","⑤"],a:3},691:{c:["②","④","①","⑤","③"],a:1},692:{c:["②","①","④","⑤","③"],a:1},693:{c:["①","⑤","④","②","③"],a:4},694:{c:["①","②","④","⑤","③"],a:1},695:{c:["②","③","⑤","④","①"],a:3},696:{c:["⑤","②","③","①","④"],a:3},697:{c:["①","③","⑤","②","④"],a:2},698:{c:["④","②","⑤","①","③"],a:4},699:{c:["④","⑤","①","②","③"],a:3},700:{c:["③","⑤","①","④","②"],a:3},701:{c:["⑤","①","②","④","③"],a:1},702:{c:["①","②","④","⑤","③"],a:4},703:{c:["①","⑤","②","③","④"],a:2},704:{c:["②","④","①","⑤","③"],a:1},705:{c:["②","⑤","④","③","①"],a:4},706:{c:["③","②","⑤","④","①"],a:0},707:{c:["②","①","③","⑤","④"],a:0},708:{c:["⑤","③","②","①","④"],a:0},709:{c:["③","①","④","⑤","②"],a:2},710:{c:["⑤","④","①","②","③"],a:4},711:{c:["③","②","④","①","⑤"],a:1},712:{c:["⑤","④","②","①","③"],a:3},713:{c:["②","④","⑤","①","③"],a:4},714:{c:["③","②","①","⑤","④"],a:1},715:{c:["④","①","②","③","⑤"],a:0},716:{c:["③","②","①","⑤","④"],a:2},717:{c:["①","⑤","③","④","②"],a:1},718:{c:["②","⑤","④","①","③"],a:4},719:{c:["⑤","①","②","④","③"],a:2},720:{c:["②","③","⑤","④","①"],a:3},721:{c:["⑤","③","②","④","①"],a:4},722:{c:["③","①","⑤","④","②"],a:0},723:{c:["②","⑤","③","④","①"],a:0},724:{c:["①","②","④","③","⑤"],a:4},725:{c:["①","④","⑤","②","③"],a:1},726:{c:["④","②","⑤","①","③"],a:4},727:{c:["③","⑤","④","②","①"],a:3},728:{c:["①","⑤","③","④","②"],a:0},729:{c:["②","⑤","④","③","①"],a:3},730:{c:["④","③","②","⑤","①"],a:2},731:{c:["③","⑤","①","④","②"],a:3},732:{c:["①","④","③","⑤","②"],a:0},733:{c:["①","②","④","⑤","③"],a:4},734:{c:["⑤","②","④","③","①"],a:1},735:{c:["⑤","③","②","①","④"],a:4},736:{c:["①","②","⑤","④","③"],a:0},737:{c:["③","②","①","⑤","④"],a:3},738:{c:["①","⑤","④","③","②"],a:3},739:{c:["⑤","④","①","②","③"],a:3},740:{c:["①","③","④","②","⑤"],a:2},741:{c:["④","⑤","③","①","②"],a:3},742:{c:["③","④","①","⑤","②"],a:0},743:{c:["⑤","①","②","④","③"],a:2},744:{c:["④","③","①","②","⑤"],a:0},745:{c:["⑤","②","④","③","①"],a:4},746:{c:["⑤","④","③","②","①"],a:2},747:{c:["⑤","①","④","②","③"],a:3},748:{c:["②","③","①","④","⑤"],a:4},749:{c:["①","③","④","②","⑤"],a:2},750:{c:["①","④","②","③","⑤"],a:3},751:{c:["①","③","⑤","④","②"],a:4},752:{c:["⑤","②","①","④","③"],a:2},753:{c:["①","③","⑤","④","②"],a:1},754:{c:["④","③","⑤","①","②"],a:4},755:{c:["②","①","④","③","⑤"],a:2},756:{c:["②","①","⑤","③","④"],a:1},757:{c:["①","④","⑤","③","②"],a:3},758:{c:["⑤","③","④","①","②"],a:4},759:{c:["④","⑤","②","①","③"],a:0},760:{c:["①","③","⑤","④","②"],a:0},761:{c:["⑤","③","④","①","②"],a:1},762:{c:["③","④","②","⑤","①"],a:2},763:{c:["④","③","②","①","⑤"],a:0},764:{c:["①","⑤","③","④","②"],a:0},765:{c:["②","①","④","③","⑤"],a:3},766:{c:["⑤","①","②","④","③"],a:2},767:{c:["③","⑤","④","②","①"],a:1},768:{c:["⑤","③","②","④","①"],a:3},769:{c:["⑤","③","①","④","②"],a:1},770:{c:["④","⑤","①","②","③"],a:3},771:{c:["⑤","②","④","①","③"],a:3},772:{c:["⑤","③","②","①","④"],a:1},773:{c:["④","③","②","①","⑤"],a:2},774:{c:["③","④","②","①","⑤"],a:1},775:{c:["①","⑤","②","③","④"],a:0},776:{c:["⑤","①","④","②","③"],a:3},777:{c:["④","③","①","⑤","②"],a:1},778:{c:["③","①","④","②","⑤"],a:2},779:{c:["⑤","①","④","②","③"],a:0},780:{c:["③","④","①","⑤","②"],a:2},781:{c:["②","⑤","③","①","④"],a:0},782:{c:["②","①","④","③","⑤"],a:3},783:{c:["④","②","③","①","⑤"],a:0},784:{c:["③","④","①","②","⑤"],a:2},785:{c:["⑤","④","③","①","②"],a:4},786:{c:["③","④","②","⑤","①"],a:0},787:{c:["②","③","④","①","⑤"],a:2},788:{c:["④","②","⑤","③","①"],a:2},789:{c:["②","③","①","④","⑤"],a:2},790:{c:["④","③","⑤","①","②"],a:4},791:{c:["④","⑤","①","③","②"],a:3},792:{c:["③","⑤","②","①","④"],a:3},793:{c:["⑤","④","①","③","②"],a:4},794:{c:["③","②","⑤","①","④"],a:0},795:{c:["②","⑤","③","④","①"],a:3},796:{c:["④","②","③","⑤","①"],a:3},797:{c:["①","②","④","⑤","③"],a:0},798:{c:["③","②","⑤","④","①"],a:1},799:{c:["③","①","②","④","⑤"],a:0},800:{c:["③","④","①","②","⑤"],a:1},801:{c:["③","②","⑤","①","④"],a:2},802:{c:["③","②","⑤","④","①"],a:4},803:{c:["③","①","②","④","⑤"],a:2},804:{c:["②","①","④","⑤","③"],a:4},805:{c:["⑤","②","④","①","③"],a:2},806:{c:["④","③","②","①","⑤"],a:3},807:{c:["③","②","④","⑤","①"],a:1},808:{c:["⑤","④","①","③","②"],a:3},809:{c:["⑤","④","②","①","③"],a:1},810:{c:["①","③","②","⑤","④"],a:3},811:{c:["⑤","③","①","④","②"],a:2},812:{c:["⑤","②","④","③","①"],a:1},813:{c:["①","②","③","④","⑤"],a:2},814:{c:["②","⑤","③","①","④"],a:4},815:{c:["①","②","④","⑤","③"],a:0},816:{c:["③","⑤","②","①","④"],a:2},817:{c:["①","②","⑤","③","④"],a:3},818:{c:["④","①","⑤","③","②"],a:0},819:{c:["④","②","⑤","③","①"],a:2},820:{c:["⑤","③","②","④","①"],a:4},821:{c:["①","②","④","③","⑤"],a:1},822:{c:["①","⑤","④","②","③"],a:4},823:{c:["①","④","②","⑤","③"],a:1},824:{c:["④","②","①","⑤","③"],a:2},825:{c:["①","②","④","⑤","③"],a:1},826:{c:["④","⑤","①","③","②"],a:3},827:{c:["③","①","②","④","⑤"],a:3},828:{c:["⑤","②","③","①","④"],a:0},829:{c:["③","⑤","①","④","②"],a:2},830:{c:["⑤","④","②","①","③"],a:2},831:{c:["④","①","⑤","②","③"],a:4},832:{c:["⑤","③","②","④","①"],a:3},833:{c:["⑤","③","①","②","④"],a:2},834:{c:["⑤","④","③","①","②"],a:4},835:{c:["②","⑤","①","③","④"],a:3},836:{c:["②","⑤","①","④","③"],a:3},837:{c:["①","②","⑤","④","③"],a:2},838:{c:["③","①","②","⑤","④"],a:1},839:{c:["①","④","③","⑤","②"],a:4},840:{c:["③","①","⑤","②","④"],a:0},841:{c:["③","④","⑤","①","②"],a:1},842:{c:["④","⑤","①","②","③"],a:2},843:{c:["③","⑤","①","②","④"],a:3},844:{c:["④","①","⑤","②","③"],a:4},845:{c:["①","⑤","④","③","②"],a:2},846:{c:["①","③","②","④","⑤"],a:4},847:{c:["④","③","②","①","⑤"],a:3},848:{c:["②","①","⑤","③","④"],a:0},849:{c:["⑤","③","②","①","④"],a:1},850:{c:["①","③","⑤","④","②"],a:3},851:{c:["④","⑤","①","②","③"],a:2},852:{c:["⑤","②","④","③","①"],a:1},853:{c:["②","⑤","③","④","①"],a:2},854:{c:["②","④","①","③","⑤"],a:1},855:{c:["④","②","①","⑤","③"],a:2},856:{c:["③","①","④","⑤","②"],a:4},857:{c:["②","③","⑤","④","①"],a:1},858:{c:["②","④","⑤","①","③"],a:1},859:{c:["②","①","④","③","⑤"],a:4},860:{c:["④","②","①","③","⑤"],a:2},861:{c:["④","②","①","③","⑤"],a:1},862:{c:["①","②","③","⑤","④"],a:2},863:{c:["⑤","④","③","①","②"],a:1},864:{c:["①","⑤","③","④","②"],a:0},865:{c:["①","④","②","⑤","③"],a:2},866:{c:["⑤","③","④","①","②"],a:1},867:{c:["⑤","②","④","③","①"],a:2},868:{c:["⑤","④","③","①","②"],a:3},869:{c:["③","①","②","⑤","④"],a:2},870:{c:["⑤","②","③","④","①"],a:2},871:{c:["②","③","①","⑤","④"],a:4},872:{c:["①","④","⑤","②","③"],a:0},873:{c:["⑤","③","④","②","①"],a:3},874:{c:["③","④","⑤","②","①"],a:0},875:{c:["④","③","⑤","②","①"],a:0},876:{c:["③","①","⑤","④","②"],a:1},877:{c:["②","④","③","①","⑤"],a:0},878:{c:["⑤","①","②","③","④"],a:3},879:{c:["①","③","④","②","⑤"],a:2},880:{c:["①","②","③","⑤","④"],a:3},881:{c:["⑤","①","③","④","②"],a:1},882:{c:["①","③","⑤","④","②"],a:4},883:{c:["①","②","④","③","⑤"],a:3},884:{c:["②","④","①","⑤","③"],a:1},885:{c:["③","④","①","②","⑤"],a:2},886:{c:["①","⑤","②","③","④"],a:2},887:{c:["①","⑤","③","②","④"],a:2},888:{c:["⑤","④","③","②","①"],a:1},889:{c:["①","②","⑤","④","③"],a:0},890:{c:["⑤","③","②","④","①"],a:2},891:{c:["⑤","③","④","①","②"],a:1},892:{c:["①","②","③","⑤","④"],a:4},893:{c:["⑤","②","①","④","③"],a:2},894:{c:["③","①","②","④","⑤"],a:2},895:{c:["②","③","④","①","⑤"],a:1},896:{c:["④","②","③","①","⑤"],a:0},897:{c:["⑤","③","①","④","②"],a:2},898:{c:["②","⑤","①","④","③"],a:0},899:{c:["①","④","⑤","③","②"],a:3},900:{c:["⑤","②","③","①","④"],a:4},901:{c:["①","④","③","②","⑤"],a:0},902:{c:["①","②","③","④","⑤"],a:1},903:{c:["③","①","②","④","⑤"],a:0},904:{c:["②","⑤","①","③","④"],a:4},905:{c:["①","③","④","②","⑤"],a:0},906:{c:["①","③","④","⑤","②"],a:4},907:{c:["②","③","⑤","①","④"],a:1},908:{c:["④","②","①","③","⑤"],a:0},909:{c:["④","⑤","③","①","②"],a:3},910:{c:["③","⑤","④","①","②"],a:4},911:{c:["②","④","①","③","⑤"],a:0},912:{c:["②","①","⑤","③","④"],a:3},913:{c:["②","③","①","④","⑤"],a:3},914:{c:["⑤","④","②","③","①"],a:4},915:{c:["③","④","①","②","⑤"],a:3},916:{c:["③","⑤","②","①","④"],a:0},917:{c:["②","①","④","③","⑤"],a:1},918:{c:["②","⑤","①","③","④"],a:0},919:{c:["①","②","③","⑤","④"],a:2},920:{c:["③","④","①","②","⑤"],a:1},921:{c:["②","③","⑤","①","④"],a:3},922:{c:["③","④","①","②","⑤"],a:3},923:{c:["⑤","③","①","②","④"],a:1},924:{c:["⑤","①","③","②","④"],a:1},925:{c:["⑤","②","④","①","③"],a:1},926:{c:["②","①","④","③","⑤"],a:3},927:{c:["⑤","②","④","①","③"],a:2},928:{c:["①","⑤","④","②","③"],a:0},929:{c:["⑤","④","③","①","②"],a:4},930:{c:["②","④","①","③","⑤"],a:3},931:{c:["②","④","①","③","⑤"],a:2},932:{c:["①","⑤","③","④","②"],a:4},933:{c:["④","⑤","②","③","①"],a:3},934:{c:["⑤","①","③","④","②"],a:1},935:{c:["⑤","②","③","①","④"],a:1},936:{c:["⑤","②","③","④","①"],a:2},937:{c:["⑤","②","①","③","④"],a:4},938:{c:["⑤","④","①","③","②"],a:2},939:{c:["④","⑤","①","②","③"],a:3},940:{c:["②","⑤","①","③","④"],a:3},941:{c:["③","④","②","①","⑤"],a:3},942:{c:["③","②","④","①","⑤"],a:1},943:{c:["③","②","①","④","⑤"],a:0},944:{c:["②","④","③","①","⑤"],a:3},945:{c:["④","③","①","⑤","②"],a:4},946:{c:["④","③","②","⑤","①"],a:1},947:{c:["①","②","③","⑤","④"],a:0},948:{c:["②","③","④","①","⑤"],a:0},949:{c:["⑤","④","①","②","③"],a:4},950:{c:["④","③","②","①","⑤"],a:0},951:{c:["②","①","③","④","⑤"],a:1},952:{c:["①","②","③","⑤","④"],a:1},953:{c:["④","③","②","①","⑤"],a:1},954:{c:["③","①","⑤","②","④"],a:1},955:{c:["⑤","①","②","③","④"],a:2},956:{c:["④","⑤","②","③","①"],a:3},957:{c:["④","⑤","③","①","②"],a:0},958:{c:["③","④","②","①","⑤"],a:3},959:{c:["①","⑤","②","③","④"],a:2},960:{c:["①","⑤","②","③","④"],a:3},961:{c:["③","①","⑤","②","④"],a:1},962:{c:["②","⑤","③","④","①"],a:0},963:{c:["③","④","①","⑤","②"],a:0},964:{c:["⑤","①","④","③","②"],a:1},965:{c:["③","④","①","⑤","②"],a:4},966:{c:["③","④","②","⑤","①"],a:0},967:{c:["③","①","⑤","②","④"],a:1},968:{c:["②","⑤","④","③","①"],a:0},969:{c:["①","⑤","②","④","③"],a:4},970:{c:["⑤","①","③","④","②"],a:3},971:{c:["①","②","④","⑤","③"],a:0},972:{c:["②","③","④","①","⑤"],a:0},973:{c:["②","③","⑤","①","④"],a:1},974:{c:["①","③","⑤","④","②"],a:0},975:{c:["②","⑤","③","④","①"],a:0},976:{c:["②","⑤","③","①","④"],a:2},977:{c:["⑤","④","②","③","①"],a:4},978:{c:["⑤","①","③","④","②"],a:4},979:{c:["②","④","⑤","①","③"],a:4},980:{c:["①","③","②","⑤","④"],a:0},981:{c:["⑤","④","①","③","②"],a:4},982:{c:["②","③","④","⑤","①"],a:1},983:{c:["②","③","⑤","①","④"],a:4},984:{c:["④","⑤","③","①","②"],a:3},985:{c:["④","③","②","⑤","①"],a:2},986:{c:["③","②","①","④","⑤"],a:0},987:{c:["⑤","④","②","①","③"],a:3},988:{c:["③","①","⑤","②","④"],a:3},989:{c:["①","②","④","③","⑤"],a:3},990:{c:["①","⑤","②","③","④"],a:0},991:{c:["④","①","⑤","③","②"],a:4},992:{c:["②","④","⑤","③","①"],a:3},993:{c:["④","③","⑤","①","②"],a:0},994:{c:["②","⑤","①","③","④"],a:2},995:{c:["④","⑤","①","②","③"],a:3},996:{c:["③","④","⑤","②","①"],a:0},997:{c:["⑤","④","③","①","②"],a:3},998:{c:["②","③","④","⑤","①"],a:0},999:{c:["④","②","③","⑤","①"],a:2},1000:{c:["②","③","①","④","⑤"],a:2},1001:{c:["①","⑤","②","④","③"],a:2},1002:{c:["①","②","④","③","⑤"],a:3},1003:{c:["④","①","⑤","②","③"],a:1},1004:{c:["⑤","④","③","②","①"],a:3},1005:{c:["④","③","①","⑤","②"],a:1},1006:{c:["②","①","④","⑤","③"],a:1},1007:{c:["②","①","③","⑤","④"],a:0},1008:{c:["③","④","②","①","⑤"],a:0},1009:{c:["④","③","⑤","②","①"],a:0},1010:{c:["②","①","④","③","⑤"],a:1},1011:{c:["②","④","①","③","⑤"],a:0},1012:{c:["①","④","②","③","⑤"],a:3},1013:{c:["③","②","⑤","①","④"],a:3},1014:{c:["⑤","①","③","④","②"],a:4},1015:{c:["⑤","④","②","③","①"],a:3},1016:{c:["④","③","②","①","⑤"],a:3},1017:{c:["③","⑤","②","④","①"],a:2},1018:{c:["③","④","②","①","⑤"],a:0},1019:{c:["⑤","④","①","②","③"],a:2},1020:{c:["②","④","⑤","①","③"],a:0},1021:{c:["①","⑤","④","③","②"],a:3},1022:{c:["③","④","①","②","⑤"],a:2},1023:{c:["③","②","①","⑤","④"],a:1},1024:{c:["①","④","⑤","③","②"],a:3},1025:{c:["③","④","⑤","②","①"],a:4},1026:{c:["⑤","②","①","③","④"],a:1},1027:{c:["④","①","⑤","②","③"],a:4},1028:{c:["②","⑤","③","①","④"],a:4},1029:{c:["②","④","⑤","③","①"],a:4},1030:{c:["⑤","③","①","④","②"],a:4},1031:{c:["②","⑤","①","③","④"],a:3},1032:{c:["⑤","②","③","①","④"],a:3},1033:{c:["③","②","①","④","⑤"],a:1},1034:{c:["④","⑤","③","②","①"],a:2},1035:{c:["⑤","①","④","②","③"],a:1},1036:{c:["⑤","②","③","④","①"],a:1},1037:{c:["①","②","⑤","④","③"],a:4},1038:{c:["①","③","⑤","④","②"],a:0},1039:{c:["①","⑤","④","③","②"],a:4},1040:{c:["①","⑤","②","③","④"],a:3},1041:{c:["③","⑤","②","①","④"],a:3},1042:{c:["①","③","⑤","④","②"],a:4},1043:{c:["④","⑤","③","①","②"],a:2},1044:{c:["③","①","⑤","②","④"],a:1},1045:{c:["②","③","④","⑤","①"],a:0},1046:{c:["⑤","④","③","②","①"],a:2},1047:{c:["①","③","⑤","②","④"],a:0},1048:{c:["④","②","⑤","①","③"],a:1},1049:{c:["③","⑤","④","②","①"],a:0},1050:{c:["④","③","①","⑤","②"],a:0},1051:{c:["①","②","⑤","④","③"],a:0},1052:{c:["③","④","⑤","②","①"],a:3},1053:{c:["①","③","⑤","②","④"],a:1},1054:{c:["④","⑤","①","③","②"],a:2},1055:{c:["②","③","④","⑤","①"],a:0},1056:{c:["⑤","④","③","②","①"],a:2},1057:{c:["②","①","⑤","③","④"],a:1},1058:{c:["③","②","⑤","④","①"],a:1},1059:{c:["①","②","⑤","③","④"],a:3},1060:{c:["⑤","②","④","③","①"],a:4},1061:{c:["⑤","③","①","④","②"],a:4},1062:{c:["②","⑤","③","①","④"],a:2},1063:{c:["①","③","⑤","②","④"],a:4},1064:{c:["⑤","①","③","②","④"],a:1},1065:{c:["⑤","①","④","③","②"],a:4},1066:{c:["③","②","④","①","⑤"],a:0},1067:{c:["③","④","①","②","⑤"],a:2},1068:{c:["①","④","③","②","⑤"],a:3},1069:{c:["④","③","①","②","⑤"],a:1},1070:{c:["①","②","④","③","⑤"],a:0},1071:{c:["③","②","⑤","④","①"],a:1},1072:{c:["③","①","⑤","④","②"],a:0},1073:{c:["①","④","⑤","②","③"],a:0},1074:{c:["③","①","④","⑤","②"],a:4},1075:{c:["③","④","①","②","⑤"],a:0},1076:{c:["③","①","②","⑤","④"],a:4},1077:{c:["⑤","②","③","①","④"],a:3},1078:{c:["③","②","⑤","①","④"],a:1},1079:{c:["⑤","②","③","①","④"],a:2},1080:{c:["③","①","④","②","⑤"],a:1},1081:{c:["①","②","③","④","⑤"],a:1},1082:{c:["②","⑤","①","④","③"],a:4},1083:{c:["①","③","⑤","②","④"],a:0},1084:{c:["②","⑤","③","④","①"],a:0},1085:{c:["③","①","⑤","④","②"],a:0},1086:{c:["②","④","①","⑤","③"],a:2},1087:{c:["④","③","⑤","②","①"],a:3},1088:{c:["⑤","④","①","②","③"],a:4},1089:{c:["④","②","①","⑤","③"],a:0},1090:{c:["③","④","⑤","②","①"],a:4},1091:{c:["①","④","③","②","⑤"],a:3},1092:{c:["③","④","①","②","⑤"],a:0},1093:{c:["②","④","⑤","③","①"],a:4},1094:{c:["①","③","②","④","⑤"],a:2},1095:{c:["①","⑤","②","③","④"],a:3},1096:{c:["⑤","②","④","③","①"],a:4},1097:{c:["②","①","③","⑤","④"],a:0},1098:{c:["③","⑤","①","②","④"],a:0},1099:{c:["①","④","③","⑤","②"],a:1},1100:{c:["①","⑤","③","②","④"],a:0},1101:{c:["①","④","②","③","⑤"],a:2},1102:{c:["③","④","②","⑤","①"],a:0},1103:{c:["⑤","③","④","②","①"],a:4},1104:{c:["⑤","③","②","①","④"],a:2},1105:{c:["①","③","⑤","④","②"],a:1},1106:{c:["②","①","⑤","③","④"],a:1},1107:{c:["④","②","①","⑤","③"],a:1},1108:{c:["①","②","④","③","⑤"],a:3},1109:{c:["③","②","⑤","①","④"],a:3},1110:{c:["②","③","④","⑤","①"],a:0},1111:{c:["④","①","⑤","②","③"],a:4},1112:{c:["①","⑤","③","④","②"],a:0},1113:{c:["③","⑤","①","②","④"],a:3},1114:{c:["③","②","④","①","⑤"],a:0},1115:{c:["②","③","①","④","⑤"],a:3},1116:{c:["①","③","④","⑤","②"],a:0},1117:{c:["⑤","①","③","②","④"],a:3},1118:{c:["②","③","⑤","④","①"],a:1},1119:{c:["①","④","③","⑤","②"],a:0},1120:{c:["③","②","④","①","⑤"],a:1},1121:{c:["③","①","②","⑤","④"],a:0},1122:{c:["④","①","③","②","⑤"],a:1},1123:{c:["④","③","②","①","⑤"],a:2},1124:{c:["①","⑤","②","④","③"],a:4},1125:{c:["①","②","⑤","④","③"],a:0},1126:{c:["⑤","③","④","②","①"],a:3},1127:{c:["③","④","⑤","①","②"],a:0},1128:{c:["②","④","①","③","⑤"],a:1},1129:{c:["②","④","③","①","⑤"],a:3},1130:{c:["②","③","①","④","⑤"],a:0},1131:{c:["③","②","①","⑤","④"],a:0},1132:{c:["①","②","⑤","④","③"],a:0},1133:{c:["④","①","⑤","③","②"],a:4},1134:{c:["④","①","②","⑤","③"],a:4},1135:{c:["①","③","②","⑤","④"],a:0},1136:{c:["⑤","①","②","③","④"],a:2},1137:{c:["⑤","②","③","④","①"],a:2},1138:{c:["③","④","⑤","②","①"],a:4},1139:{c:["③","⑤","②","④","①"],a:2},1140:{c:["④","②","①","⑤","③"],a:4},1141:{c:["③","①","④","⑤","②"],a:2},1142:{c:["⑤","①","④","②","③"],a:1},1143:{c:["①","⑤","④","②","③"],a:3},1144:{c:["④","⑤","①","③","②"],a:3},1145:{c:["②","⑤","③","①","④"],a:3},1146:{c:["②","①","③","⑤","④"],a:0},1147:{c:["④","③","①","⑤","②"],a:1},1148:{c:["④","①","③","⑤","②"],a:1},1149:{c:["①","④","⑤","②","③"],a:3},1150:{c:["③","②","④","①","⑤"],a:0},1151:{c:["③","①","④","②","⑤"],a:1},1152:{c:["①","④","⑤","③","②"],a:4},1153:{c:["④","③","②","⑤","①"],a:1},1154:{c:["④","①","⑤","②","③"],a:0},1155:{c:["④","③","②","①","⑤"],a:3},1156:{c:["②","①","⑤","③","④"],a:0},1157:{c:["⑤","②","①","③","④"],a:3},1158:{c:["①","②","⑤","③","④"],a:0},1159:{c:["②","④","③","①","⑤"],a:0},1160:{c:["⑤","④","①","③","②"],a:3},1161:{c:["②","①","④","③","⑤"],a:1},1162:{c:["③","⑤","④","①","②"],a:4},1163:{c:["⑤","③","④","①","②"],a:1},1164:{c:["②","①","⑤","④","③"],a:3},1165:{c:["⑤","③","①","②","④"],a:2},1166:{c:["⑤","③","②","④","①"],a:2},1167:{c:["④","⑤","①","②","③"],a:4},1168:{c:["④","③","②","①","⑤"],a:3},1169:{c:["②","④","①","③","⑤"],a:0},1170:{c:["①","④","②","⑤","③"],a:4},1171:{c:["②","④","③","①","⑤"],a:3},1172:{c:["④","①","②","⑤","③"],a:2},1173:{c:["⑤","④","③","①","②"],a:2},1174:{c:["③","①","②","④","⑤"],a:3},1175:{c:["②","①","③","⑤","④"],a:1},1176:{c:["②","⑤","③","①","④"],a:0},1177:{c:["②","④","③","⑤","①"],a:2},1178:{c:["③","①","④","②","⑤"],a:1},1179:{c:["④","②","③","①","⑤"],a:1},1180:{c:["③","⑤","②","①","④"],a:0},1181:{c:["⑤","④","③","②","①"],a:4},1182:{c:["⑤","③","②","④","①"],a:2},1183:{c:["④","①","⑤","②","③"],a:4},1184:{c:["⑤","③","②","①","④"],a:4}};
 
-// ── 설정 ──
-const FB_CFG={apiKey:"AIzaSyARHy35Dd2n0Fw1sUs-U4zY0BY9WVneMJ4",authDomain:"rpm-57f1a.firebaseapp.com",projectId:"rpm-57f1a",storageBucket:"rpm-57f1a.firebasestorage.app",messagingSenderId:"681087068656",appId:"1:681087068656:web:68c9d3ef6df32dceb89535"};
-
-const PAGE_MAP=[
-  [9,[38,45],"유형익히기 - 다항식 덧셈/계수구하기"],
-  [10,[46,55],"유형익히기 - 곱셈공식·공통부분"],
+var PAGE_MAP=[
+  [9,[38,45],"유형익히기 - 다항식"],
+  [10,[46,55],"유형익히기 - 곱셈공식"],
   [11,[56,60],"유형익히기 - 곱셈공식 활용"],
-  [12,[61,68],"유형익히기 - 변형·수의계산"],
+  [12,[61,68],"유형익히기 - 변형/수의계산"],
   [13,[69,75],"유형익히기 - 나눗셈"],
   [14,[76,84],"유형익히기 - 나눗셈 심화"],
   [15,[85,96],"시험에 꼭 나오는 문제"],
@@ -259,15 +267,18 @@ const PAGE_MAP=[
   [36,[346,375],"시험에 꼭 나오는 문제"],
   [40,[396,415],"유형익히기 - 이차방정식"],
   [41,[416,443],"유형익히기 - 이차방정식 심화"],
-  [42,[444,465],"유형익히기 - 판별식·근과계수"],
+  [42,[444,465],"유형익히기 - 판별식/근과계수"],
   [43,[466,480],"시험에 꼭 나오는 문제"],
   [47,[500,520],"유형익히기 - 이차함수"],
   [48,[521,545],"유형익히기 - 이차함수 심화"],
   [49,[546,566],"시험에 꼭 나오는 문제"]
 ];
-(()=>{const u=n=>n>=1093?'행렬':n>=1001?'조합':n>=911?'경우의수·순열':n>=775?'이차부등식':n>=629?'연립일차부등식':'여러가지방정식';for(let s=567;s<=1184;s+=8)PAGE_MAP.push([null,[s,Math.min(s+7,1184)],u(s)]);})();
+(function(){
+  var u=function(n){return n>=1093?'행렬':n>=1001?'조합':n>=911?'경우의수/순열':n>=775?'이차부등식':n>=629?'연립부등식':'여러가지방정식';};
+  for(var s=567;s<=1184;s+=8) PAGE_MAP.push([null,[s,Math.min(s+7,1184)],u(s)]);
+})();
 
-const UNITS=[
+var UNITS=[
   {id:1,name:'다항식의 연산',r:[1,110],c:'#FF5722'},
   {id:2,name:'항등식과 나머지정리',r:[111,195],c:'#8E44AD'},
   {id:3,name:'인수분해',r:[196,279],c:'#2980B9'},
@@ -276,377 +287,376 @@ const UNITS=[
   {id:6,name:'이차방정식과 이차함수',r:[481,566],c:'#C0392B'},
   {id:7,name:'여러 가지 방정식',r:[567,628],c:'#1ABC9C'},
   {id:8,name:'연립일차부등식',r:[629,774],c:'#F39C12'},
-  {id:9,name:'이차부등식과 연립이차부등식',r:[775,910],c:'#9B59B6'},
+  {id:9,name:'이차부등식',r:[775,910],c:'#9B59B6'},
   {id:10,name:'경우의 수와 순열',r:[911,1000],c:'#27AE60'},
   {id:11,name:'조합',r:[1001,1092],c:'#E74C3C'},
   {id:12,name:'행렬',r:[1093,1184],c:'#3498DB'}
 ];
 
-const N=['①','②','③','④','⑤'];
-let FBauth=null,FBdb=null;
-let curUser=null,records={};
-let curUnit=null,curPages=[],curPageIdx=0,curQs=[],sel={},graded=false;
+var NS=['(1)','(2)','(3)','(4)','(5)'];
+var curUser=null, records={}, curUnit=null, curPages=[], curPageIdx=0, curQs=[], sel={}, graded=false;
 
-// ── Firebase 로드 (동적, 실패해도 앱은 동작) ──
-function loadFirebase(){
-  return new Promise(resolve=>{
-    try{
-      const s1=document.createElement('script');
-      s1.src='https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js';
-      s1.onload=()=>{
-        const s2=document.createElement('script');
-        s2.src='https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js';
-        s2.onload=()=>{
-          const s3=document.createElement('script');
-          s3.src='https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js';
-          s3.onload=()=>{
-            try{
-              firebase.initializeApp(FB_CFG);
-              FBauth=firebase.auth();
-              FBdb=firebase.firestore();
-              resolve(true);
-            }catch(e){resolve(false);}
-          };
-          s3.onerror=()=>resolve(false);
-          document.head.appendChild(s3);
-        };
-        s2.onerror=()=>resolve(false);
-        document.head.appendChild(s2);
-      };
-      s1.onerror=()=>resolve(false);
-      document.head.appendChild(s1);
-    }catch(e){resolve(false);}
-  });
-}
+// ── 저장소 ──
+function rkey(){return 'rpm_'+(curUser||'g');}
+function loadRec(){try{return JSON.parse(localStorage.getItem(rkey())||'{}');}catch(e){return {};}}
+function saveRec(){try{localStorage.setItem(rkey(),JSON.stringify(records));}catch(e){}}
 
-// ── 로컬 스토리지 계정 관리 ──
-function getLocalAccounts(){try{return JSON.parse(localStorage.getItem('rpm_accounts')||'{}');}catch(e){return {};}}
-function saveLocalAccount(em,pw,name){const a=getLocalAccounts();a[em]={pw,name};localStorage.setItem('rpm_accounts',JSON.stringify(a));}
-function getLocalSession(){try{return JSON.parse(localStorage.getItem('rpm_session')||'null');}catch(e){return null;}}
-function saveLocalSession(u){localStorage.setItem('rpm_session',JSON.stringify(u));}
-function clearLocalSession(){localStorage.removeItem('rpm_session');}
-
-// ── records 저장/로드 ──
-function getRKey(){return 'rpm_rec_'+(curUser?curUser.uid||curUser.email:'guest');}
-function loadRecordsLocal(){try{return JSON.parse(localStorage.getItem(getRKey())||'{}');}catch(e){return {};}}
-function saveRecordsLocal(r){try{localStorage.setItem(getRKey(),JSON.stringify(r));}catch(e){}}
-
-async function loadRecords(){
-  records=loadRecordsLocal();
-  if(FBdb&&curUser&&curUser.uid){
-    try{
-      const snap=await FBdb.doc('students/'+curUser.uid+'/data/records').get();
-      if(snap.exists()){const d=snap.data().records||{};records=Object.assign({},d,records);saveRecordsLocal(records);}
-    }catch(e){}
-  }
-}
-async function saveRecords(batch){
-  Object.assign(records,batch);
-  saveRecordsLocal(records);
-  if(FBdb&&curUser&&curUser.uid){
-    try{await FBdb.doc('students/'+curUser.uid+'/data/records').set({records,updatedAt:new Date()},{merge:true});}catch(e){}
-  }
-}
+// ── 계정 ──
+function getAccs(){try{return JSON.parse(localStorage.getItem('rpm_accs')||'{}');}catch(e){return {};}}
+function saveAcc(em,pw,name){var a=getAccs();a[em]={pw:pw,name:name};localStorage.setItem('rpm_accs',JSON.stringify(a));}
+function getSess(){try{return JSON.parse(localStorage.getItem('rpm_sess')||'null');}catch(e){return null;}}
+function saveSess(u){localStorage.setItem('rpm_sess',JSON.stringify(u));}
+function clearSess(){localStorage.removeItem('rpm_sess');}
 
 // ── 로그인 ──
-async function doLogin(){
-  const em=document.getElementById('em').value.trim();
-  const pw=document.getElementById('pw').value;
-  if(!em||!pw){document.getElementById('lerr').textContent='이메일과 비밀번호를 입력하세요.';return;}
-  document.getElementById('lerr').textContent='로그인 중...';
-
-  let user=null;
-
-  // 1) Firebase 로그인 시도
-  if(FBauth){
-    try{
-      const cred=await FBauth.signInWithEmailAndPassword(em,pw);
-      user={uid:cred.user.uid,email:cred.user.email,name:cred.user.displayName||em.split('@')[0]};
-      saveLocalAccount(em,pw,user.name);
-    }catch(e){
-      // Firebase 실패 → 로컬 계정 확인
-      const accs=getLocalAccounts();
-      if(accs[em]&&accs[em].pw===pw){user={uid:em,email:em,name:accs[em].name||em.split('@')[0]};}
+function doLogin(){
+  var em=document.getElementById('em').value.trim();
+  var pw=document.getElementById('pw').value;
+  var err=document.getElementById('err');
+  if(!em||!pw){err.textContent='이메일과 비밀번호를 입력하세요';return;}
+  err.textContent='';
+  
+  var accs=getAccs();
+  var user=null;
+  
+  if(accs[em]){
+    if(accs[em].pw===pw){
+      user={id:em,name:accs[em].name};
+    } else {
+      err.textContent='비밀번호가 맞지 않습니다';
+      return;
     }
   } else {
-    // Firebase 없음 → 로컬만
-    const accs=getLocalAccounts();
-    if(accs[em]&&accs[em].pw===pw){user={uid:em,email:em,name:accs[em].name||em.split('@')[0]};}
-    else{
-      // 첫 로그인이면 계정 생성
-      const n=em.split('@')[0];
-      saveLocalAccount(em,pw,n);
-      user={uid:em,email:em,name:n};
-    }
+    // 새 계정 생성
+    var name=em.split('@')[0];
+    saveAcc(em,pw,name);
+    user={id:em,name:name};
   }
-
-  if(!user){document.getElementById('lerr').textContent='이메일 또는 비밀번호가 올바르지 않습니다.';return;}
-
-  document.getElementById('lerr').textContent='';
-  loginSuccess(user);
+  
+  startSession(user);
 }
 
-async function loginSuccess(user){
-  curUser=user;
-  saveLocalSession(user);
-  document.getElementById('p-login').style.display='none';
-  document.getElementById('app').style.display='flex';
+function startSession(user){
+  curUser=user.id;
+  saveSess(user);
+  records=loadRec();
+  
+  document.getElementById('login').style.display='none';
+  document.getElementById('topbar').classList.remove('hide');
+  document.getElementById('wrap').classList.remove('hide');
+  document.getElementById('nav').classList.remove('hide');
+  
   document.getElementById('tname').textContent=user.name;
-  document.getElementById('bname').textContent=user.name+'님, 안녕하세요!';
-  await loadRecords();
-  renderHome();updateHeader();
+  document.getElementById('bname').textContent=user.name+'님, 안녕하세요';
+  
+  renderHome();
+  updateHeader();
 }
 
-async function doLogout(){
-  if(FBauth)try{await FBauth.signOut();}catch(e){}
-  clearLocalSession();
-  curUser=null;records={};
-  document.getElementById('app').style.display='none';
-  document.getElementById('p-login').style.display='flex';
+function doLogout(){
+  clearSess();
+  curUser=null;
+  records={};
+  document.getElementById('login').style.display='flex';
+  document.getElementById('topbar').classList.add('hide');
+  document.getElementById('wrap').classList.add('hide');
+  document.getElementById('nav').classList.add('hide');
+  document.getElementById('em').value='';
+  document.getElementById('pw').value='';
 }
 
-// ── 앱 시작 ──
-window.addEventListener('load',async()=>{
-  const fbOk=await loadFirebase();
+// ── 이벤트 등록 ──
+document.getElementById('lbtn').addEventListener('click', doLogin);
+document.getElementById('pw').addEventListener('keydown', function(e){if(e.key==='Enter')doLogin();});
+document.getElementById('loutbtn').addEventListener('click', doLogout);
+document.getElementById('back1').addEventListener('click', function(){renderHome();go('home');});
+document.getElementById('back2').addEventListener('click', function(){go('unit');});
+document.getElementById('gbtn').addEventListener('click', gradeAll);
+document.getElementById('retrybtn').addEventListener('click', retryPage);
+document.getElementById('nextbtn').addEventListener('click', nextPage);
+document.getElementById('nb-home').addEventListener('click', function(){renderHome();go('home');});
+document.getElementById('nb-wrong').addEventListener('click', function(){renderWrong();go('wrong');});
+document.getElementById('nb-stats').addEventListener('click', function(){renderStats();go('stats');});
 
-  // Firebase 로드됐으면 auth 상태 감지
-  if(fbOk&&FBauth){
-    FBauth.onAuthStateChanged(async fbUser=>{
-      if(fbUser){
-        const user={uid:fbUser.uid,email:fbUser.email,name:fbUser.displayName||fbUser.email.split('@')[0]};
-        saveLocalAccount(fbUser.email,'__fb__',user.name);
-        await loginSuccess(user);
-      }
-    });
-  }
+// 세션 복원
+(function(){
+  var s=getSess();
+  if(s)startSession(s);
+})();
 
-  // 로컬 세션 확인
-  const session=getLocalSession();
-  if(session&&!curUser){
-    await loginSuccess(session);
-    return;
-  }
-
-  if(!curUser){
-    document.getElementById('p-login').style.display='flex';
-  }
-});
-
-// ── 네비게이션 ──
+// ── 네비 ──
 function go(name){
-  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
-  document.querySelectorAll('.bn').forEach(b=>b.classList.remove('on'));
-  document.getElementById('p-'+name).classList.add('on');
-  const bn=document.getElementById('bn-'+name);
-  if(bn)bn.classList.add('on');
-  document.getElementById('scr').scrollTop=0;
-  if(name==='wrong')renderWrong();
-  if(name==='stats')renderStats();
+  var all=document.querySelectorAll('.screen');
+  for(var i=0;i<all.length;i++) all[i].classList.remove('on');
+  document.getElementById('s-'+name).classList.add('on');
+  
+  var nbs=document.querySelectorAll('.nb');
+  for(var i=0;i<nbs.length;i++) nbs[i].classList.remove('on');
+  var nb=document.getElementById('nb-'+name);
+  if(nb) nb.classList.add('on');
+  
+  document.getElementById('wrap').scrollTop=0;
 }
 
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 
 // ── HOME ──
 function renderHome(){
   go('home');
-  const all=Object.keys(records).map(Number);
-  const tot=all.length,ok=all.filter(n=>records[n]?.correct===true).length;
+  var all=Object.keys(records).map(Number);
+  var tot=all.length;
+  var ok=0; for(var i=0;i<all.length;i++) if(records[all[i]]&&records[all[i]].correct===true) ok++;
   document.getElementById('hs0').textContent=tot;
   document.getElementById('hs1').textContent=ok;
   document.getElementById('hs2').textContent=tot-ok;
   document.getElementById('hs3').textContent=tot>0?Math.round(ok/tot*100)+'%':'-';
-  const g=document.getElementById('ucards');g.innerHTML='';
-  UNITS.forEach(u=>{
-    const total=u.r[1]-u.r[0]+1;
-    const solved=all.filter(n=>n>=u.r[0]&&n<=u.r[1]).length;
-    const okc=all.filter(n=>n>=u.r[0]&&n<=u.r[1]&&records[n]?.correct===true).length;
-    const el=document.createElement('div');el.className='uc';
-    el.style.setProperty('--uc',u.c);
-    el.innerHTML=`<div class="ubadge">${String(u.id).padStart(2,'0')}</div>
-      <div class="ui"><div class="uname">${u.name}</div>
-      <div class="urange">${u.r[0]}~${u.r[1]}번 · ${total}문제</div>
-      <div class="ubar"><div class="ubf" style="width:${Math.round(solved/total*100)}%"></div></div></div>
-      <div class="ur"><div class="upct">${solved>0?Math.round(okc/solved*100)+'%':'-'}</div>
-      <div class="ucnt">${solved}/${total}</div></div>`;
-    el.onclick=()=>openUnit(u);
+  
+  var g=document.getElementById('ucards');
+  g.innerHTML='';
+  for(var ui=0;ui<UNITS.length;ui++){
+    var u=UNITS[ui];
+    var total=u.r[1]-u.r[0]+1;
+    var solved=0,okc=0;
+    for(var i=0;i<all.length;i++){
+      if(all[i]>=u.r[0]&&all[i]<=u.r[1]){
+        solved++;
+        if(records[all[i]]&&records[all[i]].correct===true) okc++;
+      }
+    }
+    var pct=solved>0?Math.round(okc/solved*100)+'%':'-';
+    var wpct=Math.round(solved/total*100);
+    var el=document.createElement('div');
+    el.className='uc';
+    el.innerHTML='<div class="ubadge" style="background:'+u.c+'">'+String(u.id).padStart(2,'0')+'</div>'+
+      '<div class="ui"><div class="uname">'+u.name+'</div>'+
+      '<div class="urange">'+u.r[0]+'~'+u.r[1]+'번 / '+total+'문제</div>'+
+      '<div class="ubar"><div class="ubf" style="width:'+wpct+'%;background:'+u.c+'"></div></div></div>'+
+      '<div class="ur"><div class="upct" style="color:'+u.c+'">'+pct+'</div>'+
+      '<div class="ucnt">'+solved+'/'+total+'</div></div>';
+    (function(unit){el.addEventListener('click',function(){openUnit(unit);});})(u);
     g.appendChild(el);
-  });
+  }
 }
 
 function openUnit(u){
   curUnit=u;
-  curPages=PAGE_MAP.filter(p=>p[1][0]>=u.r[0]&&p[1][1]<=u.r[1]);
+  curPages=[];
+  for(var i=0;i<PAGE_MAP.length;i++){
+    if(PAGE_MAP[i][1][0]>=u.r[0]&&PAGE_MAP[i][1][1]<=u.r[1]) curPages.push(PAGE_MAP[i]);
+  }
   document.getElementById('utitle').textContent=String(u.id).padStart(2,'0')+'. '+u.name;
-  renderPageList();go('unit');
+  renderPageList();
+  go('unit');
 }
 
 function renderPageList(){
-  const l=document.getElementById('plist');l.innerHTML='';
-  curPages.forEach((p,i)=>{
-    const[pdf,[qs,qe],title]=p;
-    const ns=[];for(let n=qs;n<=qe;n++)ns.push(n);
-    const sv=ns.filter(n=>records[n]).length;
-    const ok=ns.filter(n=>records[n]?.correct===true).length;
-    const done=sv===ns.length;
-    const el=document.createElement('div');
-    el.className='pi'+(done?' done':sv>0?' partial':'');
-    const sc=done&&ok===ns.length?'var(--gn)':sv>0?'var(--pr)':'var(--mu)';
-    el.innerHTML=`<div class="pnum">P${i+1}</div>
-      <div class="pinfo"><div class="ptitle">${title}</div>
-      <div class="prange">${qs}~${qe}번 · ${ns.length}문제${pdf?' ('+pdf+'쪽)':''}</div></div>
-      <div class="pright"><div class="pscore" style="color:${sc}">${sv>0?ok+'/'+ns.length:'-'}</div></div>`;
-    el.onclick=()=>startPage(i);
+  var all=Object.keys(records).map(Number);
+  var l=document.getElementById('plist');
+  l.innerHTML='';
+  for(var i=0;i<curPages.length;i++){
+    var p=curPages[i];
+    var qs=p[1][0],qe=p[1][1],title=p[2],pdf=p[0];
+    var ns=[]; for(var n=qs;n<=qe;n++) ns.push(n);
+    var sv=0,ok=0;
+    for(var j=0;j<ns.length;j++){
+      if(records[ns[j]]){sv++; if(records[ns[j]].correct===true) ok++;}
+    }
+    var done=(sv===ns.length);
+    var cls='pi'+(done?' done':sv>0?' partial':'');
+    var sc=done&&ok===ns.length?'#26d07c':sv>0?'#ff4d1c':'#8b95a7';
+    var el=document.createElement('div');
+    el.className=cls;
+    el.innerHTML='<div class="pnum">P'+(i+1)+'</div>'+
+      '<div class="pinfo"><div class="ptitle">'+title+'</div>'+
+      '<div class="prange">'+qs+'~'+qe+'번 / '+ns.length+'문제'+(pdf?' ('+pdf+'쪽)':'')+'</div></div>'+
+      '<div class="pright" style="color:'+sc+'">'+(sv>0?ok+'/'+ns.length:'-')+'</div>';
+    (function(idx){el.addEventListener('click',function(){startPage(idx);});})(i);
     l.appendChild(el);
-  });
+  }
 }
 
 function startPage(idx){
   curPageIdx=idx;
-  const[pdf,[qs,qe],title]=curPages[idx];
-  curQs=[];for(let n=qs;n<=qe;n++)curQs.push(n);
+  var p=curPages[idx];
+  curQs=[];
+  for(var n=p[1][0];n<=p[1][1];n++) curQs.push(n);
   sel={};graded=false;
-  document.getElementById('ptitle').textContent=title;
+  document.getElementById('ptitle').textContent=p[2];
   document.getElementById('pctr').textContent=(idx+1)+'/'+curPages.length;
   document.getElementById('pfill').style.width=Math.round((idx+1)/curPages.length*100)+'%';
-  document.getElementById('rsbox').style.display='none';
-  const gb=document.getElementById('gbtn');gb.className='gbtn';gb.disabled=true;gb.textContent='채점하기';
-  renderQItems();go('quiz');
+  document.getElementById('rsbox').classList.add('hide');
+  var gb=document.getElementById('gbtn');
+  gb.className='gbtn';gb.disabled=true;gb.textContent='채점하기';
+  renderQItems();
+  go('quiz');
 }
 
 function renderQItems(){
-  const w=document.getElementById('qwrap');w.innerHTML='';
-  curQs.forEach(n=>{
-    const cd=CHOICES[n],rec=records[n];
-    const el=document.createElement('div');
-    el.className='qi'+(rec?.correct===true?' ok':rec?.correct===false?' ng':'');
+  var w=document.getElementById('qwrap');
+  w.innerHTML='';
+  for(var qi=0;qi<curQs.length;qi++){
+    var n=curQs[qi];
+    var cd=CHOICES[n];
+    var rec=records[n];
+    var cls='qi'+(rec&&rec.correct===true?' ok':rec&&rec.correct===false?' ng':'');
+    var st=rec&&rec.correct===true?'정답 O':rec&&rec.correct===false?'오답 X':'미풀이';
+    var stcls=rec&&rec.correct===true?' ok':rec&&rec.correct===false?' ng':'';
+    var el=document.createElement('div');
+    el.className=cls;
     el.id='qi'+n;
-    const st=rec?.correct===true?'O 정답':rec?.correct===false?'X 오답':'미풀이';
-    const sc=rec?.correct===true?'ok':rec?.correct===false?'ng':'';
-    el.innerHTML=`<div class="qhd"><div class="qnum">${String(n).padStart(4,'0')}</div>
-      <div class="qst ${sc}" id="qs${n}">${st}</div></div>
-      <div class="qch" id="qc${n}"></div>`;
+    el.innerHTML='<div class="qhd"><div class="qnum">'+String(n).padStart(4,'0')+'</div>'+
+      '<div class="qst'+stcls+'" id="qs'+n+'">'+st+'</div></div>'+
+      '<div class="qch" id="qc'+n+'"></div>';
     w.appendChild(el);
-    const cw=document.getElementById('qc'+n);
+    
+    var cw=document.getElementById('qc'+n);
     if(cd){
-      const row=document.createElement('div');row.className='crow';
-      cd.c.forEach((txt,i)=>{
-        const b=document.createElement('button');b.className='cb';
-        b.dataset.n=n;b.dataset.i=i;
+      var row=document.createElement('div');
+      row.className='crow';
+      for(var ci=0;ci<cd.c.length;ci++){
+        var b=document.createElement('button');
+        b.className='cb';
+        b.setAttribute('data-n',n);
+        b.setAttribute('data-i',ci);
         if(rec&&rec.correct!==undefined&&rec.correct!==null){
-          if(i===cd.a)b.classList.add('ok');
-          else if(rec.userAns===cd.c[i]&&!rec.correct)b.classList.add('ng');
+          if(ci===cd.a) b.className='cb ok';
+          else if(rec.userAns===cd.c[ci]&&!rec.correct) b.className='cb ng';
           b.disabled=true;
         }
-        b.innerHTML=`<div class="cn">${N[i]}</div><div class="ct">${esc(txt)}</div>`;
-        b.onclick=()=>pick(n,i);
+        b.innerHTML='<div class="cn">'+NS[ci]+'</div><div class="ct">'+esc(cd.c[ci])+'</div>';
+        (function(qn,qi2){b.addEventListener('click',function(){pick(qn,qi2);});})(n,ci);
         row.appendChild(b);
-      });
+      }
       cw.appendChild(row);
     } else {
-      cw.innerHTML='<div style="padding:10px;font-size:12px;color:var(--mu)">교재에서 확인하세요</div>';
+      cw.innerHTML='<div style="padding:10px;font-size:12px;color:#8b95a7">교재에서 확인하세요</div>';
     }
-  });
+  }
   updateGBar();
 }
 
 function pick(n,i){
-  if(graded)return;
+  if(graded) return;
   sel[n]=i;
-  document.querySelectorAll(`.cb[data-n="${n}"]`).forEach((b,j)=>b.classList.toggle('sel',j===i));
+  var bs=document.querySelectorAll('.cb[data-n="'+n+'"]');
+  for(var j=0;j<bs.length;j++) bs[j].className=(j===i)?'cb sel':'cb';
   updateGBar();
 }
 
 function updateGBar(){
-  const nq=curQs.filter(n=>!records[n]||records[n].correct===undefined||records[n].correct===null);
-  const ans=nq.filter(n=>sel[n]!==undefined).length;
-  document.getElementById('gi').innerHTML=`<b>${ans}</b>/${nq.length} 답 선택됨`;
+  var nq=[]; for(var i=0;i<curQs.length;i++){var n=curQs[i];if(!records[n]||records[n].correct===undefined||records[n].correct===null) nq.push(n);}
+  var ans=0; for(var i=0;i<nq.length;i++){if(sel[nq[i]]!==undefined) ans++;}
+  document.getElementById('gi').innerHTML='<b>'+ans+'</b>/'+nq.length+' 답 선택됨';
   document.getElementById('gbtn').disabled=(ans===0);
 }
 
 function gradeAll(){
-  if(Object.keys(sel).length===0)return;
+  if(Object.keys(sel).length===0) return;
   graded=true;
-  const batch={};let ok=0,ng=0;
-  curQs.forEach(n=>{
-    const cd=CHOICES[n];if(!cd)return;
-    const s=sel[n];if(s===undefined)return;
-    const isOk=(s===cd.a);
-    isOk?ok++:ng++;
-    batch[n]={correct:isOk,userAns:cd.c[s],correctAns:cd.c[cd.a],ts:Date.now()};
-    const el=document.getElementById('qi'+n);
-    if(el){el.classList.remove('ok','ng');el.classList.add(isOk?'ok':'ng');}
-    const se=document.getElementById('qs'+n);
-    if(se){se.textContent=isOk?'O 정답':'X 오답';se.className='qst '+(isOk?'ok':'ng');}
-    document.querySelectorAll(`.cb[data-n="${n}"]`).forEach((b,i)=>{
-      b.classList.remove('sel');
-      if(i===cd.a)b.classList.add('ok');
-      else if(i===s&&!isOk)b.classList.add('ng');
-      b.disabled=true;
-    });
-  });
-  saveRecords(batch);updateHeader();
-  document.getElementById('rs0').textContent=Object.keys(sel).length;
+  var ok=0,ng=0,cnt=0;
+  for(var qi=0;qi<curQs.length;qi++){
+    var n=curQs[qi];
+    var cd=CHOICES[n];
+    if(!cd) continue;
+    var s=sel[n];
+    if(s===undefined) continue;
+    cnt++;
+    var isOk=(s===cd.a);
+    if(isOk) ok++; else ng++;
+    records[n]={correct:isOk,userAns:cd.c[s],correctAns:cd.c[cd.a],ts:Date.now()};
+    var el=document.getElementById('qi'+n);
+    if(el){el.className='qi'+(isOk?' ok':' ng');}
+    var se=document.getElementById('qs'+n);
+    if(se){se.textContent=isOk?'정답 O':'오답 X';se.className='qst'+(isOk?' ok':' ng');}
+    var bs=document.querySelectorAll('.cb[data-n="'+n+'"]');
+    for(var j=0;j<bs.length;j++){
+      bs[j].className='cb';
+      if(j===cd.a) bs[j].className='cb ok';
+      else if(j===s&&!isOk) bs[j].className='cb ng';
+      bs[j].disabled=true;
+    }
+  }
+  saveRec();
+  updateHeader();
+  document.getElementById('rs0').textContent=cnt;
   document.getElementById('rs1').textContent=ok;
   document.getElementById('rs2').textContent=ng;
-  document.getElementById('rsbox').style.display='block';
-  const gb=document.getElementById('gbtn');gb.textContent='채점 완료 ✓';gb.className='gbtn done';gb.disabled=true;
-  document.getElementById('scr').scrollTop=0;
+  document.getElementById('rsbox').classList.remove('hide');
+  var gb=document.getElementById('gbtn');
+  gb.textContent='채점 완료';gb.className='gbtn done';gb.disabled=true;
+  document.getElementById('wrap').scrollTop=0;
 }
 
 function retryPage(){
-  curQs.forEach(n=>{delete records[n];});
-  saveRecordsLocal(records);
+  for(var i=0;i<curQs.length;i++) delete records[curQs[i]];
+  saveRec();
   sel={};graded=false;
-  document.getElementById('rsbox').style.display='none';
-  const gb=document.getElementById('gbtn');gb.className='gbtn';gb.disabled=true;gb.textContent='채점하기';
+  document.getElementById('rsbox').classList.add('hide');
+  var gb=document.getElementById('gbtn');
+  gb.className='gbtn';gb.disabled=true;gb.textContent='채점하기';
   renderQItems();
 }
 
 function nextPage(){
-  if(curPageIdx<curPages.length-1)startPage(curPageIdx+1);
-  else{alert(' 단원 완료!');renderPageList();go('unit');}
+  if(curPageIdx<curPages.length-1) startPage(curPageIdx+1);
+  else{alert('단원 완료!');renderPageList();go('unit');}
 }
 
 function renderWrong(){
-  const wrong=Object.keys(records).filter(k=>records[k]?.correct===false).map(Number).sort((a,b)=>a-b);
-  document.getElementById('wsub').textContent=wrong.length?'틀린 문제 '+wrong.length+'개':'틀린 문제 없음 ';
-  const l=document.getElementById('wlist');l.innerHTML='';
-  if(!wrong.length){l.innerHTML='<div class="empty"><div class="ei">O</div><p>오답 노트가 비어있어요!</p></div>';return;}
-  wrong.forEach(n=>{
-    const r=records[n];
-    const u=UNITS.find(u=>n>=u.r[0]&&n<=u.r[1])||{name:'?'};
-    const el=document.createElement('div');el.className='wi';
-    el.innerHTML=`<div class="witop"><span class="winum">문항 ${String(n).padStart(4,'0')}</span><span class="wiunit">${u.name}</span></div>
-      <div class="wians">내 답: <span class="m">${esc(r.userAns||'?')}</span> → 정답: <span class="c">${esc(r.correctAns||'?')}</span></div>
-      <a class="wibtn" href="https://www.youtube.com/results?search_query=RPM+공통수학1+${String(n).padStart(4,'0')}번" target="_blank">▶ 해설</a>`;
+  var all=Object.keys(records).map(Number).sort(function(a,b){return a-b;});
+  var wrong=[];
+  for(var i=0;i<all.length;i++) if(records[all[i]]&&records[all[i]].correct===false) wrong.push(all[i]);
+  document.getElementById('wsub').textContent=wrong.length?'틀린 문제 '+wrong.length+'개':'틀린 문제 없음';
+  var l=document.getElementById('wlist');
+  l.innerHTML='';
+  if(!wrong.length){l.innerHTML='<div class="empty">오답이 없어요! 잘하고 있어요.</div>';return;}
+  for(var i=0;i<wrong.length;i++){
+    var n=wrong[i];
+    var r=records[n];
+    var uname='?';
+    for(var j=0;j<UNITS.length;j++){if(n>=UNITS[j].r[0]&&n<=UNITS[j].r[1]){uname=UNITS[j].name;break;}}
+    var el=document.createElement('div');
+    el.className='wi';
+    el.innerHTML='<div class="witop"><span class="winum">'+String(n).padStart(4,'0')+'번</span><span class="wiunit">'+uname+'</span></div>'+
+      '<div class="wians">내 답: <span class="wm">'+esc(r.userAns||'?')+'</span> / 정답: <span class="wc">'+esc(r.correctAns||'?')+'</span></div>'+
+      '<a class="wbtn" href="https://www.youtube.com/results?search_query=RPM+공통수학1+'+String(n).padStart(4,'0')+'번" target="_blank">해설 보기</a>';
     l.appendChild(el);
-  });
+  }
 }
 
 function renderStats(){
-  const all=Object.keys(records).map(Number);
-  const tot=all.length,ok=all.filter(n=>records[n]?.correct===true).length;
+  var all=Object.keys(records).map(Number);
+  var tot=all.length,ok=0;
+  for(var i=0;i<all.length;i++) if(records[all[i]]&&records[all[i]].correct===true) ok++;
   document.getElementById('st0').textContent=tot;
   document.getElementById('st1').textContent=tot>0?Math.round(ok/tot*100)+'%':'0%';
   document.getElementById('st2').textContent=ok;
   document.getElementById('st3').textContent=tot-ok;
-  const ul=document.getElementById('usl');ul.innerHTML='';
-  UNITS.forEach(u=>{
-    const ns=all.filter(n=>n>=u.r[0]&&n<=u.r[1]);
-    const c=ns.filter(n=>records[n]?.correct===true).length;
-    const t=ns.length,total=u.r[1]-u.r[0]+1;
-    const el=document.createElement('div');el.className='us';
-    el.innerHTML=`<div class="ustop"><span>${String(u.id).padStart(2,'0')} ${u.name}</span>
-      <span style="color:${u.c}">${t}/${total} · ${t>0?Math.round(c/t*100):0}%</span></div>
-      <div class="usbar"><div class="usfill" style="width:${Math.round(t/total*100)}%;background:${u.c}"></div></div>`;
+  var ul=document.getElementById('usl');ul.innerHTML='';
+  for(var ui=0;ui<UNITS.length;ui++){
+    var u=UNITS[ui];
+    var ns=[],c=0;
+    for(var i=0;i<all.length;i++) if(all[i]>=u.r[0]&&all[i]<=u.r[1]){ns.push(all[i]);if(records[all[i]]&&records[all[i]].correct===true)c++;}
+    var total=u.r[1]-u.r[0]+1;
+    var el=document.createElement('div');el.className='us';
+    el.innerHTML='<div class="ustop"><span>'+String(u.id).padStart(2,'0')+' '+u.name+'</span>'+
+      '<span style="color:'+u.c+'">'+ns.length+'/'+total+' / '+(ns.length>0?Math.round(c/ns.length*100):0)+'%</span></div>'+
+      '<div class="usbar"><div class="usfill" style="width:'+Math.round(ns.length/total*100)+'%;background:'+u.c+'"></div></div>';
     ul.appendChild(el);
-  });
+  }
 }
 
 function updateHeader(){
-  const all=Object.keys(records).map(Number);
-  document.getElementById('hc').textContent=all.filter(n=>records[n]?.correct===true).length;
-  document.getElementById('hw').textContent=all.filter(n=>records[n]?.correct===false).length;
+  var all=Object.keys(records).map(Number);
+  var ok=0,ng=0;
+  for(var i=0;i<all.length;i++){
+    if(records[all[i]]&&records[all[i]].correct===true) ok++;
+    else if(records[all[i]]&&records[all[i]].correct===false) ng++;
+  }
+  document.getElementById('hc').textContent=ok;
+  document.getElementById('hw').textContent=ng;
 }
 </script>
 </body>
