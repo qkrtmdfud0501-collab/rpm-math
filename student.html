@@ -1053,31 +1053,7 @@ function openAiSol(n){
     });
   }
 
-  // 페이지 이미지를 GitHub에서 fetch해서 Gemini Vision으로 전송
-  var fetchPromise;
-  if(pageNum){
-    var imgUrl=BASE_URL+'page-'+String(pageNum).padStart(3,'0')+'.jpg';
-    fetchPromise=fetch(imgUrl)
-      .then(function(r){return r.blob();})
-      .then(function(blob){
-        return new Promise(function(resolve){
-          var reader=new FileReader();
-          reader.onloadend=function(){
-            var b64=reader.result.split(',')[1];
-            resolve(callGemini([
-              {inline_data:{mime_type:'image/jpeg',data:b64}},
-              {text:promptText}
-            ]));
-          };
-          reader.readAsDataURL(blob);
-        });
-      })
-      .catch(function(){
-        return callGemini([{text:promptText}]);
-      });
-  } else {
-    fetchPromise=Promise.resolve(callGemini([{text:promptText}]));
-  }
+  var fetchPromise=Promise.resolve(callGemini([{text:promptText}]));
 
   fetchPromise.then(function(r){
     if(r.status===400||r.status===403){
