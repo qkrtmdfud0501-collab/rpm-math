@@ -299,7 +299,10 @@ var curUser=null, records={}, curUnit=null, curPages=[], curPageIdx=0, curQs=[],
 // ── 저장소 ──
 function rkey(){return 'rpm_'+(curUser||'g');}
 function loadRec(){try{return JSON.parse(localStorage.getItem(rkey())||'{}');}catch(e){return {};}}
-function saveRec(){try{localStorage.setItem(rkey(),JSON.stringify(records));}catch(e){}}
+function saveRec(){
+  try{localStorage.setItem(rkey(),JSON.stringify(records));}catch(e){}
+  syncToFirebase();
+}
 
 // ── 계정 ──
 function getAccs(){try{return JSON.parse(localStorage.getItem('rpm_accs')||'{}');}catch(e){return {};}}
@@ -658,6 +661,62 @@ function updateHeader(){
   document.getElementById('hc').textContent=ok;
   document.getElementById('hw').textContent=ng;
 }
+
+// ── Firebase 백그라운드 동기화 ──
+var FB = null; // Firebase Firestore 인스턴스
+
+function initFirebase() {
+  try {
+    if (typeof firebase === 'undefined') return;
+    if (!firebase.apps.length) {
+      firebase.initializeApp({
+        apiKey:"AIzaSyARHy35Dd2n0Fw1sUs-U4zY0BY9WVneMJ4",
+        authDomain:"rpm-57f1a.firebaseapp.com",
+        projectId:"rpm-57f1a",
+        storageBucket:"rpm-57f1a.firebasestorage.app",
+        messagingSenderId:"681087068656",
+        appId:"1:681087068656:web:68c9d3ef6df32dceb89535"
+      });
+    }
+    FB = firebase.firestore();
+  } catch(e) {}
+}
+
+function syncToFirebase() {
+  if (!FB || !curUser) return;
+  try {
+    var uid = curUser.replace(/[^a-zA-Z0-9_]/g, '_');
+    FB.collection('students').doc(uid).set({
+      email: curUser,
+      name: document.getElementById('tname').textContent,
+      records: records,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, {merge: true});
+  } catch(e) {}
+}
+
+// Firebase SDK 동적 로드 (실패해도 앱은 정상 동작)
+function loadFirebaseSDK() {
+  var s1 = document.createElement('script');
+  s1.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js';
+  s1.onload = function() {
+    var s2 = document.createElement('script');
+    s2.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js';
+    s2.onload = function() {
+      initFirebase();
+      // 이미 로그인돼 있으면 즉시 동기화
+      if (curUser) syncToFirebase();
+    };
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s1);
+}
+
+// 페이지 로드 후 Firebase 비동기 로드
+window.addEventListener('load', function() {
+  setTimeout(loadFirebaseSDK, 1000); // 1초 후 백그라운드에서 로드
+});
+
 </script>
 </body>
 </html>
