@@ -438,7 +438,7 @@ window.addEventListener('load',()=>{
       alert('관리자 권한이 없습니다.');
       doLogout(); return;
     }
-    document.getElementById('p-login').classList.remove('on');
+    document.getElementById('p-login').style.display='none';
     document.getElementById('sidebar').style.display='flex';
     document.getElementById('mainContent').style.display='block';
     document.getElementById('sbAdmin').textContent=user.email;
@@ -452,7 +452,7 @@ window.addEventListener('load',()=>{
 //  NAV
 // ════════════════════════════════════════════
 function navTo(name){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.page:not(#p-login)').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.sbn').forEach(b=>b.classList.remove('on'));
   document.getElementById('p-'+name).classList.add('on');
   document.getElementById('nav-'+name).classList.add('on');
