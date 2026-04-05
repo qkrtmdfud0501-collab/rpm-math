@@ -1046,9 +1046,9 @@ function openAiSol(n){
   var BASE_URL='https://qkrtmdfud0501-collab.github.io/rpm-math/pages72/';
 
   function callGemini(parts){
-    return fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key,{
+    return fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','X-goog-api-key':key},
       body:JSON.stringify({contents:[{parts:parts}]})
     });
   }
