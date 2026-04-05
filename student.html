@@ -1046,7 +1046,6 @@ function openAiSol(n){
   var BASE_URL='https://qkrtmdfud0501-collab.github.io/rpm-math/pages/';
 
   function callGemini(parts){
-    console.log('[AI] 사용 키:', key?key.substring(0,12)+'...':'없음');
     return fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -1054,35 +1053,8 @@ function openAiSol(n){
     });
   }
 
-  // 이미지를 canvas로 리사이즈 후 Gemini Vision 전송
-  var fetchPromise;
-  if(pageNum){
-    var imgUrl=BASE_URL+'page-'+String(pageNum).padStart(3,'0')+'.jpg';
-    fetchPromise=new Promise(function(resolve){
-      var img=new Image();
-      img.crossOrigin='anonymous';
-      img.onload=function(){
-        // canvas로 너비 600px로 리사이즈
-        var canvas=document.createElement('canvas');
-        var ratio=Math.min(600/img.width, 800/img.height);
-        canvas.width=Math.round(img.width*ratio);
-        canvas.height=Math.round(img.height*ratio);
-        var ctx=canvas.getContext('2d');
-        ctx.drawImage(img,0,0,canvas.width,canvas.height);
-        var b64=canvas.toDataURL('image/jpeg',0.75).split(',')[1];
-        resolve(callGemini([
-          {inline_data:{mime_type:'image/jpeg',data:b64}},
-          {text:promptText}
-        ]));
-      };
-      img.onerror=function(){
-        resolve(callGemini([{text:promptText}]));
-      };
-      img.src=imgUrl;
-    });
-  } else {
-    fetchPromise=Promise.resolve(callGemini([{text:promptText}]));
-  }
+  // 텍스트만으로 Gemini 호출
+  var fetchPromise=Promise.resolve(callGemini([{text:promptText}]));
 
   fetchPromise.then(function(r){
     if(r.status===400||r.status===403){
