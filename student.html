@@ -20,18 +20,18 @@
     appId: "1:681087068656:web:68c9d3ef6df32dceb89535"
   };
   const app=initializeApp(firebaseConfig);
-  const auth=getAuth(app);
-  const db=getFirestore(app);
-  window._fb={auth,db,signInWithEmailAndPassword,signOut,onAuthStateChanged,
-    doc,getDoc,setDoc,serverTimestamp};
+  window._fb={
+    auth:getAuth(app), db:getFirestore(app),
+    signInWithEmailAndPassword, signOut, onAuthStateChanged,
+    doc, getDoc, setDoc, serverTimestamp
+  };
 </script>
 <style>
 :root{
   --bg:#F0F3F8;--surface:#fff;--dark:#1A1D2E;--navy:#252A4A;
   --primary:#FF4D1C;--green:#26D07C;--red:#FF3B5C;--gold:#FFB800;
   --muted:#8B95A7;--border:#E8ECF4;--r:14px;
-  --shadow:0 4px 20px rgba(26,29,46,0.08);
-  --shadow-sm:0 2px 8px rgba(26,29,46,0.06);
+  --shadow:0 4px 20px rgba(26,29,46,.08);--shadow-sm:0 2px 8px rgba(26,29,46,.06);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;font-family:'Noto Sans KR',sans-serif;color:var(--dark);background:var(--bg);}
@@ -42,15 +42,15 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;color:var(--dark);ba
 
 /* TOP BAR */
 .topbar{background:var(--dark);padding:0 14px;display:flex;align-items:center;
-  justify-content:space-between;height:50px;flex-shrink:0;box-shadow:0 2px 12px rgba(0,0,0,.25);z-index:50;}
+  justify-content:space-between;height:50px;flex-shrink:0;z-index:50;box-shadow:0 2px 12px rgba(0,0,0,.25);}
 .tbar-logo{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--primary);letter-spacing:2px;}
 .tbar-right{display:flex;align-items:center;gap:7px;}
-.pill{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);
-  border-radius:20px;padding:3px 8px;font-size:11px;color:white;display:flex;align-items:center;gap:3px;}
+.pill{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+  border-radius:20px;padding:3px 9px;font-size:11px;color:white;display:flex;align-items:center;gap:3px;}
 .pill b{color:var(--gold);}
 .tbar-name{font-size:11px;color:rgba(255,255,255,.5);}
 .logout-btn{background:none;border:1px solid rgba(255,255,255,.18);border-radius:7px;
-  padding:4px 8px;color:rgba(255,255,255,.55);font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
+  padding:4px 9px;color:rgba(255,255,255,.55);font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 
 /* BOTTOM NAV */
 .bnav{background:var(--surface);border-top:1px solid var(--border);display:flex;flex-shrink:0;box-shadow:0 -4px 16px rgba(0,0,0,.05);}
@@ -111,7 +111,25 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;color:var(--dark);ba
 .upct{font-size:12px;font-weight:700;color:var(--unit-c);}
 .ucnt{font-size:10px;color:var(--muted);margin-top:1px;}
 
-/* QUIZ */
+/* 페이지 목록 */
+.page-list{display:flex;flex-direction:column;gap:5px;margin-top:6px;}
+.page-item{
+  background:white;border-radius:9px;padding:10px 13px;
+  display:flex;align-items:center;gap:10px;cursor:pointer;
+  border:2px solid var(--border);box-shadow:var(--shadow-sm);transition:all .15s;
+}
+.page-item:active{transform:scale(.98);}
+.page-item.done{border-color:#B2F5D0;}
+.page-item.partial{border-color:var(--gold);}
+.pi-num{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--primary);flex-shrink:0;width:36px;}
+.pi-info{flex:1;min-width:0;}
+.pi-title{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pi-range{font-size:10px;color:var(--muted);margin-top:1px;}
+.pi-right{text-align:right;flex-shrink:0;}
+.pi-score{font-size:12px;font-weight:700;}
+.pi-cnt{font-size:10px;color:var(--muted);}
+
+/* QUIZ - 페이지 단위 채점 */
 .quiz-header{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
 .back-btn{width:32px;height:32px;border:none;background:var(--surface);border-radius:8px;
   cursor:pointer;font-size:15px;flex-shrink:0;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm);}
@@ -120,113 +138,98 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;color:var(--dark);ba
 .progbar{height:5px;background:var(--border);border-radius:3px;margin-bottom:10px;overflow:hidden;}
 .progfill{height:100%;background:linear-gradient(90deg,var(--primary),var(--gold));border-radius:3px;transition:width .35s;}
 
-/* 문제 카드 */
-.qcard{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:10px;}
-.qcard-top{background:linear-gradient(135deg,var(--dark),var(--navy));
-  padding:16px 18px;display:flex;justify-content:space-between;align-items:flex-end;}
-.qnum-display{font-family:'Bebas Neue',sans-serif;font-size:72px;color:white;line-height:.9;}
-.qnum-sub{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;padding-bottom:4px;}
-.qtag{font-size:10px;color:rgba(255,255,255,.5);background:rgba(255,255,255,.09);
-  border-radius:5px;padding:2px 7px;}
-.qunit-tag{font-size:11px;color:rgba(255,255,255,.75);font-weight:600;max-width:120px;text-align:right;line-height:1.3;}
+/* 페이지 안내 배너 */
+.page-banner{
+  background:linear-gradient(135deg,var(--dark),var(--navy));
+  border-radius:var(--r);padding:14px 16px;margin-bottom:10px;color:white;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.pb-left .pb-label{font-size:10px;color:rgba(255,255,255,.5);margin-bottom:2px;}
+.pb-left .pb-range{font-family:'Bebas Neue',sans-serif;font-size:32px;color:white;line-height:1;}
+.pb-right{text-align:right;}
+.pb-title{font-size:11px;color:rgba(255,255,255,.7);font-weight:600;max-width:150px;text-align:right;line-height:1.4;}
+.pb-cnt{font-size:10px;color:rgba(255,255,255,.4);margin-top:4px;}
 
-/* 답 입력 */
-.ans-wrap{padding:13px 14px 14px;}
-.ans-label{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;letter-spacing:.4px;}
+/* 문제 카드 (페이지 내 개별 문제) */
+.q-item{
+  background:var(--surface);border-radius:12px;
+  border:2px solid var(--border);margin-bottom:8px;
+  overflow:hidden;box-shadow:var(--shadow-sm);transition:border-color .2s;
+}
+.q-item.answered{border-color:var(--border);}
+.q-item.correct{border-color:var(--green);}
+.q-item.wrong{border-color:var(--red);}
+.q-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 13px 8px;border-bottom:1px solid var(--border);
+  background:#FAFBFF;
+}
+.q-head-left{display:flex;align-items:center;gap:8px;}
+.q-num{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--primary);line-height:1;}
+.q-status{font-size:11px;color:var(--muted);}
+.q-status.ok{color:var(--green);font-weight:700;}
+.q-status.ng{color:var(--red);font-weight:700;}
+.q-choices{padding:8px 10px 10px;}
+.choice-row-q{display:flex;flex-direction:column;gap:5px;}
+.choice-btn-q{
+  display:flex;align-items:center;gap:9px;
+  border:2px solid var(--border);border-radius:9px;padding:9px 12px;
+  background:white;cursor:pointer;transition:all .12s;text-align:left;
+  font-family:'Noto Sans KR',sans-serif;
+}
+.choice-btn-q:active{transform:scale(.99);}
+.choice-btn-q.selected{border-color:var(--primary);background:#FFF3F0;}
+.choice-btn-q.correct{border-color:var(--green);background:#EDFFF5;}
+.choice-btn-q.wrong{border-color:var(--red);background:#FFF5F7;}
+.cn{width:22px;height:22px;border-radius:50%;flex-shrink:0;background:var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);}
+.choice-btn-q.selected .cn{background:var(--primary);color:white;}
+.choice-btn-q.correct .cn{background:var(--green);color:white;}
+.choice-btn-q.wrong .cn{background:var(--red);color:white;}
+.ct{font-size:12px;color:var(--dark);line-height:1.5;word-break:break-all;}
 
-/* 탭 */
-.type-tabs{display:flex;gap:5px;margin-bottom:10px;}
-.type-tab{padding:6px 14px;border-radius:7px;border:1px solid var(--border);
-  font-size:12px;font-weight:600;cursor:pointer;background:white;
-  font-family:'Noto Sans KR',sans-serif;transition:all .15s;color:var(--muted);}
-.type-tab.on{background:var(--primary);color:white;border-color:var(--primary);}
+/* 채점 버튼 */
+.grade-bar{
+  position:sticky;bottom:0;background:rgba(255,255,255,.95);
+  backdrop-filter:blur(8px);padding:10px 12px;
+  border-top:1px solid var(--border);margin:-12px -12px 0;
+  display:flex;gap:8px;align-items:center;
+}
+.grade-info{flex:1;font-size:12px;color:var(--muted);}
+.grade-info b{color:var(--dark);}
+.grade-btn{
+  padding:11px 22px;background:var(--primary);color:white;border:none;
+  border-radius:9px;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;
+  cursor:pointer;transition:all .2s;white-space:nowrap;
+}
+.grade-btn:disabled{background:var(--border);color:var(--muted);cursor:not-allowed;}
+.grade-btn.done{background:var(--navy);}
 
-/* 객관식 */
-.choice-row{display:flex;gap:6px;margin-bottom:6px;}
-.choice-btn{flex:1;padding:13px 2px;border:2px solid var(--border);border-radius:10px;
-  background:white;font-size:18px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;
-  transition:all .15s;font-weight:700;}
-.choice-btn:active{transform:scale(.94);}
-.choice-btn.selected{border-color:var(--primary);background:#FFF3F0;color:var(--primary);}
-.choice-btn.correct{border-color:var(--green);background:#EDFFF5;color:#1A6640;}
-.choice-btn.wrong{border-color:var(--red);background:#FFF5F7;color:var(--red);}
+/* 결과 요약 */
+.result-summary{
+  background:linear-gradient(135deg,var(--dark),var(--navy));
+  border-radius:var(--r);padding:16px;margin-bottom:10px;color:white;
+}
+.rs-title{font-size:14px;font-weight:700;margin-bottom:12px;}
+.rs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.rs-card{background:rgba(255,255,255,.1);border-radius:9px;padding:10px;text-align:center;}
+.rs-card .n{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1;}
+.rs-card .l{font-size:10px;color:rgba(255,255,255,.6);margin-top:2px;}
+.rs-actions{display:flex;gap:7px;margin-top:12px;}
+.rs-btn{flex:1;padding:10px;border-radius:8px;border:none;cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;}
+.rs-btn-next{background:var(--primary);color:white;}
+.rs-btn-retry{background:rgba(255,255,255,.15);color:white;}
 
-/* 수식 디스플레이 */
-.math-display{min-height:50px;border:2px solid var(--border);border-radius:10px;
-  padding:11px 13px;font-size:18px;background:white;margin-bottom:8px;
-  display:flex;align-items:center;flex-wrap:wrap;cursor:text;
-  transition:border-color .2s;position:relative;letter-spacing:1px;}
-.math-display.focus{border-color:var(--primary);}
-.math-display.ok{border-color:var(--green);background:#F0FFF7;}
-.math-display.ng{border-color:var(--red);background:#FFF5F7;}
-.cursor{display:inline-block;width:2px;height:22px;background:var(--primary);
-  animation:blink .8s infinite;vertical-align:middle;margin:0 1px;}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-.math-placeholder{color:var(--muted);font-size:13px;font-style:italic;}
-
-/* 수식 키보드 */
-.mathkb{background:#F0F3F8;border-radius:10px;padding:7px;margin-bottom:7px;}
-.kb-section{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.5px;
-  padding:2px 2px 4px;text-transform:uppercase;}
-.kb-row{display:flex;gap:4px;margin-bottom:4px;}
-.kb-row:last-child{margin-bottom:0;}
-.kb-btn{flex:1;padding:9px 2px;border:1px solid #DDE1EC;border-radius:6px;
-  background:white;font-size:14px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;
-  transition:all .1s;text-align:center;font-weight:600;color:var(--dark);min-width:0;
-  box-shadow:0 1px 3px rgba(0,0,0,.06);}
-.kb-btn:active{background:var(--primary);color:white;transform:scale(.93);}
-.kb-btn.op{background:#EFF6FF;color:#1E40AF;border-color:#C7D9F8;}
-.kb-btn.fn{background:#F5F0FF;color:#5B21B6;border-color:#DDD6FE;}
-.kb-btn.del{background:#FFF5F7;color:var(--red);border-color:#FFD0DA;}
-.kb-btn.go{background:var(--primary);color:white;border-color:var(--primary);flex:2;font-size:13px;}
-
-/* 결과 */
-.result{display:none;margin-top:8px;border-radius:9px;padding:11px 13px;}
-.result.show{display:flex;gap:8px;align-items:flex-start;}
-.result.ok{background:#EDFFF5;border:1px solid #B2F5D0;}
-.result.ng{background:#FFF5F7;border:1px solid #FFD0DA;}
-.r-icon{font-size:21px;flex-shrink:0;}
-.r-title{font-size:13px;font-weight:700;margin-bottom:2px;}
-.r-ans{font-size:12px;color:var(--muted);}
-.r-ans b{color:var(--green);}
-.yt-btn{display:flex;align-items:center;gap:6px;background:#FF0000;color:white;
-  border:none;border-radius:7px;padding:8px 13px;margin-top:7px;
-  font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;
-  cursor:pointer;text-decoration:none;width:fit-content;}
-
-/* 이전/다음 */
-.qnav{display:flex;gap:6px;padding:0 14px 13px;}
-.qnav-btn{flex:1;padding:11px;border-radius:9px;border:none;
-  font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;}
-.qnav-prev{background:var(--border);color:var(--dark);}
-.qnav-next{background:var(--primary);color:white;}
-
-/* FAB + SHEET */
-.fab{position:fixed;bottom:66px;right:12px;z-index:99;width:46px;height:46px;border-radius:50%;
-  background:var(--primary);color:white;border:none;font-size:18px;cursor:pointer;
-  display:none;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(255,77,28,.4);}
-.fab.show{display:flex;}
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;}
-.overlay.show{display:flex;}
-.sheet{background:var(--surface);border-radius:18px 18px 0 0;width:100%;
-  max-height:68vh;display:flex;flex-direction:column;animation:slideUp .22s ease;}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.sheet-head{padding:11px 15px;border-bottom:1px solid var(--border);
-  display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
-.sheet-head h3{font-size:13px;font-weight:700;}
-.sheet-close{width:24px;height:24px;border:none;background:var(--border);border-radius:50%;cursor:pointer;font-size:12px;}
-.sheet-body{overflow-y:auto;padding:9px;flex:1;}
-.qgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
-.qg-btn{aspect-ratio:1;border-radius:7px;border:none;cursor:pointer;font-size:11px;font-weight:700;
-  display:flex;align-items:center;justify-content:center;transition:all .1s;}
-.qg-btn.un{background:var(--border);color:var(--dark);}
-.qg-btn.ok{background:#B2F5D0;color:#1A6640;}
-.qg-btn.ng{background:#FFD0DA;color:#8B1A2E;}
-.qg-btn.cur{outline:2px solid var(--primary);outline-offset:1px;}
+/* nav prev/next */
+.page-nav{display:flex;gap:7px;padding:10px 0 4px;}
+.page-nav-btn{flex:1;padding:12px;border-radius:9px;border:none;
+  font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;}
+.page-nav-prev{background:var(--border);color:var(--dark);}
+.page-nav-next{background:var(--primary);color:white;}
 
 /* WRONG */
-.wrong-banner{background:linear-gradient(135deg,#8B1A2E,var(--red));border-radius:var(--r);
-  padding:13px;margin-bottom:11px;color:white;}
+.wrong-banner{background:linear-gradient(135deg,#8B1A2E,var(--red));border-radius:var(--r);padding:13px;margin-bottom:11px;color:white;}
 .wrong-list{display:flex;flex-direction:column;gap:6px;}
 .wi{background:var(--surface);border-radius:10px;border-left:4px solid var(--red);padding:11px 13px;box-shadow:var(--shadow-sm);}
 .wi-top{display:flex;justify-content:space-between;margin-bottom:5px;}
@@ -261,17 +264,17 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;color:var(--dark);ba
   .bnav{flex-direction:column;width:72px;height:100%;border-top:none;border-right:1px solid var(--border);padding:16px 0;}
   .bn{padding:11px 4px;font-size:9px;}
   .bn .ico{font-size:21px;}
-  .screen{max-width:660px;margin:0 auto;padding:20px;}
-  .fab{bottom:20px;}
+  .scroll{padding:0;}
+  .screen{max-width:680px;margin:0 auto;padding:20px;}
   .bnav::before{content:'RPM';font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--primary);
     letter-spacing:2px;display:block;text-align:center;padding:0 0 16px;
     border-bottom:1px solid var(--border);margin-bottom:8px;}
+  .grade-bar{margin:-20px -20px 0;}
 }
 </style>
 </head>
 <body>
 <div id="app" style="display:none;">
-
   <div class="topbar">
     <div class="tbar-logo">RPM 数学</div>
     <div class="tbar-right">
@@ -283,25 +286,18 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;color:var(--dark);ba
   </div>
 
   <div class="scroll" id="scrollEl">
-
     <!-- LOGIN -->
     <div id="s-login" style="display:none;">
       <div class="login-card">
-        <div class="login-logo">
-          <div class="big">RPM</div>
-          <div class="sub">공통수학 1 · 학습 시스템</div>
-        </div>
-        <div class="lfield"><label>이메일</label>
-          <input class="linput" type="email" id="lemail" placeholder="student@school.com"></div>
-        <div class="lfield"><label>비밀번호</label>
-          <input class="linput" type="password" id="lpassword" placeholder="비밀번호"
-            onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <div class="login-logo"><div class="big">RPM</div><div class="sub">공통수학 1 · 학습 시스템</div></div>
+        <div class="lfield"><label>이메일</label><input class="linput" type="email" id="lemail" placeholder="student@school.com"></div>
+        <div class="lfield"><label>비밀번호</label><input class="linput" type="password" id="lpassword" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doLogin()"></div>
         <button class="lbtn" onclick="doLogin()">로그인</button>
         <div class="lerr" id="lerr"></div>
       </div>
     </div>
 
-    <!-- HOME -->
+    <!-- HOME: 단원 선택 -->
     <div class="screen on" id="s-home">
       <div class="home-banner">
         <div class="hb-name" id="hbName">안녕하세요</div>
@@ -317,127 +313,47 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;color:var(--dark);ba
       <div class="unit-grid" id="unitGrid"></div>
     </div>
 
-    <!-- QUIZ -->
+    <!-- UNIT: 페이지 목록 -->
+    <div class="screen" id="s-unit">
+      <div class="quiz-header">
+        <button class="back-btn" onclick="navTo('home');renderHome()">←</button>
+        <div class="quiz-title" id="unitPageTitle">단원</div>
+      </div>
+      <div class="page-list" id="pageList"></div>
+    </div>
+
+    <!-- QUIZ: 페이지 단위 채점 -->
     <div class="screen" id="s-quiz">
       <div class="quiz-header">
-        <button class="back-btn" onclick="goHome()">←</button>
-        <div class="quiz-title" id="qUnitTitle">단원</div>
-        <div class="quiz-counter" id="qCounter">1/1</div>
+        <button class="back-btn" onclick="navTo('unit')">←</button>
+        <div class="quiz-title" id="qPageTitle">페이지</div>
+        <div class="quiz-counter" id="qPageCounter"></div>
       </div>
       <div class="progbar"><div class="progfill" id="progFill" style="width:0%"></div></div>
 
-      <div class="qcard">
-        <!-- 문항번호 크게 -->
-        <div class="qcard-top">
-          <div class="qnum-display" id="qNumLbl">0001</div>
-          <div class="qnum-sub">
-            <span class="qtag" id="qTypeTag">기본</span>
-            <span class="qunit-tag" id="qUnitTag"></span>
+      <!-- 결과 요약 (채점 후 표시) -->
+      <div id="resultSummary" style="display:none;">
+        <div class="result-summary">
+          <div class="rs-title">📊 채점 결과</div>
+          <div class="rs-grid">
+            <div class="rs-card"><div class="n" id="rs-total">0</div><div class="l">전체</div></div>
+            <div class="rs-card"><div class="n" id="rs-ok" style="color:var(--green)">0</div><div class="l">정답</div></div>
+            <div class="rs-card"><div class="n" id="rs-ng" style="color:var(--red)">0</div><div class="l">오답</div></div>
+          </div>
+          <div class="rs-actions">
+            <button class="rs-btn rs-btn-retry" onclick="retryPage()">🔄 다시 풀기</button>
+            <button class="rs-btn rs-btn-next" onclick="nextPage()">다음 페이지 →</button>
           </div>
         </div>
+      </div>
 
-        <div class="ans-wrap">
-          <div class="ans-label">📝 답 입력</div>
+      <!-- 문제 목록 -->
+      <div id="qItemsWrap"></div>
 
-          <!-- 답 유형 탭 -->
-          <div class="type-tabs">
-            <button class="type-tab on" id="tab-obj" onclick="setType('obj')">① 객관식</button>
-            <button class="type-tab" id="tab-sub" onclick="setType('sub')">✏ 주관식</button>
-          </div>
-
-          <!-- 객관식 -->
-          <div id="obj-area">
-            <div class="choice-row">
-              <button class="choice-btn" data-v="①" onclick="selectChoice(this)">①</button>
-              <button class="choice-btn" data-v="②" onclick="selectChoice(this)">②</button>
-              <button class="choice-btn" data-v="③" onclick="selectChoice(this)">③</button>
-              <button class="choice-btn" data-v="④" onclick="selectChoice(this)">④</button>
-              <button class="choice-btn" data-v="⑤" onclick="selectChoice(this)">⑤</button>
-            </div>
-          </div>
-
-          <!-- 주관식 수식 입력기 -->
-          <div id="sub-area" style="display:none;">
-            <div class="math-display" id="mathDisplay">
-              <span class="math-placeholder">수식 키보드로 답 입력</span>
-            </div>
-            <!-- 숨겨진 input (일반 키보드 지원용) -->
-            <input id="hiddenInput" style="position:fixed;opacity:0;width:1px;height:1px;top:-100px;"
-              onkeydown="onHiddenKey(event)" oninput="onHiddenInput(event)">
-
-            <div class="mathkb">
-              <!-- 숫자 행 -->
-              <div class="kb-row">
-                <button class="kb-btn" onclick="kb('7')">7</button>
-                <button class="kb-btn" onclick="kb('8')">8</button>
-                <button class="kb-btn" onclick="kb('9')">9</button>
-                <button class="kb-btn op" onclick="kb('+')">＋</button>
-                <button class="kb-btn op" onclick="kb('-')">－</button>
-                <button class="kb-btn del" onclick="kbDel()">⌫</button>
-              </div>
-              <div class="kb-row">
-                <button class="kb-btn" onclick="kb('4')">4</button>
-                <button class="kb-btn" onclick="kb('5')">5</button>
-                <button class="kb-btn" onclick="kb('6')">6</button>
-                <button class="kb-btn op" onclick="kb('×')">×</button>
-                <button class="kb-btn op" onclick="kb('÷')">÷</button>
-                <button class="kb-btn op" onclick="kb('/')">／</button>
-              </div>
-              <div class="kb-row">
-                <button class="kb-btn" onclick="kb('1')">1</button>
-                <button class="kb-btn" onclick="kb('2')">2</button>
-                <button class="kb-btn" onclick="kb('3')">3</button>
-                <button class="kb-btn fn" onclick="kb('√')">√</button>
-                <button class="kb-btn fn" onclick="kb('²')">²</button>
-                <button class="kb-btn fn" onclick="kb('³')">³</button>
-              </div>
-              <div class="kb-row">
-                <button class="kb-btn" onclick="kb('0')">0</button>
-                <button class="kb-btn" onclick="kb('.')">·</button>
-                <button class="kb-btn op" onclick="kb('±')">±</button>
-                <button class="kb-btn fn" onclick="kb('π')">π</button>
-                <button class="kb-btn fn" onclick="kb('i')">i</button>
-                <button class="kb-btn del" onclick="kbClear()">C</button>
-              </div>
-              <!-- 문자/기호 행 -->
-              <div class="kb-row">
-                <button class="kb-btn fn" onclick="kb('x')">x</button>
-                <button class="kb-btn fn" onclick="kb('y')">y</button>
-                <button class="kb-btn fn" onclick="kb('a')">a</button>
-                <button class="kb-btn fn" onclick="kb('b')">b</button>
-                <button class="kb-btn fn" onclick="kb('(')"> ( </button>
-                <button class="kb-btn fn" onclick="kb(')')"> ) </button>
-              </div>
-              <div class="kb-row">
-                <button class="kb-btn fn" onclick="kb('α')">α</button>
-                <button class="kb-btn fn" onclick="kb('β')">β</button>
-                <button class="kb-btn fn" onclick="kb('≤')">≤</button>
-                <button class="kb-btn fn" onclick="kb('≥')">≥</button>
-                <button class="kb-btn fn" onclick="kb('≠')">≠</button>
-                <button class="kb-btn fn" onclick="kb('∞')">∞</button>
-              </div>
-              <!-- 채점 -->
-              <div class="kb-row">
-                <button class="kb-btn go" id="checkBtn" onclick="onCheck()">✓ 채점하기</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- 결과 -->
-          <div class="result" id="resultBox">
-            <div class="r-icon" id="rIcon"></div>
-            <div class="r-body">
-              <div class="r-title" id="rTitle"></div>
-              <div class="r-ans" id="rAns"></div>
-            </div>
-          </div>
-          <a class="yt-btn" id="ytBtn" href="#" target="_blank" style="display:none">▶ 해설 영상 보기</a>
-        </div>
-
-        <div class="qnav">
-          <button class="qnav-btn qnav-prev" onclick="prevQ()">← 이전</button>
-          <button class="qnav-btn qnav-next" onclick="nextQ()" id="nextBtn">다음 →</button>
-        </div>
+      <!-- 하단 채점 바 -->
+      <div class="grade-bar">
+        <div class="grade-info" id="gradeInfo">답을 선택하세요</div>
+        <button class="grade-btn" id="gradeBtn" onclick="gradeAll()" disabled>채점하기</button>
       </div>
     </div>
 
@@ -462,29 +378,1250 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;color:var(--dark);ba
       <div style="font-size:12px;font-weight:700;margin-bottom:7px;">단원별 성취도</div>
       <div class="ustat-list" id="ustatList"></div>
     </div>
-
   </div>
 
   <div class="bnav">
-    <button class="bn on" id="bn-home" onclick="navTo('home')"><span class="ico">🏠</span><span>단원</span></button>
-    <button class="bn" id="bn-quiz" onclick="navTo('quiz')"><span class="ico">📖</span><span>문제</span></button>
+    <button class="bn on" id="bn-home" onclick="navTo('home');renderHome()"><span class="ico">🏠</span><span>단원</span></button>
     <button class="bn" id="bn-wrong" onclick="navTo('wrong')"><span class="ico">❌</span><span>오답</span></button>
     <button class="bn" id="bn-stats" onclick="navTo('stats')"><span class="ico">📊</span><span>통계</span></button>
   </div>
 </div>
 
-<button class="fab" id="fab" onclick="openSheet()">≡</button>
-<div class="overlay" id="overlay" onclick="if(event.target===this)closeSheet()">
-  <div class="sheet">
-    <div class="sheet-head">
-      <h3>문제 목록</h3>
-      <button class="sheet-close" onclick="closeSheet()">✕</button>
-    </div>
-    <div class="sheet-body"><div class="qgrid" id="qgrid"></div></div>
-  </div>
-</div>
-
 <script>
+const CHOICES={
+  1:{c:["5x²+5xy+4y²", "(1)x²-2xy+8y² (2)-10x²+14xy-14y²", "(1)3x³y²+2x²y-5xy³+y-7 (2)-7+(2x²+1)y+3x³y²-5xy³", "3x²-xy+4y²", "2x²+7xy+3y²"],a:2},
+  2:{c:["5x²+5xy+4y²", "2x²+7xy+3y²", "(1)x²-2xy+8y² (2)-10x²+14xy-14y²", "3x²-xy+4y²", "(1)3x³y²+2x²y-5xy³+y-7 (2)-7+(2x²+1)y+3x³y²-5xy³"],a:3},
+  3:{c:["(1)3x³y²+2x²y-5xy³+y-7 (2)-7+(2x²+1)y+3x³y²-5xy³", "5x²+5xy+4y²", "(1)x²-2xy+8y² (2)-10x²+14xy-14y²", "2x²+7xy+3y²", "3x²-xy+4y²"],a:3},
+  4:{c:["(1)-2x³-x²+2x+6 (2)-x³-3x²+4x+7 (3)4x³+x²-2", "5x²+5xy+4y²", "3x²-xy+4y²", "(1)x²-2xy+8y² (2)-10x²+14xy-14y²", "2x²+7xy+3y²"],a:1},
+  5:{c:["2x²+7xy+3y²", "5x²+5xy+4y²", "2a³-6a²+12a", "(1)-2x³-x²+2x+6 (2)-x³-3x²+4x+7 (3)4x³+x²-2", "(1)x²-2xy+8y² (2)-10x²+14xy-14y²"],a:4},
+  6:{c:["x³+2x²-2x+3", "2a³-6a²+12a", "(1)x²-2xy+8y² (2)-10x²+14xy-14y²", "5x²+5xy+4y²", "(1)-2x³-x²+2x+6 (2)-x³-3x²+4x+7 (3)4x³+x²-2"],a:4},
+  7:{c:["2a³-6a²+12a", "(1)x²-2xy+8y² (2)-10x²+14xy-14y²", "2a³-5a²b-17ab²+20b³", "(1)-2x³-x²+2x+6 (2)-x³-3x²+4x+7 (3)4x³+x²-2", "x³+2x²-2x+3"],a:0},
+  8:{c:["4x²+20x+25", "(1)-2x³-x²+2x+6 (2)-x³-3x²+4x+7 (3)4x³+x²-2", "x³+2x²-2x+3", "2a³-5a²b-17ab²+20b³", "2a³-6a²+12a"],a:2},
+  9:{c:["2a³-5a²b-17ab²+20b³", "2a³-6a²+12a", "x³+2x²-2x+3", "4x²+20x+25", "9x²-12x+4"],a:0},
+  10:{c:["9x²-y²", "9x²-12x+4", "2a³-5a²b-17ab²+20b³", "x³+2x²-2x+3", "4x²+20x+25"],a:4},
+  11:{c:["9x²-y²", "2a³-5a²b-17ab²+20b³", "4x²+20x+25", "9x²-12x+4", "x²+5x+6"],a:3},
+  12:{c:["4x²+20x+25", "9x²-12x+4", "9x²-y²", "x²+5x+6", "6x²+7x-20"],a:2},
+  13:{c:["9x²-y²", "9x²-12x+4", "4x²+y²+9z²-4xy+6yz-12zx", "x²+5x+6", "6x²+7x-20"],a:3},
+  14:{c:["6x²+7x-20", "4x²+y²+9z²-4xy+6yz-12zx", "x³+3x²+3x+1", "x²+5x+6", "9x²-y²"],a:0},
+  15:{c:["4x²+y²+9z²-4xy+6yz-12zx", "x³-6x²y+12xy²-8y³", "x³+3x²+3x+1", "x²+5x+6", "6x²+7x-20"],a:0},
+  16:{c:["6x²+7x-20", "x³+3x²+3x+1", "4x²+y²+9z²-4xy+6yz-12zx", "a³+8", "x³-6x²y+12xy²-8y³"],a:1},
+  17:{c:["4x²+y²+9z²-4xy+6yz-12zx", "a³+8", "x³+3x²+3x+1", "27x³-1", "x³-6x²y+12xy²-8y³"],a:4},
+  18:{c:["x³+6x²+11x+6", "a³+8", "27x³-1", "x³+3x²+3x+1", "x³-6x²y+12xy²-8y³"],a:1},
+  19:{c:["a³+8", "a³-b³+3ab+1", "x³+6x²+11x+6", "27x³-1", "x³-6x²y+12xy²-8y³"],a:3},
+  20:{c:["x³+6x²+11x+6", "a³+8", "16x⁴+36x²y²+81y⁴", "a³-b³+3ab+1", "27x³-1"],a:0},
+  21:{c:["27x³-1", "a³-b³+3ab+1", "16x⁴+36x²y²+81y⁴", "(1)13 (2)45", "x³+6x²+11x+6"],a:1},
+  22:{c:["(1)13 (2)45", "(1)22 (2)-100", "x³+6x²+11x+6", "16x⁴+36x²y²+81y⁴", "a³-b³+3ab+1"],a:3},
+  23:{c:["(1)13 (2)45", "16x⁴+36x²y²+81y⁴", "(1)14 (2)52", "a³-b³+3ab+1", "(1)22 (2)-100"],a:0},
+  24:{c:["(1)22 (2)-100", "(1)14 (2)52", "16x⁴+36x²y²+81y⁴", "(1)13 (2)45", "(1)14 (2)10√2"],a:0},
+  25:{c:["(1)14 (2)10√2", "(1)22 (2)-100", "(1)14 (2)52", "(1)13 (2)45", "(1)14 (2)34"],a:2},
+  26:{c:["(1)14 (2)34", "(1)22 (2)-100", "㈎6 ㈏6 ㈐6 ㈑6 ㈒1", "(1)14 (2)10√2", "(1)14 (2)52"],a:3},
+  27:{c:["(1)14 (2)34", "(1)14 (2)52", "(1)14 (2)10√2", "㈎6 ㈏6 ㈐6 ㈑6 ㈒1", "몫:2x²-2x-2, 나머지:3"],a:0},
+  28:{c:["몫:2x-1, 나머지:4x+4", "㈎6 ㈏6 ㈐6 ㈑6 ㈒1", "몫:2x²-2x-2, 나머지:3", "(1)14 (2)34", "(1)14 (2)10√2"],a:1},
+  29:{c:["몫:3x²+3x+1, 나머지:2x+2", "몫:2x-1, 나머지:4x+4", "㈎6 ㈏6 ㈐6 ㈑6 ㈒1", "(1)14 (2)34", "몫:2x²-2x-2, 나머지:3"],a:4},
+  30:{c:["몫:2x²-2x-2, 나머지:3", "㈎6 ㈏6 ㈐6 ㈑6 ㈒1", "3x³-x²+4x+3=(x²+1)(3x-1)+x+4", "몫:3x²+3x+1, 나머지:2x+2", "몫:2x-1, 나머지:4x+4"],a:4},
+  31:{c:["3x³-x²+4x+3=(x²+1)(3x-1)+x+4", "몫:2x-1, 나머지:4x+4", "몫:3x²+3x+1, 나머지:2x+2", "2x³+x-3=(x²-x-1)(2x+2)+5x-1", "몫:2x²-2x-2, 나머지:3"],a:2},
+  32:{c:["2x³+x-3=(x²-x-1)(2x+2)+5x-1", "㈎-1 ㈏0 ㈐-1 ㈑-3 ㈒-2 ㈓x²+3x-3 ㈔-2", "3x³-x²+4x+3=(x²+1)(3x-1)+x+4", "몫:3x²+3x+1, 나머지:2x+2", "몫:2x-1, 나머지:4x+4"],a:2},
+  33:{c:["몫:x²+x+1, 나머지:0", "몫:3x²+3x+1, 나머지:2x+2", "㈎-1 ㈏0 ㈐-1 ㈑-3 ㈒-2 ㈓x²+3x-3 ㈔-2", "3x³-x²+4x+3=(x²+1)(3x-1)+x+4", "2x³+x-3=(x²-x-1)(2x+2)+5x-1"],a:4},
+  34:{c:["2x³+x-3=(x²-x-1)(2x+2)+5x-1", "3x³-x²+4x+3=(x²+1)(3x-1)+x+4", "몫:3x²+2x+6, 나머지:8", "몫:x²+x+1, 나머지:0", "㈎-1 ㈏0 ㈐-1 ㈑-3 ㈒-2 ㈓x²+3x-3 ㈔-2"],a:4},
+  35:{c:["몫:2x²+2x+4, 나머지:-3", "㈎-1 ㈏0 ㈐-1 ㈑-3 ㈒-2 ㈓x²+3x-3 ㈔-2", "2x³+x-3=(x²-x-1)(2x+2)+5x-1", "몫:3x²+2x+6, 나머지:8", "몫:x²+x+1, 나머지:0"],a:4},
+  36:{c:["몫:3x²+2x+6, 나머지:8", "몫:x²+x+1, 나머지:0", "6x²+8xy-10y²", "㈎-1 ㈏0 ㈐-1 ㈑-3 ㈒-2 ㈓x²+3x-3 ㈔-2", "몫:2x²+2x+4, 나머지:-3"],a:0},
+  37:{c:["몫:3x²+2x+6, 나머지:8", "x²+4xy-2y²", "6x²+8xy-10y²", "몫:x²+x+1, 나머지:0", "몫:2x²+2x+4, 나머지:-3"],a:4},
+  38:{c:["몫:2x²+2x+4, 나머지:-3", "몫:3x²+2x+6, 나머지:8", "x²+4xy-2y²", "6x²+8xy-10y²", "④"],a:3},
+  39:{c:["0", "몫:2x²+2x+4, 나머지:-3", "x²+4xy-2y²", "④", "6x²+8xy-10y²"],a:2},
+  40:{c:["③", "②", "④", "①", "⑤"],a:2},
+  41:{c:["-2", "0", "-3", "-1", "1"],a:1},
+  42:{c:["⑤", "②", "③", "④", "①"],a:3},
+  43:{c:["3", "5", "6", "4", "2"],a:1},
+  44:{c:["9", "8", "10", "7", "11"],a:2},
+  45:{c:["17", "20", "18", "21", "19"],a:1},
+  46:{c:["②", "③", "⑤", "④", "①"],a:2},
+  47:{c:["⑤", "④", "②", "①", "③"],a:1},
+  48:{c:["-1", "-4", "-5", "-3", "-2"],a:4},
+  49:{c:["19", "18", "16", "17", "15"],a:1},
+  50:{c:["③", "①", "②", "④", "⑤"],a:0},
+  51:{c:["108", "x⁴-8x³+14x²+8x-15", "18", "a²-b²-c⁴+2bc²", "③"],a:3},
+  52:{c:["④", "a²-b²-c⁴+2bc²", "x⁴-8x³+14x²+8x-15", "③", "108"],a:2},
+  53:{c:["105", "107", "109", "106", "108"],a:4},
+  54:{c:["①", "④", "③", "⑤", "②"],a:1},
+  55:{c:["9", "11", "10", "8", "7"],a:2},
+  56:{c:["⑤", "47", "10", "④", "30√3"],a:4},
+  57:{c:["45", "47", "48", "46", "44"],a:1},
+  58:{c:["④", "③", "①", "②", "⑤"],a:4},
+  59:{c:["⑤", "①", "④", "②", "③"],a:1},
+  60:{c:["③", "①", "⑤", "②", "④"],a:3},
+  61:{c:["-2", "-5", "-3", "-4", "-1"],a:0},
+  62:{c:["41", "39", "37", "38", "40"],a:4},
+  63:{c:["①", "④", "②", "③", "⑤"],a:3},
+  64:{c:["32", "30", "31", "29", "33"],a:0},
+  65:{c:["①", "②", "③", "④", "⑤"],a:0},
+  66:{c:["⑤", "④", "②", "③", "①"],a:1},
+  67:{c:["⑤", "④", "②", "③", "①"],a:3},
+  68:{c:["6", "8", "7", "5", "9"],a:1},
+  69:{c:["7", "8", "10", "9", "6"],a:3},
+  70:{c:["15", "13", "16", "14", "12"],a:0},
+  71:{c:["⑤", "④", "②", "①", "③"],a:0},
+  72:{c:["x²-x+5", "몫:2x-1, 나머지:0", "x²-4x+7", "⑤", "15"],a:0},
+  73:{c:["몫:x+4, 나머지:2x", "x²-x+5", "몫:2x-1, 나머지:0", "⑤", "x²-4x+7"],a:2},
+  74:{c:["몫:x+4, 나머지:2x", "몫:1/3Q(x), 나머지:R", "몫:2x-1, 나머지:0", "x²-x+5", "x²-4x+7"],a:4},
+  75:{c:["몫:1/3Q(x), 나머지:R", "몫:2x-1, 나머지:0", "x²-4x+7", "몫:x+4, 나머지:2x", "④"],a:3},
+  76:{c:["몫:1/3Q(x), 나머지:R", "x²-4x+7", "몫:x+4, 나머지:2x", "①", "④"],a:0},
+  77:{c:["②", "⑤", "①", "④", "③"],a:3},
+  78:{c:["⑤", "④", "①", "②", "③"],a:2},
+  79:{c:["18", "16", "19", "20", "17"],a:2},
+  80:{c:["5", "6", "8", "9", "7"],a:2},
+  81:{c:["①", "④", "③", "⑤", "②"],a:4},
+  82:{c:["②", "①", "④", "⑤", "③"],a:1},
+  83:{c:["17", "18", "16", "19", "20"],a:3},
+  84:{c:["125", "126", "123", "122", "124"],a:0},
+  85:{c:["4", "6", "5", "2", "3"],a:2},
+  86:{c:["5", "52cm²", "④", "47", "125"],a:1},
+  87:{c:["48", "44", "46", "47", "45"],a:3},
+  88:{c:["③", "①", "④", "②", "⑤"],a:2},
+  89:{c:["151", "148", "150", "149", "147"],a:2},
+  90:{c:["⑤", "④", "②", "①", "③"],a:2},
+  91:{c:["⑤", "③", "④", "②", "①"],a:1},
+  92:{c:["②", "①", "⑤", "③", "④"],a:2},
+  93:{c:["-5", "-3", "-6", "-4", "-2"],a:1},
+  94:{c:["④", "⑤", "①", "②", "③"],a:4},
+  95:{c:["③", "①", "⑤", "②", "④"],a:4},
+  96:{c:["①", "②", "④", "⑤", "③"],a:3},
+  97:{c:["x²+3x-1", "④", "32-12√6", "x+4", "⑤"],a:2},
+  98:{c:["몫:2Q(x), 나머지:R", "x²+3x-1", "32-12√6", "⑤", "x+4"],a:1},
+  99:{c:["x²+3x-1", "몫:2Q(x), 나머지:R", "32-12√6", "x+4", "3"],a:3},
+  100:{c:["3", "x²+3x-1", "몫:2Q(x), 나머지:R", "④", "x+4"],a:2},
+  101:{c:["0", "4", "2", "1", "3"],a:4},
+  102:{c:["④", "⑤", "①", "③", "②"],a:0},
+  103:{c:["18", "15", "17", "16", "19"],a:0},
+  104:{c:["3", "2", "1", "0", "-1"],a:1},
+  105:{c:["4", "3", "7", "5", "6"],a:4},
+  106:{c:["60", "58", "59", "57", "61"],a:0},
+  107:{c:["①", "④", "②", "⑤", "③"],a:2},
+  108:{c:["71/9", "71/8", "73/8", "72/8", "70/8"],a:1},
+  109:{c:["3", "6", "7", "4", "5"],a:1},
+  110:{c:["1", "3", "4", "2", "5"],a:2},
+  111:{c:["a=6,b=3,c=-6", "6", "ㄴ,ㄹ,ㅁ", "a=4,b=-1,c=2", "4"],a:2},
+  112:{c:["4", "ㄴ,ㄹ,ㅁ", "a=4,b=-1,c=2", "a=6,b=3,c=-6", "a=3/2,b=-2,c=-1/2"],a:2},
+  113:{c:["a=1,b=3,c=-1", "a=4,b=-1,c=2", "a=6,b=3,c=-6", "a=3/2,b=-2,c=-1/2", "ㄴ,ㄹ,ㅁ"],a:2},
+  114:{c:["a=1,b=3,c=-1", "a=2,b=-3,c=6", "a=3/2,b=-2,c=-1/2", "a=4,b=-1,c=2", "a=6,b=3,c=-6"],a:2},
+  115:{c:["a=-3,b=1", "a=1,b=3,c=-1", "a=6,b=3,c=-6", "a=3/2,b=-2,c=-1/2", "a=2,b=-3,c=6"],a:1},
+  116:{c:["a=1,b=3,c=-1", "a=6,b=3,c=-1", "a=3/2,b=-2,c=-1/2", "a=-3,b=1", "a=2,b=-3,c=6"],a:4},
+  117:{c:["(1)-2 (2)-66", "a=6,b=3,c=-1", "a=1,b=3,c=-1", "a=-3,b=1", "a=2,b=-3,c=6"],a:3},
+  118:{c:["(1)-1 (2)17/4", "a=6,b=3,c=-1", "a=2,b=-3,c=6", "(1)-2 (2)-66", "a=-3,b=1"],a:1},
+  119:{c:["a=-3,b=1", "3", "(1)-2 (2)-66", "a=6,b=3,c=-1", "(1)-1 (2)17/4"],a:2},
+  120:{c:["3", "(1)4 (2)-20", "a=6,b=3,c=-1", "(1)-2 (2)-66", "(1)-1 (2)17/4"],a:4},
+  121:{c:["3", "4", "2", "1", "0"],a:0},
+  122:{c:["(1)-1 (2)17/4", "2", "a=4,b=1", "3", "(1)4 (2)-20"],a:4},
+  123:{c:["14", "(1)4 (2)-20", "a=4,b=1", "2", "3"],a:2},
+  124:{c:["0", "2", "3", "-1", "1"],a:1},
+  125:{c:["0", "4", "2", "3", "1"],a:3},
+  126:{c:["15", "12", "13", "11", "14"],a:4},
+  127:{c:["②", "④", "⑤", "③", "①"],a:3},
+  128:{c:["②", "①", "④", "⑤", "③"],a:1},
+  129:{c:["85", "82", "81", "83", "84"],a:4},
+  130:{c:["-1", "1", "0", "3", "2"],a:4},
+  131:{c:["-3", "-4", "0", "-1", "-2"],a:3},
+  132:{c:["④", "①", "③", "②", "⑤"],a:2},
+  133:{c:["①", "④", "②", "③", "⑤"],a:1},
+  134:{c:["35", "32", "34", "33", "36"],a:0},
+  135:{c:["①", "⑤", "③", "②", "④"],a:3},
+  136:{c:["-17", "-18", "-16", "-14", "-15"],a:4},
+  137:{c:["32", "31", "33", "30", "29"],a:0},
+  138:{c:["①", "③", "⑤", "④", "②"],a:2},
+  139:{c:["②", "④", "⑤", "③", "①"],a:1},
+  140:{c:["59", "61", "58", "60", "57"],a:3},
+  141:{c:["⑤", "②", "③", "①", "④"],a:4},
+  142:{c:["-3", "-4", "-5", "-1", "-2"],a:4},
+  143:{c:["2", "1", "3", "-1", "0"],a:0},
+  144:{c:["-2", "-1", "-3", "-4", "0"],a:1},
+  145:{c:["4", "5", "3", "2", "6"],a:1},
+  146:{c:["①", "④", "③", "⑤", "②"],a:3},
+  147:{c:["①", "③", "④", "②", "⑤"],a:4},
+  148:{c:["-x+16", "5x-6", "-x²+2x+2", "⑤", "2"],a:0},
+  149:{c:["2", "-x²+2x+2", "-x+16", "5x-6", "⑤"],a:3},
+  150:{c:["5x-6", "-x²+2x+2", "-x+16", "②", "2"],a:1},
+  151:{c:["-1", "1", "2", "0", "3"],a:2},
+  152:{c:["④", "①", "②", "③", "⑤"],a:2},
+  153:{c:["-7", "-8", "-6", "-9", "-5"],a:2},
+  154:{c:["④", "①", "②", "⑤", "③"],a:2},
+  155:{c:["-5", "-4", "-1", "-3", "-2"],a:4},
+  156:{c:["③", "①", "④", "②", "⑤"],a:3},
+  157:{c:["③", "④", "①", "⑤", "②"],a:4},
+  158:{c:["17", "18", "19", "15", "16"],a:1},
+  159:{c:["-1", "2", "1", "0", "3"],a:1},
+  160:{c:["-19", "-20", "-22", "-21", "-23"],a:1},
+  161:{c:["④", "①", "③", "②", "⑤"],a:4},
+  162:{c:["4", "3", "2", "1", "0"],a:1},
+  163:{c:["-8", "-9", "-7", "-5", "-6"],a:4},
+  164:{c:["⑤", "④", "②", "③", "①"],a:0},
+  165:{c:["-3", "-6", "-5", "-4", "-7"],a:3},
+  166:{c:["④", "①", "②", "⑤", "③"],a:2},
+  167:{c:["101", "99", "100", "97", "98"],a:2},
+  168:{c:["0", "-1", "-3", "-2", "-4"],a:1},
+  169:{c:["⑤", "①", "②", "③", "④"],a:2},
+  170:{c:["⑤", "①", "②", "③", "④"],a:3},
+  171:{c:["96", "94", "95", "98", "97"],a:4},
+  172:{c:["3", "4", "0", "1", "2"],a:0},
+  173:{c:["-4", "-3", "-1", "0", "-2"],a:2},
+  174:{c:["2", "1", "3", "4", "0"],a:2},
+  175:{c:["5", "4", "2", "3", "6"],a:0},
+  176:{c:["③", "④", "⑤", "①", "②"],a:3},
+  177:{c:["-6", "-8", "-5", "-4", "-7"],a:2},
+  178:{c:["③", "①", "④", "⑤", "②"],a:1},
+  179:{c:["-6", "-7", "-5", "-9", "-8"],a:0},
+  180:{c:["-2", "-1", "-3", "-5", "-4"],a:0},
+  181:{c:["-12", "-13", "-10", "-14", "-11"],a:4},
+  182:{c:["1", "3", "0", "2", "4"],a:1},
+  183:{c:["-1", "2", "0", "1", "-2"],a:3},
+  184:{c:["①", "③", "⑤", "②", "④"],a:0},
+  185:{c:["2", "4", "3", "1", "0"],a:2},
+  186:{c:["①", "②", "⑤", "④", "③"],a:2},
+  187:{c:["⑤", "3", "x+1", "6", "2"],a:2},
+  188:{c:["2", "3", "-1", "1", "0"],a:0},
+  189:{c:["0", "2", "-1", "1", "3"],a:1},
+  190:{c:["6", "5", "7", "4", "3"],a:0},
+  191:{c:["-30", "-28", "-26", "-29", "-27"],a:4},
+  192:{c:["-17", "-20", "-21", "-18", "-19"],a:3},
+  193:{c:["-7", "-8", "-9", "-5", "-6"],a:4},
+  194:{c:["②", "④", "③", "①", "⑤"],a:4},
+  195:{c:["-6", "-5", "-7", "-3", "-4"],a:4},
+  196:{c:["(x-1)(y-1)", "-4", "(a+b)(c-d)", "⑤", "2a(a+2b²)"],a:4},
+  197:{c:["2a(a+2b²)", "(a+b)(c-d)", "(2x+5y)²", "-4", "(x-1)(y-1)"],a:4},
+  198:{c:["(2x+5y)²", "(x-1)(y-1)", "(a+b)(c-d)", "(8x+3y)(8x-3y)", "2a(a+2b²)"],a:2},
+  199:{c:["(x-1)(y-1)", "(2x+5y)²", "(a+b)(c-d)", "3(3a+4b)(3a-4b)", "(8x+3y)(8x-3y)"],a:1},
+  200:{c:["(x+2)(x+6)", "(8x+3y)(8x-3y)", "3(3a+4b)(3a-4b)", "(2x+5y)²", "(a+b)(c-d)"],a:1},
+  201:{c:["(x+2)(3x-4)", "3(3a+4b)(3a-4b)", "(8x+3y)(8x-3y)", "(x+2)(x+6)", "(2x+5y)²"],a:1},
+  202:{c:["(x+2)(3x-4)", "(8x+3y)(8x-3y)", "3(3a+4b)(3a-4b)", "(x+2)(x+6)", "(2x+3y)(3x-2y)"],a:3},
+  203:{c:["(2x+3y)(3x-2y)", "(a-b+c)²", "(x+2)(x+6)", "(x+2)(3x-4)", "3(3a+4b)(3a-4b)"],a:3},
+  204:{c:["(x+2)(3x-4)", "(2x+3y)(3x-2y)", "(a-b+c)²", "(x+2)(x+6)", "(x+y+1)²"],a:1},
+  205:{c:["(2x+3y)(3x-2y)", "(x+2)(3x-4)", "(x+y+1)²", "(a-b+c)²", "(x-2)³"],a:3},
+  206:{c:["(x-2)³", "(x+3y)³", "(a-b+c)²", "(x+y+1)²", "(2x+3y)(3x-2y)"],a:3},
+  207:{c:["(x-2)(x²+2x+4)", "(a-b+c)²", "(x+3y)³", "(x+y+1)²", "(x-2)³"],a:4},
+  208:{c:["(x+3y)³", "(2a+3b)(4a²-6ab+9b²)", "(x+y+1)²", "(x-2)³", "(x-2)(x²+2x+4)"],a:0},
+  209:{c:["(2a+3b)(4a²-6ab+9b²)", "(x+3y)³", "(a²+a+1)(a²-a+1)", "(x-2)³", "(x-2)(x²+2x+4)"],a:4},
+  210:{c:["(2a+3b)(4a²-6ab+9b²)", "(x-2)(x²+2x+4)", "(a²+a+1)(a²-a+1)", "(x+3y)³", "(x²+2xy+4y²)(x²-2xy+4y²)"],a:0},
+  211:{c:["(2a+3b)(4a²-6ab+9b²)", "(x-2)(x²+2x+4)", "(a-b+c)(a²+b²+c²+ab+bc-ca)", "(x²+2xy+4y²)(x²-2xy+4y²)", "(a²+a+1)(a²-a+1)"],a:4},
+  212:{c:["(a²+a+1)(a²-a+1)", "(x²+2xy+4y²)(x²-2xy+4y²)", "(a-b+c)(a²+b²+c²+ab+bc-ca)", "(2a+3b)(4a²-6ab+9b²)", "(x+y+1)(x²+y²+1-xy-x-y)"],a:1},
+  213:{c:["(x+y+1)(x²+y²+1-xy-x-y)", "(a-b+c)(a²+b²+c²+ab+bc-ca)", "(a²+a+1)(a²-a+1)", "x(x-1)", "(x²+2xy+4y²)(x²-2xy+4y²)"],a:1},
+  214:{c:["(x²+2xy+4y²)(x²-2xy+4y²)", "(x²+5x+8)(x²+5x-2)", "(a-b+c)(a²+b²+c²+ab+bc-ca)", "x(x-1)", "(x+y+1)(x²+y²+1-xy-x-y)"],a:4},
+  215:{c:["(x+1)(x-1)(x²+6)", "(x+y+1)(x²+y²+1-xy-x-y)", "x(x-1)", "(x²+5x+8)(x²+5x-2)", "(a-b+c)(a²+b²+c²+ab+bc-ca)"],a:2},
+  216:{c:["(x+y+1)(x²+y²+1-xy-x-y)", "(x²+x+5)(x²-x+5)", "(x+1)(x-1)(x²+6)", "(x²+5x+8)(x²+5x-2)", "x(x-1)"],a:3},
+  217:{c:["(x+1)(x-1)(x²+6)", "(x-y-1)(x-y-2)", "x(x-1)", "(x²+5x+8)(x²+5x-2)", "(x²+x+5)(x²-x+5)"],a:0},
+  218:{c:["(x²+x+5)(x²-x+5)", "(y-a)(x+y+a)", "(x²+5x+8)(x²+5x-2)", "(x+1)(x-1)(x²+6)", "(x-y-1)(x-y-2)"],a:0},
+  219:{c:["(x-y-1)(x-y-2)", "(x-1)(x+2)(x-3)", "(x²+x+5)(x²-x+5)", "(x+1)(x-1)(x²+6)", "(y-a)(x+y+a)"],a:0},
+  220:{c:["(x²+x+5)(x²-x+5)", "(x-1)(x+2)(x-3)", "(x+1)(x-2)(x²-2x+3)", "(y-a)(x+y+a)", "(x-y-1)(x-y-2)"],a:3},
+  221:{c:["(x+1)(x-2)(x²-2x+3)", "(x-1)(x+2)(x-3)", "(x-y-1)(x-y-2)", "③", "(y-a)(x+y+a)"],a:1},
+  222:{c:["(x+1)(x-2)(x²-2x+3)", "③", "-36", "(x-1)(x+2)(x-3)", "(y-a)(x+y+a)"],a:0},
+  223:{c:["⑤", "①", "②", "③", "④"],a:3},
+  224:{c:["-37", "-36", "-35", "-38", "-39"],a:1},
+  225:{c:["⑤", "①", "④", "③", "②"],a:3},
+  226:{c:["②", "③", "④", "①", "⑤"],a:1},
+  227:{c:["②", "③", "①", "④", "⑤"],a:0},
+  228:{c:["④", "⑤", "②", "①", "③"],a:3},
+  229:{c:["④", "⑤", "①", "②", "③"],a:4},
+  230:{c:["4", "1", "5", "3", "2"],a:0},
+  231:{c:["④", "③", "⑤", "②", "①"],a:0},
+  232:{c:["-1", "1", "2", "-2", "0"],a:1},
+  233:{c:["-4", "-6", "-2", "-3", "-5"],a:3},
+  234:{c:["11", "8", "7", "10", "9"],a:3},
+  235:{c:["②", "⑤", "④", "①", "③"],a:1},
+  236:{c:["2", "3", "5", "6", "4"],a:2},
+  237:{c:["②", "③", "①", "⑤", "④"],a:4},
+  238:{c:["(x+1)(x-3)(x-y)", "-1", "④", "5", "①"],a:0},
+  239:{c:["⑤", "①", "④", "③", "②"],a:1},
+  240:{c:["-2", "-3", "0", "-4", "-1"],a:4},
+  241:{c:["②", "6", "-1", "①", "(a+b)(b+c)(c+a)"],a:4},
+  242:{c:["⑤", "①", "③", "②", "④"],a:1},
+  243:{c:["⑤", "①", "③", "④", "②"],a:4},
+  244:{c:["3", "4", "5", "6", "7"],a:3},
+  245:{c:["④", "①", "⑤", "③", "②"],a:2},
+  246:{c:["⑤", "②", "③", "④", "①"],a:0},
+  247:{c:["⑤", "②", "①", "③", "④"],a:0},
+  248:{c:["20", "19", "21", "22", "23"],a:3},
+  249:{c:["①", "②", "④", "⑤", "③"],a:3},
+  250:{c:["②", "④", "①", "③", "⑤"],a:3},
+  251:{c:["①", "②", "③", "④", "⑤"],a:3},
+  252:{c:["⑤", "②", "④", "①", "③"],a:4},
+  253:{c:["③", "①", "②", "⑤", "④"],a:4},
+  254:{c:["48", "52", "49", "51", "50"],a:3},
+  255:{c:["178", "180", "181", "179", "177"],a:1},
+  256:{c:["21", "24", "22", "23", "25"],a:1},
+  257:{c:["5/3", "4/3", "6/3", "5/4", "7/3"],a:0},
+  258:{c:["9999", "10000", "9998", "9997", "9996"],a:0},
+  259:{c:["⑤", "④", "②", "③", "①"],a:3},
+  260:{c:["⑤", "④", "③", "①", "②"],a:2},
+  261:{c:["522", "523", "524", "521", "525"],a:2},
+  262:{c:["①", "⑤", "②", "④", "③"],a:1},
+  263:{c:["524", "⑤", "b=c인 이등변삼각형", "②", "③"],a:2},
+  264:{c:["②", "①", "④", "③", "⑤"],a:4},
+  265:{c:["①", "④", "③", "②", "⑤"],a:3},
+  266:{c:["④", "⑤", "③", "②", "①"],a:3},
+  267:{c:["9", "7", "8", "5", "6"],a:2},
+  268:{c:["⑤", "②", "①", "③", "④"],a:4},
+  269:{c:["③", "②", "⑤", "④", "①"],a:3},
+  270:{c:["6", "3(x-y)(y-z)(z-x)", "④", "⑤", "①"],a:1},
+  271:{c:["①", "②", "③", "④", "⑤"],a:0},
+  272:{c:["⑤", "②", "①", "③", "④"],a:0},
+  273:{c:["3", "5", "7", "6", "4"],a:3},
+  274:{c:["-223", "-221", "-220", "-219", "-222"],a:2},
+  275:{c:["②", "③", "⑤", "④", "①"],a:0},
+  276:{c:["22", "20", "23", "19", "21"],a:0},
+  277:{c:["17", "15", "16", "14", "13"],a:2},
+  278:{c:["3", "0", "1", "4", "2"],a:0},
+  279:{c:["√3", "3", "16", "실수부분:0, 허수부분:4", "실수부분:1+√2, 허수부분:0"],a:0},
+  280:{c:["√3", "3", "실수부분:0, 허수부분:4", "실수부분:-5, 허수부분:√3", "실수부분:1+√2, 허수부분:0"],a:2},
+  281:{c:["실수부분:3/2, 허수부분:-1/2", "실수부분:1+√2, 허수부분:0", "실수부분:0, 허수부분:4", "실수부분:-5, 허수부분:√3", "√3"],a:1},
+  282:{c:["실수부분:-5, 허수부분:√3", "실수부분:1+√2, 허수부분:0", "실수부분:3/2, 허수부분:-1/2", "(1)ㄷ,ㅁ,ㅂ (2)ㄱ,ㄴ,ㄹ (3)ㄱ,ㄴ", "실수부분:0, 허수부분:4"],a:0},
+  283:{c:["실수부분:3/2, 허수부분:-1/2", "x=2,y=0", "(1)ㄷ,ㅁ,ㅂ (2)ㄱ,ㄴ,ㄹ (3)ㄱ,ㄴ", "실수부분:-5, 허수부분:√3", "실수부분:1+√2, 허수부분:0"],a:0},
+  284:{c:["x=1,y=5", "(1)ㄷ,ㅁ,ㅂ (2)ㄱ,ㄴ,ㄹ (3)ㄱ,ㄴ", "실수부분:3/2, 허수부분:-1/2", "x=2,y=0", "실수부분:-5, 허수부분:√3"],a:1},
+  285:{c:["실수부분:3/2, 허수부분:-1/2", "x=2,y=2", "(1)ㄷ,ㅁ,ㅂ (2)ㄱ,ㄴ,ㄹ (3)ㄱ,ㄴ", "x=1,y=5", "x=2,y=0"],a:4},
+  286:{c:["x=2,y=2", "x=1,y=5", "x=2,y=0", "(1)ㄷ,ㅁ,ㅂ (2)ㄱ,ㄴ,ㄹ (3)ㄱ,ㄴ", "-5-7i"],a:1},
+  287:{c:["-3i-1", "-5-7i", "x=1,y=5", "x=2,y=0", "x=2,y=2"],a:4},
+  288:{c:["x=1,y=5", "x=2,y=2", "-5-7i", "-i", "-3i-1"],a:2},
+  289:{c:["-3i-1", "7", "x=2,y=2", "-5-7i", "-i"],a:0},
+  290:{c:["3+7i", "-5-7i", "-3i-1", "7", "-i"],a:4},
+  291:{c:["7", "6", "5", "4", "8"],a:0},
+  292:{c:["11-2i", "3+7i", "-i", "3+5i", "7"],a:1},
+  293:{c:["3+7i", "11-2i", "7", "3+5i", "1-4i"],a:3},
+  294:{c:["1-4i", "i", "11-2i", "3+7i", "3+5i"],a:2},
+  295:{c:["3+5i", "1-4i", "11-2i", "-i", "i"],a:1},
+  296:{c:["2", "i", "1-4i", "-i", "11-2i"],a:1},
+  297:{c:["1-4i", "i", "√3i", "2", "-i"],a:4},
+  298:{c:["5i", "-i", "√3i", "i", "2"],a:3},
+  299:{c:["2", "3", "-1", "0", "1"],a:0},
+  300:{c:["-4√2i", "i", "2", "5i", "√3i"],a:4},
+  301:{c:["2", "√3i", "-4√2i", "5i", "±i"],a:3},
+  302:{c:["±i", "√3i", "5i", "±2√2i", "-4√2i"],a:4},
+  303:{c:["-4", "±i", "±2√2i", "-4√2i", "5i"],a:1},
+  304:{c:["-4√2i", "-4", "-√5i", "±2√2i", "±i"],a:3},
+  305:{c:["-7", "-4", "-5", "-3", "-6"],a:1},
+  306:{c:["√3", "±2√2i", "-√5i", "-4", "-3√2+√2/2·i"],a:2},
+  307:{c:["-4", "-√5i", "③④", "-3√2+√2/2·i", "√3"],a:4},
+  308:{c:["-√5i", "③④", "3", "-3√2+√2/2·i", "√3"],a:3},
+  309:{c:["-3√2+√2/2·i", "20", "③④", "3", "√3"],a:2},
+  310:{c:["2", "1", "4", "0", "3"],a:4},
+  311:{c:["18", "17", "21", "20", "19"],a:3},
+  312:{c:["-7+14i", "②", "3", "③", "20"],a:0},
+  313:{c:["①", "⑤", "④", "③", "②"],a:4},
+  314:{c:["③", "④", "①", "⑤", "②"],a:0},
+  315:{c:["20", "18", "19", "21", "22"],a:3},
+  316:{c:["0", "2", "-1", "1", "-2"],a:3},
+  317:{c:["①", "③", "④", "②", "⑤"],a:0},
+  318:{c:["③", "④", "②", "⑤", "①"],a:0},
+  319:{c:["-4", "-5", "-6", "-8", "-7"],a:1},
+  320:{c:["⑤", "③", "②", "①", "④"],a:0},
+  321:{c:["8/25", "7/25", "9/25", "8/26", "10/25"],a:0},
+  322:{c:["-32", "-33", "-35", "-34", "-31"],a:0},
+  323:{c:["-292i", "-3", "4", "-32", "8/25"],a:0},
+  324:{c:["1", "5", "3", "2", "4"],a:4},
+  325:{c:["-2", "-6", "-4", "-5", "-3"],a:4},
+  326:{c:["0", "1", "-1", "2", "-2"],a:1},
+  327:{c:["③", "④", "②", "⑤", "①"],a:1},
+  328:{c:["-2", "2", "-1", "0", "1"],a:4},
+  329:{c:["-14", "-13", "-11", "-12", "-10"],a:2},
+  330:{c:["18", "17", "20", "16", "19"],a:4},
+  331:{c:["⑤", "②", "①", "③", "④"],a:1},
+  332:{c:["19", "ㄱ,ㄴ", "-1", "3+2i", "②"],a:1},
+  333:{c:["⑤", "①", "③", "④", "②"],a:4},
+  334:{c:["-2", "-4", "-1", "0", "-3"],a:2},
+  335:{c:["2±√3i", "④", "3+2i", "②", "-1"],a:2},
+  336:{c:["③", "⑤", "④", "②", "①"],a:2},
+  337:{c:["3+2i", "2±√3i", "3", "-1", "④"],a:1},
+  338:{c:["3", "2", "1", "4", "0"],a:0},
+  339:{c:["③", "①", "⑤", "④", "②"],a:3},
+  340:{c:["-3", "-1", "-2", "-4", "0"],a:1},
+  341:{c:["②", "①", "④", "③", "⑤"],a:4},
+  342:{c:["104", "103", "102", "101", "100"],a:1},
+  343:{c:["④", "③", "①", "⑤", "②"],a:1},
+  344:{c:["-1", "-2", "-3", "0", "1"],a:3},
+  345:{c:["1", "-1", "2", "-2", "0"],a:0},
+  346:{c:["⑤", "①", "④", "②", "③"],a:4},
+  347:{c:["①", "②", "⑤", "④", "③"],a:2},
+  348:{c:["5", "4", "1", "2", "3"],a:1},
+  349:{c:["-3", "-1", "-2", "0", "1"],a:3},
+  350:{c:["4", "x²-4", "3", "0", "-a-2b"],a:1},
+  351:{c:["0", "②", "x²-4", "3", "-a-2b"],a:4},
+  352:{c:["4", "0", "3", "1", "2"],a:2},
+  353:{c:["④", "⑤", "③", "②", "①"],a:3},
+  354:{c:["5", "④", "3", "ㄱ", "②"],a:3},
+  355:{c:["⑤", "④", "③", "①", "②"],a:1},
+  356:{c:["④", "③", "②", "⑤", "①"],a:0},
+  357:{c:["5", "2", "6", "4", "3"],a:0},
+  358:{c:["④", "-i", "⑤", "5+13i", "5"],a:3},
+  359:{c:["④", "②", "③", "⑤", "①"],a:0},
+  360:{c:["-i", "-4-3i", "5+13i", "⑤", "④"],a:0},
+  361:{c:["①", "④", "③", "②", "⑤"],a:4},
+  362:{c:["③", "⑤", "-i", "-4", "-4-3i"],a:4},
+  363:{c:["-4", "-3", "-5", "-7", "-6"],a:0},
+  364:{c:["④", "⑤", "②", "③", "①"],a:3},
+  365:{c:["5", "2", "6", "3", "4"],a:0},
+  366:{c:["②", "⑤", "③", "④", "①"],a:1},
+  367:{c:["12", "11", "13", "14", "10"],a:2},
+  368:{c:["10", "11", "12", "9", "13"],a:2},
+  369:{c:["③", "①", "⑤", "②", "④"],a:3},
+  370:{c:["③", "②", "⑤", "④", "①"],a:0},
+  371:{c:["2", "-1", "0", "3", "1"],a:0},
+  372:{c:["18", "21", "20", "19", "17"],a:2},
+  373:{c:["20", "24", "100-i", "-d", "2"],a:3},
+  374:{c:["x=1 또는 x=4", "20", "100-i", "-d", "24"],a:2},
+  375:{c:["25", "24", "21", "23", "22"],a:1},
+  376:{c:["x=-1/2 또는 x=3/5", "100-i", "24", "x=1 또는 x=4", "x=(-3±√5)/2"],a:3},
+  377:{c:["x=-1/2 또는 x=3/5", "x=4±2√3i", "x=(-3±√5)/2", "24", "x=1 또는 x=4"],a:0},
+  378:{c:["x=(-3±√5)/2", "x=-1/2 또는 x=3/5", "x=-1/2 또는 x=4, 실근", "x=4±2√3i", "x=1 또는 x=4"],a:0},
+  379:{c:["x=4±2√3i", "x=3/2, 실근", "x=-1/2 또는 x=4, 실근", "x=(-3±√5)/2", "x=-1/2 또는 x=3/5"],a:0},
+  380:{c:["x=(-3±√5)/2", "x=-1/2 또는 x=4, 실근", "x=-1±√2i, 허근", "x=3/2, 실근", "x=4±2√3i"],a:1},
+  381:{c:["x=-1/2 또는 x=4, 실근", "x=4±2√3i", "x=-1±√2i, 허근", "x=3/2, 실근", "(1)ㄱ,ㅂ (2)ㄷ,ㄹ (3)ㄴ,ㅁ"],a:3},
+  382:{c:["(1)k<9/4 (2)k=9/4 (3)k>9/4", "x=3/2, 실근", "x=-1±√2i, 허근", "(1)ㄱ,ㅂ (2)ㄷ,ㄹ (3)ㄴ,ㅁ", "x=-1/2 또는 x=4, 실근"],a:2},
+  383:{c:["x=-1±√2i, 허근", "(1)k<9/4 (2)k=9/4 (3)k>9/4", "x=3/2, 실근", "(1)-2 (2)-2 (3)8 (4)12", "(1)ㄱ,ㅂ (2)ㄷ,ㄹ (3)ㄴ,ㅁ"],a:4},
+  384:{c:["(1)ㄱ,ㅂ (2)ㄷ,ㄹ (3)ㄴ,ㅁ", "(1)k<9/4 (2)k=9/4 (3)k>9/4", "(1)-2 (2)-2 (3)8 (4)12", "x=-1±√2i, 허근", "x²-x-2=0"],a:1},
+  385:{c:["(1)-2 (2)-2 (3)8 (4)12", "x²-x-2=0", "(1)k<9/4 (2)k=9/4 (3)k>9/4", "x²-6x+1=0", "(1)ㄱ,ㅂ (2)ㄷ,ㄹ (3)ㄴ,ㅁ"],a:0},
+  386:{c:["(1)k<9/4 (2)k=9/4 (3)k>9/4", "(1)-2 (2)-2 (3)8 (4)12", "x²-4x+5=0", "x²-6x+1=0", "x²-x-2=0"],a:4},
+  387:{c:["x²-6x+1=0", "x²-4x+5=0", "(1)-2 (2)-2 (3)8 (4)12", "x²-x-2=0", "(x+1-√5)(x+1+√5)"],a:0},
+  388:{c:["(x+5i)(x-5i)", "x²-x-2=0", "x²-6x+1=0", "x²-4x+5=0", "(x+1-√5)(x+1+√5)"],a:3},
+  389:{c:["x²-4x+5=0", "x²-6x+1=0", "(x+1-√5)(x+1+√5)", "2(x-(3+√7i)/4)(x-(3-√7i)/4)", "(x+5i)(x-5i)"],a:2},
+  390:{c:["a=-4,b=1", "(x+1-√5)(x+1+√5)", "2(x-(3+√7i)/4)(x-(3-√7i)/4)", "x²-4x+5=0", "(x+5i)(x-5i)"],a:4},
+  391:{c:["2(x-(3+√7i)/4)(x-(3-√7i)/4)", "(x+1-√5)(x+1+√5)", "a=-4,b=1", "(x+5i)(x-5i)", "a=-6,b=13"],a:0},
+  392:{c:["a=-6,b=13", "(x+5i)(x-5i)", "2(x-(3+√7i)/4)(x-(3-√7i)/4)", "④", "a=-4,b=1"],a:4},
+  393:{c:["a=-4,b=1", "18", "2(x-(3+√7i)/4)(x-(3-√7i)/4)", "a=-6,b=13", "④"],a:3},
+  394:{c:["③", "①", "⑤", "④", "②"],a:3},
+  395:{c:["16", "19", "15", "18", "17"],a:3},
+  396:{c:["④", "②", "⑤", "③", "①"],a:0},
+  397:{c:["2", "0", "-1", "1", "-2"],a:3},
+  398:{c:["1", "0", "-1", "2", "3"],a:3},
+  399:{c:["-2", "-3", "-4", "-5", "-6"],a:1},
+  400:{c:["⑤", "②", "①", "④", "③"],a:3},
+  401:{c:["14", "13", "12", "11", "15"],a:0},
+  402:{c:["-1", "-3", "-2", "-4", "0"],a:0},
+  403:{c:["x=-1-√3 또는 x=1+√3", "-2+√2", "14", "③", "-1"],a:0},
+  404:{c:["②", "④", "③", "⑤", "①"],a:2},
+  405:{c:["-2+√2", "200cm²", "3", "③", "x=-1-√3 또는 x=1+√3"],a:0},
+  406:{c:["0", "2", "1", "3", "4"],a:3},
+  407:{c:["200cm²", "3", "②", "③", "-2+√2"],a:0},
+  408:{c:["②", "①", "③", "④", "⑤"],a:2},
+  409:{c:["④", "③", "①", "⑤", "②"],a:4},
+  410:{c:["⑤", "④", "①", "③", "②"],a:1},
+  411:{c:["-2", "0", "-1", "-4", "-3"],a:2},
+  412:{c:["10", "12", "13", "9", "11"],a:1},
+  413:{c:["④", "③", "①", "②", "⑤"],a:1},
+  414:{c:["③", "12", "서로 다른 두 허근", "서로 다른 두 실근", "①"],a:2},
+  415:{c:["서로 다른 두 실근", "③", "3", "서로 다른 두 허근", "①"],a:0},
+  416:{c:["⑤", "③", "①", "②", "④"],a:2},
+  417:{c:["2", "1", "4", "0", "3"],a:4},
+  418:{c:["④", "②", "①", "⑤", "③"],a:3},
+  419:{c:["17", "19", "15", "16", "18"],a:4},
+  420:{c:["⑤", "④", "②", "③", "①"],a:0},
+  421:{c:["3/3", "2/4", "1/3", "4/3", "2/3"],a:4},
+  422:{c:["√13", "2/3", "⑤", "③", "44"],a:0},
+  423:{c:["①", "⑤", "③", "②", "④"],a:2},
+  424:{c:["42", "41", "43", "45", "44"],a:4},
+  425:{c:["④", "②", "③", "①", "⑤"],a:2},
+  426:{c:["22/2", "21/2", "21/3", "23/2", "20/2"],a:1},
+  427:{c:["1", "-1", "2", "3", "0"],a:2},
+  428:{c:["⑤", "③", "②", "①", "④"],a:2},
+  429:{c:["-11", "-12", "-9", "-13", "-10"],a:4},
+  430:{c:["2", "1", "-2", "-1", "0"],a:1},
+  431:{c:["②", "④", "⑤", "①", "③"],a:2},
+  432:{c:["4", "3", "2", "6", "5"],a:4},
+  433:{c:["2", "1", "-1", "3", "0"],a:0},
+  434:{c:["1", "4", "3", "0", "2"],a:2},
+  435:{c:["④", "①", "②", "⑤", "③"],a:2},
+  436:{c:["④", "①", "③", "②", "⑤"],a:3},
+  437:{c:["②", "⑤", "①", "④", "③"],a:4},
+  438:{c:["19", "18", "17", "15", "16"],a:1},
+  439:{c:["③", "a=-6,b=1", "18", "13", "①"],a:1},
+  440:{c:["14", "12", "11", "13", "10"],a:3},
+  441:{c:["①", "②", "④", "⑤", "③"],a:0},
+  442:{c:["13", "①", "2x²-5x+2=0", "2", "5/2"],a:2},
+  443:{c:["5/3", "5/2", "7/2", "6/2", "4/2"],a:1},
+  444:{c:["3", "0", "-1", "2", "1"],a:3},
+  445:{c:["-4", "-3", "-5", "-1", "-2"],a:4},
+  446:{c:["x=-6 또는 x=2", "x=-8 또는 x=3", "2", "-2", "1"],a:0},
+  447:{c:["x=-8 또는 x=3", "x=-6 또는 x=2", "1", "-2", "①"],a:0},
+  448:{c:["1", "2", "-2", "-1", "0"],a:0},
+  449:{c:["④", "⑤", "②", "①", "③"],a:3},
+  450:{c:["2/2", "3/2", "5/2", "3/3", "4/2"],a:1},
+  451:{c:["①", "④", "⑤", "③", "②"],a:0},
+  452:{c:["-72", "-71", "-68", "-69", "-70"],a:3},
+  453:{c:["②", "①", "④", "⑤", "③"],a:1},
+  454:{c:["-4", "-3", "0", "-1", "-2"],a:3},
+  455:{c:["-1", "10초", "120m", "②", "①"],a:1},
+  456:{c:["-1", "②", "10초", "120m", "8"],a:3},
+  457:{c:["①", "②", "⑤", "④", "③"],a:1},
+  458:{c:["6", "7", "8", "9", "5"],a:2},
+  459:{c:["1", "-2", "0", "2", "-1"],a:0},
+  460:{c:["1", "8", "ㄱ,ㄴ", "-19/10", "정삼각형"],a:2},
+  461:{c:["6", "ㄱ,ㄴ", "정삼각형", "1", "-19/10"],a:2},
+  462:{c:["-17/10", "-19/11", "-20/10", "-18/10", "-19/10"],a:4},
+  463:{c:["6", "3", "5", "7", "4"],a:0},
+  464:{c:["⑤", "①", "③", "②", "④"],a:2},
+  465:{c:["3", "1", "-1", "2", "0"],a:3},
+  466:{c:["①", "⑤", "2", "x²-8x-20=0", "③"],a:3},
+  467:{c:["①", "②", "③", "⑤", "④"],a:0},
+  468:{c:["⑤", "③", "①", "④", "②"],a:0},
+  469:{c:["①", "②", "⑤", "③", "④"],a:3},
+  470:{c:["③", "-1", "x=(1±√17)/2", "-4/3", "⑤"],a:2},
+  471:{c:["-4/3", "-5/3", "-4/4", "-2/3", "-3/3"],a:0},
+  472:{c:["-4", "0", "-2", "-1", "-3"],a:3},
+  473:{c:["②", "④", "①", "⑤", "③"],a:3},
+  474:{c:["5", "7", "4", "6", "3"],a:3},
+  475:{c:["-1", "6", "x²-3x+2=0", "1/2·bc", "⑤"],a:3},
+  476:{c:["6", "x²-3x+2=0", "1/2·bc", "-1", "ㄱ,ㄴ,ㄷ"],a:1},
+  477:{c:["-2", "-3", "-4", "0", "-1"],a:4},
+  478:{c:["0,2", "ㄱ,ㄴ,ㄷ", "x²-3x+2=0", "-1", "1"],a:1},
+  479:{c:["1", "-2", "0", "-1", "2"],a:0},
+  480:{c:["-4", "-3", "-1", "-2", "0"],a:2},
+  481:{c:["-1", "1", "1,3", "0,2", "2"],a:3},
+  482:{c:["0", "-1", "0,2", "2", "1,3"],a:4},
+  483:{c:["3", "-1", "0", "1", "2"],a:4},
+  484:{c:["-3", "-1", "1", "-2", "0"],a:4},
+  485:{c:["0", "2", "-2", "1", "-1"],a:3},
+  486:{c:["0", "k≤9", "-3,-1", "(1)k<4 (2)k=4 (3)k>4", "1"],a:3},
+  487:{c:["2", "1", "(1)k<4 (2)k=4 (3)k>4", "-3,-1", "k≤9"],a:4},
+  488:{c:["-3,-1", "k≤9", "만나지 않는다.", "2", "(1)k<4 (2)k=4 (3)k>4"],a:0},
+  489:{c:["2", "-1", "1", "3", "0"],a:0},
+  490:{c:["2", "-3,-1", "서로 다른 두 점에서 만난다.", "만나지 않는다.", "한 점에서 만난다.(접한다.)"],a:3},
+  491:{c:["2", "한 점에서 만난다.(접한다.)", "만나지 않는다.", "서로 다른 두 점에서 만난다.", "(1)k>-8 (2)k=-8 (3)k<-8"],a:3},
+  492:{c:["k≤1/8", "(1)k>-8 (2)k=-8 (3)k<-8", "서로 다른 두 점에서 만난다.", "만나지 않는다.", "한 점에서 만난다.(접한다.)"],a:4},
+  493:{c:["서로 다른 두 점에서 만난다.", "한 점에서 만난다.(접한다.)", "최댓값:1, 최솟값:-3", "(1)k>-8 (2)k=-8 (3)k<-8", "k≤1/8"],a:3},
+  494:{c:["최댓값:7, 최솟값:-1", "최댓값:1, 최솟값:-3", "한 점에서 만난다.(접한다.)", "(1)k>-8 (2)k=-8 (3)k<-8", "k≤1/8"],a:4},
+  495:{c:["최댓값:6, 최솟값:2", "(1)k>-8 (2)k=-8 (3)k<-8", "최댓값:7, 최솟값:-1", "최댓값:1, 최솟값:-3", "k≤1/8"],a:3},
+  496:{c:["최댓값:6, 최솟값:2", "최댓값:1, 최솟값:-3", "k≤1/8", "최댓값:7, 최솟값:-1", "최댓값:9, 최솟값:-7"],a:3},
+  497:{c:["최댓값:6, 최솟값:2", "최댓값:1, 최솟값:-3", "최댓값:17/2, 최솟값:-2", "최댓값:7, 최솟값:-1", "최댓값:9, 최솟값:-7"],a:0},
+  498:{c:["최댓값:6, 최솟값:2", "최댓값:7, 최솟값:-1", "최댓값:17/2, 최솟값:-2", "최댓값:9, 최솟값:-7", "①"],a:3},
+  499:{c:["최댓값:17/2, 최솟값:-2", "①", "72", "최댓값:9, 최솟값:-7", "최댓값:6, 최솟값:2"],a:0},
+  500:{c:["②", "④", "③", "①", "⑤"],a:3},
+  501:{c:["73", "70", "69", "72", "71"],a:3},
+  502:{c:["5", "2", "1", "3", "4"],a:4},
+  503:{c:["-8", "-10", "-6", "-7", "-9"],a:3},
+  504:{c:["②", "⑤", "①", "③", "④"],a:1},
+  505:{c:["①", "⑤", "③", "④", "②"],a:2},
+  506:{c:["⑤", "(3,28)", "③", "④", "8"],a:1},
+  507:{c:["③", "①", "④", "②", "⑤"],a:2},
+  508:{c:["7", "5", "6", "9", "8"],a:4},
+  509:{c:["1/2", "3/2", "2/2", "0/2", "1/3"],a:0},
+  510:{c:["-3", "1", "-2", "-1", "0"],a:4},
+  511:{c:["-1", "0", "1", "2", "-2"],a:2},
+  512:{c:["7", "6", "8", "9", "5"],a:2},
+  513:{c:["2", "0", "1", "-1", "-2"],a:2},
+  514:{c:["20/4", "21/5", "21/4", "22/4", "23/4"],a:2},
+  515:{c:["④", "①", "⑤", "③", "②"],a:2},
+  516:{c:["-2", "-1", "0", "-4", "-3"],a:1},
+  517:{c:["27", "26", "25", "28", "29"],a:3},
+  518:{c:["-1", "④", "28", "y=2", "1"],a:3},
+  519:{c:["0", "-1", "-2", "2", "1"],a:4},
+  520:{c:["⑤", "③", "②", "④", "①"],a:3},
+  521:{c:["121", "119", "118", "120", "117"],a:3},
+  522:{c:["15", "16", "17", "14", "13"],a:1},
+  523:{c:["-5", "-7", "-8", "-4", "-6"],a:0},
+  524:{c:["-2", "-3", "-4", "-6", "-5"],a:1},
+  525:{c:["0", "2", "-1", "-2", "1"],a:4},
+  526:{c:["5", "3", "1", "4", "2"],a:3},
+  527:{c:["6", "5", "8", "7", "9"],a:2},
+  528:{c:["⑤", "③", "①", "④", "②"],a:2},
+  529:{c:["2", "6", "4", "5", "3"],a:3},
+  530:{c:["-6", "-3", "-4", "-7", "-5"],a:2},
+  531:{c:["①", "②", "④", "⑤", "③"],a:1},
+  532:{c:["15", "17", "13", "16", "14"],a:3},
+  533:{c:["②", "①", "④", "③", "⑤"],a:1},
+  534:{c:["23", "21", "24", "22", "25"],a:2},
+  535:{c:["3/3", "4/3", "2/3", "2/4", "1/3"],a:2},
+  536:{c:["51", "50", "49", "47", "48"],a:1},
+  537:{c:["-1", "-2", "-4", "-3", "0"],a:0},
+  538:{c:["21", "18", "17", "20", "19"],a:3},
+  539:{c:["1200m²", "-1", "63m", "20", "15"],a:2},
+  540:{c:["16", "13", "12", "14", "15"],a:4},
+  541:{c:["40명", "1200m²", "15", "63m", "18m"],a:1},
+  542:{c:["40명", "1200m²", "18m", "15", "②"],a:2},
+  543:{c:["②", "-13", "40명", "1200m²", "18m"],a:2},
+  544:{c:["⑤", "②", "③", "①", "④"],a:1},
+  545:{c:["-14", "-13", "-12", "-16", "-15"],a:1},
+  546:{c:["10", "11", "8", "9", "7"],a:0},
+  547:{c:["⑤", "③", "④", "②", "①"],a:3},
+  548:{c:["3", "6", "4", "5", "2"],a:3},
+  549:{c:["④", "②", "①", "⑤", "③"],a:1},
+  550:{c:["④", "②", "①", "③", "⑤"],a:3},
+  551:{c:["-1", "-3", "-5", "-4", "-2"],a:4},
+  552:{c:["-8/4", "-9/3", "-6/3", "-8/3", "-7/3"],a:3},
+  553:{c:["6", "7", "5", "4", "8"],a:1},
+  554:{c:["11", "8", "7", "9", "10"],a:4},
+  555:{c:["4", "5", "1", "3", "2"],a:0},
+  556:{c:["①", "⑤", "③", "②", "④"],a:1},
+  557:{c:["4", "1", "2", "3", "0"],a:3},
+  558:{c:["-4", "-5", "-2", "-3", "-1"],a:2},
+  559:{c:["⑤", "③", "②", "④", "①"],a:0},
+  560:{c:["1", "-1", "0", "2", "-2"],a:0},
+  561:{c:["-23", "11/2", "⑤", "1", "9b"],a:4},
+  562:{c:["-25", "-23", "-22", "-26", "-24"],a:1},
+  563:{c:["10/2", "12/2", "11/3", "13/2", "11/2"],a:4},
+  564:{c:["5/9", "4/10", "4/9", "3/9", "6/9"],a:2},
+  565:{c:["①", "③", "②", "④", "⑤"],a:1},
+  566:{c:["2", "0", "-1", "1", "3"],a:0},
+  567:{c:["⑤", "①", "③", "④", "②"],a:2},
+  568:{c:["⑤", "③", "④", "②", "①"],a:3},
+  569:{c:["③", "⑤", "②", "①", "④"],a:4},
+  570:{c:["④", "⑤", "①", "③", "②"],a:2},
+  571:{c:["⑤", "③", "①", "④", "②"],a:1},
+  572:{c:["①", "③", "⑤", "④", "②"],a:2},
+  573:{c:["②", "⑤", "①", "③", "④"],a:0},
+  574:{c:["③", "⑤", "②", "①", "④"],a:0},
+  575:{c:["①", "⑤", "③", "②", "④"],a:0},
+  576:{c:["②", "③", "①", "⑤", "④"],a:4},
+  577:{c:["②", "①", "⑤", "③", "④"],a:2},
+  578:{c:["①", "⑤", "②", "③", "④"],a:2},
+  579:{c:["③", "①", "②", "⑤", "④"],a:0},
+  580:{c:["⑤", "③", "②", "④", "①"],a:4},
+  581:{c:["⑤", "③", "④", "②", "①"],a:0},
+  582:{c:["③", "④", "⑤", "①", "②"],a:1},
+  583:{c:["④", "⑤", "②", "①", "③"],a:4},
+  584:{c:["③", "⑤", "①", "④", "②"],a:4},
+  585:{c:["③", "⑤", "④", "①", "②"],a:3},
+  586:{c:["④", "②", "⑤", "①", "③"],a:2},
+  587:{c:["⑤", "②", "④", "①", "③"],a:2},
+  588:{c:["②", "③", "①", "④", "⑤"],a:1},
+  589:{c:["③", "②", "⑤", "④", "①"],a:1},
+  590:{c:["⑤", "③", "④", "①", "②"],a:3},
+  591:{c:["②", "①", "③", "④", "⑤"],a:4},
+  592:{c:["②", "④", "③", "⑤", "①"],a:1},
+  593:{c:["⑤", "①", "②", "③", "④"],a:3},
+  594:{c:["②", "①", "④", "⑤", "③"],a:0},
+  595:{c:["③", "②", "x=-1 또는 x=2", "x=2 또는 x=3", "x=1 또는 x=2 또는 x=3"],a:3},
+  596:{c:["x=1 또는 x=2 또는 x=3", "x=-1 또는 x=2", "②", "x=2 또는 x=3", "x=1(중근)"],a:0},
+  597:{c:["x=-1 또는 x=2", "x=1(중근)", "③", "x=1 또는 x=2 또는 x=3", "x=2 또는 x=3"],a:0},
+  598:{c:["x=-1 또는 x=2", "x=1(중근)", "③", "②", "x=1 또는 x=2 또는 x=3"],a:1},
+  599:{c:["⑤", "②", "③", "④", "①"],a:2},
+  600:{c:["①", "③", "⑤", "②", "④"],a:3},
+  601:{c:["③", "④", "⑤", "①", "②"],a:1},
+  602:{c:["②", "④", "①", "③", "⑤"],a:2},
+  603:{c:["④", "①", "⑤", "③", "②"],a:2},
+  604:{c:["③", "④", "⑤", "②", "①"],a:0},
+  605:{c:["①", "②", "④", "⑤", "③"],a:1},
+  606:{c:["④", "②", "⑤", "③", "①"],a:0},
+  607:{c:["④", "③", "⑤", "①", "②"],a:3},
+  608:{c:["①", "④", "③", "⑤", "②"],a:3},
+  609:{c:["②", "⑤", "①", "④", "③"],a:4},
+  610:{c:["①", "④", "③", "②", "⑤"],a:3},
+  611:{c:["②", "①", "⑤", "③", "④"],a:4},
+  612:{c:["⑤", "②", "④", "①", "③"],a:3},
+  613:{c:["③", "⑤", "①", "②", "④"],a:0},
+  614:{c:["④", "①", "⑤", "②", "③"],a:2},
+  615:{c:["②", "④", "①", "⑤", "③"],a:0},
+  616:{c:["②", "④", "③", "⑤", "①"],a:1},
+  617:{c:["①", "④", "②", "③", "⑤"],a:3},
+  618:{c:["④", "②", "①", "③", "⑤"],a:2},
+  619:{c:["③", "⑤", "④", "①", "②"],a:4},
+  620:{c:["①", "⑤", "③", "④", "②"],a:1},
+  621:{c:["①", "⑤", "②", "④", "③"],a:3},
+  622:{c:["⑤", "③", "②", "①", "④"],a:1},
+  623:{c:["③", "④", "②", "⑤", "①"],a:2},
+  624:{c:["①", "④", "⑤", "②", "③"],a:0},
+  625:{c:["②", "①", "⑤", "③", "④"],a:2},
+  626:{c:["②", "④", "⑤", "①", "③"],a:1},
+  627:{c:["②", "③", "⑤", "①", "④"],a:1},
+  628:{c:["③", "②", "④", "①", "⑤"],a:1},
+  629:{c:["⑤", "③", "②", "④", "①"],a:1},
+  630:{c:["②", "①", "④", "③", "⑤"],a:0},
+  631:{c:["②", "⑤", "①", "④", "③"],a:3},
+  632:{c:["⑤", "②", "①", "③", "④"],a:2},
+  633:{c:["④", "②", "⑤", "③", "①"],a:2},
+  634:{c:["⑤", "①", "④", "③", "②"],a:3},
+  635:{c:["①", "③", "⑤", "②", "④"],a:3},
+  636:{c:["③", "④", "⑤", "①", "②"],a:1},
+  637:{c:["④", "②", "①", "③", "⑤"],a:2},
+  638:{c:["①", "⑤", "③", "④", "②"],a:1},
+  639:{c:["②", "①", "④", "⑤", "③"],a:4},
+  640:{c:["③", "④", "②", "⑤", "①"],a:2},
+  641:{c:["②", "④", "③", "①", "⑤"],a:1},
+  642:{c:["②", "④", "-3<x<5", "x<-1 또는 x>3", "-2≤x≤4"],a:2},
+  643:{c:["④", "-3<x<5", "x<-1 또는 x>3", "x≤-2 또는 x≥6", "-2≤x≤4"],a:4},
+  644:{c:["x<-1 또는 x>3", "-3<x<5", "-2≤x≤4", "x≤-2 또는 x≥6", "③"],a:0},
+  645:{c:["③", "-2≤x≤4", "②", "x≤-2 또는 x≥6", "x<-1 또는 x>3"],a:3},
+  646:{c:["②", "①", "⑤", "④", "③"],a:4},
+  647:{c:["③", "①", "⑤", "④", "②"],a:4},
+  648:{c:["④", "①", "⑤", "③", "②"],a:0},
+  649:{c:["②", "①", "⑤", "③", "④"],a:1},
+  650:{c:["①", "⑤", "④", "②", "③"],a:1},
+  651:{c:["⑤", "③", "④", "②", "①"],a:1},
+  652:{c:["①", "②", "④", "⑤", "③"],a:1},
+  653:{c:["①", "③", "④", "②", "⑤"],a:2},
+  654:{c:["②", "③", "④", "⑤", "①"],a:4},
+  655:{c:["④", "③", "⑤", "②", "①"],a:1},
+  656:{c:["④", "③", "②", "①", "⑤"],a:2},
+  657:{c:["①", "⑤", "②", "③", "④"],a:4},
+  658:{c:["⑤", "①", "②", "④", "③"],a:1},
+  659:{c:["②", "⑤", "①", "④", "③"],a:1},
+  660:{c:["④", "③", "②", "⑤", "①"],a:1},
+  661:{c:["④", "①", "②", "⑤", "③"],a:2},
+  662:{c:["③", "②", "⑤", "④", "①"],a:3},
+  663:{c:["④", "⑤", "③", "②", "①"],a:4},
+  664:{c:["②", "①", "③", "④", "⑤"],a:4},
+  665:{c:["①", "⑤", "④", "②", "③"],a:4},
+  666:{c:["①", "④", "③", "②", "⑤"],a:3},
+  667:{c:["④", "②", "③", "⑤", "①"],a:0},
+  668:{c:["④", "③", "①", "②", "⑤"],a:2},
+  669:{c:["②", "①", "⑤", "④", "③"],a:2},
+  670:{c:["②", "①", "⑤", "④", "③"],a:4},
+  671:{c:["①", "④", "⑤", "③", "②"],a:4},
+  672:{c:["②", "③", "⑤", "④", "①"],a:3},
+  673:{c:["②", "⑤", "③", "④", "①"],a:4},
+  674:{c:["②", "③", "⑤", "①", "④"],a:2},
+  675:{c:["①", "⑤", "③", "④", "②"],a:2},
+  676:{c:["②", "③", "④", "⑤", "①"],a:0},
+  677:{c:["②", "⑤", "③", "④", "①"],a:3},
+  678:{c:["⑤", "③", "①", "④", "②"],a:2},
+  679:{c:["③", "①", "②", "④", "⑤"],a:4},
+  680:{c:["②", "①", "④", "⑤", "③"],a:4},
+  681:{c:["②", "③", "①", "④", "⑤"],a:0},
+  682:{c:["⑤", "③", "①", "②", "④"],a:4},
+  683:{c:["④", "①", "③", "②", "⑤"],a:1},
+  684:{c:["①", "②", "④", "③", "⑤"],a:3},
+  685:{c:["③", "②", "⑤", "①", "④"],a:1},
+  686:{c:["⑤", "①", "②", "③", "④"],a:4},
+  687:{c:["②", "①", "④", "③", "⑤"],a:1},
+  688:{c:["④", "①", "②", "⑤", "③"],a:3},
+  689:{c:["④", "①", "⑤", "②", "③"],a:4},
+  690:{c:["②", "③", "①", "⑤", "④"],a:0},
+  691:{c:["③", "⑤", "①", "④", "②"],a:3},
+  692:{c:["①", "⑤", "④", "③", "②"],a:0},
+  693:{c:["①", "③", "④", "②", "⑤"],a:1},
+  694:{c:["③", "①", "②", "④", "⑤"],a:2},
+  695:{c:["①", "⑤", "④", "②", "③"],a:2},
+  696:{c:["②", "④", "⑤", "①", "③"],a:3},
+  697:{c:["③", "④", "⑤", "①", "②"],a:2},
+  698:{c:["①", "③", "②", "⑤", "④"],a:1},
+  699:{c:["⑤", "①", "②", "③", "④"],a:2},
+  700:{c:["③", "①", "⑤", "④", "②"],a:3},
+  701:{c:["③", "①", "②", "⑤", "④"],a:1},
+  702:{c:["④", "⑤", "③", "②", "①"],a:2},
+  703:{c:["⑤", "③", "②", "④", "①"],a:2},
+  704:{c:["①", "②", "⑤", "③", "④"],a:4},
+  705:{c:["⑤", "①", "③", "②", "④"],a:1},
+  706:{c:["①", "②", "⑤", "④", "③"],a:4},
+  707:{c:["②", "③", "⑤", "④", "①"],a:0},
+  708:{c:["④", "⑤", "②", "③", "①"],a:1},
+  709:{c:["②", "⑤", "①", "③", "④"],a:4},
+  710:{c:["②", "①", "④", "③", "⑤"],a:3},
+  711:{c:["①", "④", "③", "⑤", "②"],a:4},
+  712:{c:["①", "②", "③", "⑤", "④"],a:0},
+  713:{c:["①", "③", "②", "④", "⑤"],a:1},
+  714:{c:["④", "⑤", "③", "②", "①"],a:3},
+  715:{c:["②", "③", "⑤", "①", "④"],a:4},
+  716:{c:["①", "②", "④", "⑤", "③"],a:0},
+  717:{c:["④", "①", "③", "⑤", "②"],a:3},
+  718:{c:["①", "③", "⑤", "②", "④"],a:1},
+  719:{c:["③", "⑤", "②", "①", "④"],a:2},
+  720:{c:["④", "⑤", "③", "①", "②"],a:0},
+  721:{c:["④", "①", "②", "⑤", "③"],a:1},
+  722:{c:["④", "⑤", "①", "②", "③"],a:4},
+  723:{c:["④", "⑤", "①", "③", "②"],a:4},
+  724:{c:["②", "④", "⑤", "①", "③"],a:2},
+  725:{c:["②", "③", "④", "⑤", "①"],a:2},
+  726:{c:["⑤", "①", "②", "③", "④"],a:3},
+  727:{c:["⑤", "①", "④", "③", "②"],a:4},
+  728:{c:["③", "①", "④", "⑤", "②"],a:1},
+  729:{c:["②", "①", "⑤", "③", "④"],a:3},
+  730:{c:["⑤", "③", "②", "①", "④"],a:2},
+  731:{c:["③", "②", "⑤", "④", "①"],a:3},
+  732:{c:["③", "①", "④", "⑤", "②"],a:1},
+  733:{c:["②", "④", "①", "③", "⑤"],a:3},
+  734:{c:["①", "③", "⑤", "②", "④"],a:3},
+  735:{c:["③", "④", "①", "②", "⑤"],a:1},
+  736:{c:["③", "①", "⑤", "②", "④"],a:1},
+  737:{c:["④", "③", "⑤", "②", "①"],a:2},
+  738:{c:["④", "⑤", "③", "①", "②"],a:2},
+  739:{c:["⑤", "①", "②", "④", "③"],a:2},
+  740:{c:["③", "⑤", "②", "①", "④"],a:4},
+  741:{c:["⑤", "④", "①", "②", "③"],a:2},
+  742:{c:["②", "③", "①", "④", "⑤"],a:1},
+  743:{c:["②", "③", "⑤", "①", "④"],a:0},
+  744:{c:["②", "①", "⑤", "④", "③"],a:3},
+  745:{c:["①", "⑤", "②", "④", "③"],a:0},
+  746:{c:["①", "④", "③", "②", "⑤"],a:2},
+  747:{c:["⑤", "②", "③", "①", "④"],a:1},
+  748:{c:["⑤", "③", "④", "②", "①"],a:0},
+  749:{c:["②", "①", "③", "④", "⑤"],a:3},
+  750:{c:["②", "③", "①", "⑤", "④"],a:1},
+  751:{c:["⑤", "④", "③", "①", "②"],a:4},
+  752:{c:["⑤", "④", "③", "②", "①"],a:4},
+  753:{c:["③", "⑤", "②", "①", "④"],a:0},
+  754:{c:["②", "④", "①", "⑤", "③"],a:0},
+  755:{c:["①", "③", "②", "⑤", "④"],a:4},
+  756:{c:["②", "③", "①", "④", "⑤"],a:2},
+  757:{c:["④", "①", "③", "②", "⑤"],a:2},
+  758:{c:["⑤", "③", "②", "①", "④"],a:2},
+  759:{c:["③", "⑤", "②", "④", "①"],a:3},
+  760:{c:["④", "⑤", "①", "②", "③"],a:2},
+  761:{c:["①", "⑤", "④", "③", "②"],a:3},
+  762:{c:["②", "①", "⑤", "③", "④"],a:0},
+  763:{c:["③", "⑤", "②", "①", "④"],a:4},
+  764:{c:["⑤", "④", "①", "②", "③"],a:2},
+  765:{c:["④", "②", "③", "⑤", "①"],a:2},
+  766:{c:["①", "②", "⑤", "③", "④"],a:1},
+  767:{c:["④", "②", "③", "⑤", "①"],a:3},
+  768:{c:["④", "⑤", "②", "③", "①"],a:0},
+  769:{c:["⑤", "③", "④", "②", "①"],a:1},
+  770:{c:["④", "①", "②", "③", "⑤"],a:2},
+  771:{c:["④", "①", "②", "③", "⑤"],a:1},
+  772:{c:["②", "③", "⑤", "④", "①"],a:1},
+  773:{c:["①", "②", "④", "⑤", "③"],a:1},
+  774:{c:["④", "②", "⑤", "①", "③"],a:0},
+  775:{c:["④", "③", "①", "②", "⑤"],a:2},
+  776:{c:["④", "③", "①", "②", "⑤"],a:3},
+  777:{c:["①", "④", "③", "⑤", "②"],a:2},
+  778:{c:["⑤", "②", "④", "③", "①"],a:2},
+  779:{c:["③", "①", "④", "②", "⑤"],a:4},
+  780:{c:["①", "②", "⑤", "④", "③"],a:0},
+  781:{c:["④", "①", "⑤", "②", "③"],a:3},
+  782:{c:["③", "⑤", "②", "④", "①"],a:0},
+  783:{c:["③", "⑤", "①", "②", "④"],a:4},
+  784:{c:["④", "①", "③", "②", "⑤"],a:1},
+  785:{c:["④", "③", "⑤", "①", "②"],a:4},
+  786:{c:["⑤", "②", "③", "①", "④"],a:2},
+  787:{c:["①", "②", "④", "⑤", "③"],a:2},
+  788:{c:["③", "②", "①", "④", "⑤"],a:4},
+  789:{c:["④", "①", "③", "②", "⑤"],a:1},
+  790:{c:["③", "①", "②", "⑤", "④"],a:2},
+  791:{c:["③", "④", "⑤", "①", "②"],a:0},
+  792:{c:["③", "②", "④", "⑤", "①"],a:4},
+  793:{c:["③", "⑤", "①", "④", "②"],a:4},
+  794:{c:["⑤", "①", "③", "②", "④"],a:2},
+  795:{c:["③", "①", "②", "④", "⑤"],a:3},
+  796:{c:["①", "③", "②", "④", "⑤"],a:4},
+  797:{c:["③", "④", "②", "⑤", "①"],a:4},
+  798:{c:["②", "①", "③", "④", "⑤"],a:0},
+  799:{c:["④", "①", "③", "⑤", "②"],a:2},
+  800:{c:["④", "③", "②", "①", "⑤"],a:0},
+  801:{c:["③", "⑤", "④", "②", "①"],a:1},
+  802:{c:["②", "⑤", "④", "③", "①"],a:4},
+  803:{c:["②", "④", "⑤", "③", "①"],a:0},
+  804:{c:["④", "②", "①", "③", "⑤"],a:3},
+  805:{c:["③", "④", "①", "②", "⑤"],a:1},
+  806:{c:["①", "③", "④", "②", "⑤"],a:0},
+  807:{c:["③", "②", "⑤", "①", "④"],a:1},
+  808:{c:["①", "②", "③", "⑤", "④"],a:2},
+  809:{c:["③", "②", "④", "⑤", "①"],a:2},
+  810:{c:["②", "③", "①", "④", "⑤"],a:4},
+  811:{c:["①", "⑤", "④", "③", "②"],a:0},
+  812:{c:["②", "③", "④", "⑤", "①"],a:0},
+  813:{c:["⑤", "③", "④", "①", "②"],a:1},
+  814:{c:["⑤", "③", "①", "②", "④"],a:4},
+  815:{c:["⑤", "③", "①", "④", "②"],a:2},
+  816:{c:["⑤", "④", "②", "①", "③"],a:2},
+  817:{c:["⑤", "①", "③", "④", "②"],a:2},
+  818:{c:["①", "②", "④", "③", "⑤"],a:2},
+  819:{c:["⑤", "④", "①", "②", "③"],a:0},
+  820:{c:["②", "①", "⑤", "④", "③"],a:1},
+  821:{c:["①", "④", "③", "⑤", "②"],a:4},
+  822:{c:["④", "③", "②", "⑤", "①"],a:1},
+  823:{c:["⑤", "④", "①", "②", "③"],a:1},
+  824:{c:["①", "⑤", "②", "④", "③"],a:0},
+  825:{c:["③", "①", "⑤", "②", "④"],a:3},
+  826:{c:["①", "⑤", "②", "④", "③"],a:4},
+  827:{c:["⑤", "①", "②", "④", "③"],a:3},
+  828:{c:["④", "①", "③", "⑤", "②"],a:3},
+  829:{c:["⑤", "②", "①", "④", "③"],a:2},
+  830:{c:["②", "④", "⑤", "③", "①"],a:0},
+  831:{c:["⑤", "①", "③", "④", "②"],a:2},
+  832:{c:["②", "①", "⑤", "③", "④"],a:4},
+  833:{c:["⑤", "②", "③", "④", "①"],a:4},
+  834:{c:["⑤", "②", "①", "③", "④"],a:1},
+  835:{c:["④", "①", "⑤", "②", "③"],a:4},
+  836:{c:["②", "④", "③", "①", "⑤"],a:1},
+  837:{c:["④", "①", "②", "③", "⑤"],a:4},
+  838:{c:["②", "③", "⑤", "④", "①"],a:4},
+  839:{c:["④", "⑤", "③", "①", "②"],a:4},
+  840:{c:["①", "④", "③", "⑤", "②"],a:2},
+  841:{c:["②", "③", "①", "⑤", "④"],a:4},
+  842:{c:["③", "④", "①", "⑤", "②"],a:2},
+  843:{c:["⑤", "③", "④", "①", "②"],a:4},
+  844:{c:["④", "⑤", "①", "②", "③"],a:4},
+  845:{c:["②", "④", "⑤", "③", "①"],a:1},
+  846:{c:["③", "④", "②", "⑤", "①"],a:3},
+  847:{c:["④", "③", "②", "①", "⑤"],a:3},
+  848:{c:["③", "④", "①", "②", "⑤"],a:3},
+  849:{c:["⑤", "②", "④", "③", "①"],a:3},
+  850:{c:["③", "②", "①", "④", "⑤"],a:3},
+  851:{c:["②", "③", "④", "⑤", "①"],a:4},
+  852:{c:["⑤", "④", "③", "①", "②"],a:4},
+  853:{c:["①", "③", "②", "④", "⑤"],a:1},
+  854:{c:["①", "②", "⑤", "④", "③"],a:3},
+  855:{c:["①", "⑤", "②", "④", "③"],a:0},
+  856:{c:["⑤", "①", "④", "②", "③"],a:3},
+  857:{c:["②", "①", "④", "③", "⑤"],a:3},
+  858:{c:["③", "⑤", "②", "①", "④"],a:4},
+  859:{c:["④", "③", "①", "②", "⑤"],a:4},
+  860:{c:["⑤", "②", "④", "①", "③"],a:3},
+  861:{c:["③", "①", "④", "②", "⑤"],a:3},
+  862:{c:["⑤", "①", "④", "②", "③"],a:4},
+  863:{c:["①", "②", "⑤", "③", "④"],a:4},
+  864:{c:["①", "③", "②", "⑤", "④"],a:0},
+  865:{c:["④", "②", "③", "①", "⑤"],a:1},
+  866:{c:["⑤", "④", "③", "②", "①"],a:2},
+  867:{c:["③", "①", "④", "⑤", "②"],a:2},
+  868:{c:["④", "②", "①", "③", "⑤"],a:2},
+  869:{c:["③", "④", "①", "②", "⑤"],a:3},
+  870:{c:["④", "①", "③", "⑤", "②"],a:2},
+  871:{c:["④", "⑤", "②", "①", "③"],a:0},
+  872:{c:["④", "③", "②", "⑤", "①"],a:4},
+  873:{c:["①", "②", "⑤", "④", "③"],a:1},
+  874:{c:["①", "④", "⑤", "②", "③"],a:4},
+  875:{c:["①", "②", "⑤", "③", "④"],a:4},
+  876:{c:["①", "⑤", "③", "④", "②"],a:0},
+  877:{c:["④", "②", "①", "⑤", "③"],a:1},
+  878:{c:["①", "⑤", "②", "④", "③"],a:4},
+  879:{c:["②", "⑤", "④", "③", "①"],a:2},
+  880:{c:["④", "②", "③", "⑤", "①"],a:3},
+  881:{c:["①", "②", "⑤", "③", "④"],a:0},
+  882:{c:["⑤", "③", "②", "④", "①"],a:2},
+  883:{c:["④", "②", "⑤", "①", "③"],a:4},
+  884:{c:["③", "②", "④", "⑤", "①"],a:2},
+  885:{c:["①", "③", "②", "⑤", "④"],a:0},
+  886:{c:["②", "④", "①", "⑤", "③"],a:0},
+  887:{c:["④", "①", "②", "③", "⑤"],a:3},
+  888:{c:["④", "②", "③", "⑤", "①"],a:0},
+  889:{c:["⑤", "②", "④", "③", "①"],a:4},
+  890:{c:["②", "⑤", "③", "④", "①"],a:0},
+  891:{c:["②", "①", "③", "④", "⑤"],a:2},
+  892:{c:["④", "①", "⑤", "③", "②"],a:0},
+  893:{c:["⑤", "③", "②", "④", "①"],a:4},
+  894:{c:["①", "④", "③", "②", "⑤"],a:3},
+  895:{c:["②", "④", "③", "⑤", "①"],a:2},
+  896:{c:["③", "④", "⑤", "①", "②"],a:1},
+  897:{c:["⑤", "④", "③", "①", "②"],a:3},
+  898:{c:["④", "②", "①", "③", "⑤"],a:1},
+  899:{c:["③", "⑤", "④", "①", "②"],a:0},
+  900:{c:["③", "①", "⑤", "②", "④"],a:4},
+  901:{c:["③", "①", "②", "④", "⑤"],a:1},
+  902:{c:["②", "①", "③", "⑤", "④"],a:0},
+  903:{c:["⑤", "④", "②", "③", "①"],a:3},
+  904:{c:["①", "②", "⑤", "③", "④"],a:4},
+  905:{c:["②", "③", "⑤", "①", "④"],a:3},
+  906:{c:["②", "③", "⑤", "④", "①"],a:0},
+  907:{c:["④", "②", "③", "①", "⑤"],a:2},
+  908:{c:["②", "③", "④", "⑤", "①"],a:2},
+  909:{c:["①", "②", "④", "⑤", "③"],a:0},
+  910:{c:["③", "①", "④", "⑤", "②"],a:4},
+  911:{c:["①", "③", "④", "②", "⑤"],a:3},
+  912:{c:["⑤", "②", "①", "④", "③"],a:4},
+  913:{c:["⑤", "③", "②", "④", "①"],a:3},
+  914:{c:["③", "①", "⑤", "④", "②"],a:1},
+  915:{c:["①", "⑤", "②", "④", "③"],a:2},
+  916:{c:["⑤", "①", "④", "②", "③"],a:4},
+  917:{c:["③", "④", "⑤", "②", "①"],a:4},
+  918:{c:["④", "③", "②", "①", "⑤"],a:2},
+  919:{c:["⑤", "①", "②", "④", "③"],a:4},
+  920:{c:["⑤", "①", "②", "③", "④"],a:4},
+  921:{c:["⑤", "②", "③", "①", "④"],a:3},
+  922:{c:["③", "④", "②", "⑤", "①"],a:2},
+  923:{c:["①", "③", "④", "②", "⑤"],a:1},
+  924:{c:["⑤", "②", "③", "④", "①"],a:4},
+  925:{c:["⑤", "③", "④", "②", "①"],a:3},
+  926:{c:["①", "③", "④", "②", "⑤"],a:1},
+  927:{c:["④", "③", "⑤", "①", "②"],a:0},
+  928:{c:["③", "②", "①", "⑤", "④"],a:2},
+  929:{c:["④", "⑤", "②", "①", "③"],a:2},
+  930:{c:["⑤", "④", "②", "①", "③"],a:4},
+  931:{c:["②", "③", "④", "①", "⑤"],a:3},
+  932:{c:["⑤", "③", "④", "①", "②"],a:4},
+  933:{c:["⑤", "①", "④", "②", "③"],a:4},
+  934:{c:["①", "④", "②", "③", "⑤"],a:0},
+  935:{c:["④", "③", "①", "②", "⑤"],a:3},
+  936:{c:["③", "④", "①", "⑤", "②"],a:0},
+  937:{c:["⑤", "①", "③", "②", "④"],a:4},
+  938:{c:["④", "②", "③", "①", "⑤"],a:3},
+  939:{c:["⑤", "④", "②", "③", "①"],a:2},
+  940:{c:["②", "⑤", "①", "③", "④"],a:3},
+  941:{c:["②", "③", "①", "⑤", "④"],a:2},
+  942:{c:["②", "①", "④", "③", "⑤"],a:0},
+  943:{c:["⑤", "①", "④", "②", "③"],a:4},
+  944:{c:["①", "③", "⑤", "④", "②"],a:0},
+  945:{c:["③", "①", "②", "④", "⑤"],a:2},
+  946:{c:["③", "⑤", "②", "④", "①"],a:0},
+  947:{c:["⑤", "②", "①", "④", "③"],a:2},
+  948:{c:["③", "⑤", "①", "④", "②"],a:4},
+  949:{c:["①", "②", "⑤", "③", "④"],a:3},
+  950:{c:["①", "⑤", "③", "④", "②"],a:3},
+  951:{c:["②", "⑤", "①", "④", "③"],a:2},
+  952:{c:["④", "⑤", "③", "②", "①"],a:3},
+  953:{c:["③", "④", "⑤", "②", "①"],a:0},
+  954:{c:["①", "⑤", "④", "②", "③"],a:0},
+  955:{c:["①", "④", "③", "②", "⑤"],a:3},
+  956:{c:["①", "④", "③", "②", "⑤"],a:2},
+  957:{c:["③", "④", "①", "②", "⑤"],a:1},
+  958:{c:["①", "③", "②", "⑤", "④"],a:0},
+  959:{c:["④", "②", "①", "③", "⑤"],a:1},
+  960:{c:["④", "③", "①", "②", "⑤"],a:1},
+  961:{c:["④", "③", "⑤", "②", "①"],a:4},
+  962:{c:["②", "①", "③", "⑤", "④"],a:0},
+  963:{c:["②", "⑤", "①", "④", "③"],a:4},
+  964:{c:["③", "②", "④", "⑤", "①"],a:4},
+  965:{c:["①", "④", "②", "⑤", "③"],a:2},
+  966:{c:["③", "②", "⑤", "④", "①"],a:0},
+  967:{c:["④", "③", "⑤", "②", "①"],a:4},
+  968:{c:["③", "②", "⑤", "④", "①"],a:1},
+  969:{c:["④", "③", "②", "①", "⑤"],a:1},
+  970:{c:["②", "④", "⑤", "①", "③"],a:1},
+  971:{c:["②", "⑤", "①", "③", "④"],a:2},
+  972:{c:["④", "③", "②", "⑤", "①"],a:2},
+  973:{c:["⑤", "④", "③", "①", "②"],a:2},
+  974:{c:["⑤", "①", "③", "②", "④"],a:1},
+  975:{c:["③", "②", "④", "①", "⑤"],a:1},
+  976:{c:["⑤", "①", "③", "②", "④"],a:2},
+  977:{c:["⑤", "①", "③", "④", "②"],a:1},
+  978:{c:["④", "⑤", "①", "③", "②"],a:4},
+  979:{c:["③", "④", "①", "②", "⑤"],a:0},
+  980:{c:["③", "①", "②", "④", "⑤"],a:1},
+  981:{c:["④", "②", "⑤", "①", "③"],a:1},
+  982:{c:["④", "⑤", "②", "①", "③"],a:4},
+  983:{c:["①", "②", "③", "⑤", "④"],a:4},
+  984:{c:["③", "④", "①", "⑤", "②"],a:2},
+  985:{c:["②", "①", "⑤", "③", "④"],a:0},
+  986:{c:["④", "⑤", "②", "③", "①"],a:3},
+  987:{c:["③", "④", "⑤", "②", "①"],a:4},
+  988:{c:["③", "⑤", "②", "①", "④"],a:2},
+  989:{c:["③", "④", "⑤", "②", "①"],a:0},
+  990:{c:["⑤", "③", "④", "②", "①"],a:4},
+  991:{c:["②", "①", "④", "⑤", "③"],a:0},
+  992:{c:["⑤", "③", "①", "④", "②"],a:1},
+  993:{c:["③", "②", "⑤", "④", "①"],a:3},
+  994:{c:["②", "①", "④", "⑤", "③"],a:1},
+  995:{c:["②", "①", "⑤", "④", "③"],a:0},
+  996:{c:["②", "④", "①", "③", "⑤"],a:3},
+  997:{c:["②", "④", "③", "①", "⑤"],a:3},
+  998:{c:["①", "②", "④", "⑤", "③"],a:1},
+  999:{c:["④", "③", "②", "⑤", "①"],a:1},
+  1000:{c:["①", "④", "③", "②", "⑤"],a:0},
+  1001:{c:["④", "⑤", "②", "③", "①"],a:2},
+  1002:{c:["②", "④", "①", "⑤", "③"],a:4},
+  1003:{c:["①", "③", "②", "④", "⑤"],a:0},
+  1004:{c:["③", "②", "④", "①", "⑤"],a:1},
+  1005:{c:["①", "②", "④", "③", "⑤"],a:3},
+  1006:{c:["①", "③", "⑤", "②", "④"],a:0},
+  1007:{c:["④", "②", "⑤", "③", "①"],a:1},
+  1008:{c:["④", "①", "②", "⑤", "③"],a:4},
+  1009:{c:["③", "⑤", "④", "①", "②"],a:2},
+  1010:{c:["⑤", "②", "④", "③", "①"],a:4},
+  1011:{c:["⑤", "③", "①", "②", "④"],a:3},
+  1012:{c:["③", "⑤", "①", "②", "④"],a:0},
+  1013:{c:["③", "②", "①", "④", "⑤"],a:2},
+  1014:{c:["④", "③", "⑤", "①", "②"],a:4},
+  1015:{c:["③", "⑤", "②", "④", "①"],a:0},
+  1016:{c:["②", "③", "①", "⑤", "④"],a:2},
+  1017:{c:["③", "④", "①", "②", "⑤"],a:3},
+  1018:{c:["②", "①", "④", "③", "⑤"],a:3},
+  1019:{c:["③", "⑤", "①", "④", "②"],a:2},
+  1020:{c:["⑤", "④", "③", "②", "①"],a:3},
+  1021:{c:["⑤", "①", "④", "②", "③"],a:4},
+  1022:{c:["②", "①", "④", "⑤", "③"],a:1},
+  1023:{c:["④", "①", "③", "②", "⑤"],a:3},
+  1024:{c:["③", "④", "②", "⑤", "①"],a:0},
+  1025:{c:["①", "④", "⑤", "②", "③"],a:0},
+  1026:{c:["②", "④", "③", "⑤", "①"],a:0},
+  1027:{c:["④", "②", "⑤", "③", "①"],a:3},
+  1028:{c:["①", "②", "③", "④", "⑤"],a:3},
+  1029:{c:["③", "②", "⑤", "④", "①"],a:4},
+  1030:{c:["③", "②", "④", "⑤", "①"],a:1},
+  1031:{c:["④", "②", "⑤", "①", "③"],a:4},
+  1032:{c:["④", "③", "②", "①", "⑤"],a:3},
+  1033:{c:["⑤", "①", "②", "④", "③"],a:2},
+  1034:{c:["②", "④", "⑤", "③", "①"],a:3},
+  1035:{c:["④", "②", "①", "③", "⑤"],a:2},
+  1036:{c:["③", "②", "④", "①", "⑤"],a:1},
+  1037:{c:["③", "②", "④", "⑤", "①"],a:0},
+  1038:{c:["④", "⑤", "③", "①", "②"],a:3},
+  1039:{c:["⑤", "①", "④", "②", "③"],a:3},
+  1040:{c:["⑤", "①", "③", "②", "④"],a:2},
+  1041:{c:["②", "④", "①", "③", "⑤"],a:2},
+  1042:{c:["④", "①", "⑤", "②", "③"],a:3},
+  1043:{c:["①", "⑤", "②", "④", "③"],a:4},
+  1044:{c:["②", "⑤", "①", "④", "③"],a:2},
+  1045:{c:["②", "④", "③", "⑤", "①"],a:0},
+  1046:{c:["④", "②", "①", "③", "⑤"],a:3},
+  1047:{c:["①", "⑤", "③", "④", "②"],a:0},
+  1048:{c:["③", "⑤", "①", "②", "④"],a:3},
+  1049:{c:["②", "④", "①", "⑤", "③"],a:4},
+  1050:{c:["①", "④", "②", "⑤", "③"],a:1},
+  1051:{c:["⑤", "④", "③", "①", "②"],a:3},
+  1052:{c:["④", "⑤", "②", "①", "③"],a:2},
+  1053:{c:["①", "②", "⑤", "③", "④"],a:3},
+  1054:{c:["③", "⑤", "④", "①", "②"],a:3},
+  1055:{c:["④", "⑤", "③", "②", "①"],a:3},
+  1056:{c:["④", "③", "⑤", "②", "①"],a:1},
+  1057:{c:["②", "④", "⑤", "③", "①"],a:4},
+  1058:{c:["⑤", "②", "①", "③", "④"],a:1},
+  1059:{c:["②", "⑤", "④", "③", "①"],a:3},
+  1060:{c:["⑤", "④", "②", "①", "③"],a:3},
+  1061:{c:["⑤", "①", "③", "④", "②"],a:4},
+  1062:{c:["④", "③", "⑤", "②", "①"],a:1},
+  1063:{c:["①", "⑤", "③", "④", "②"],a:3},
+  1064:{c:["④", "⑤", "①", "②", "③"],a:2},
+  1065:{c:["③", "⑤", "②", "④", "①"],a:2},
+  1066:{c:["①", "②", "④", "③", "⑤"],a:3},
+  1067:{c:["⑤", "①", "③", "④", "②"],a:1},
+  1068:{c:["④", "③", "①", "②", "⑤"],a:3},
+  1069:{c:["①", "⑤", "③", "②", "④"],a:2},
+  1070:{c:["①", "⑤", "③", "②", "④"],a:0},
+  1071:{c:["④", "②", "③", "⑤", "①"],a:1},
+  1072:{c:["④", "②", "①", "③", "⑤"],a:3},
+  1073:{c:["①", "⑤", "③", "②", "④"],a:0},
+  1074:{c:["③", "②", "①", "④", "⑤"],a:1},
+  1075:{c:["②", "④", "③", "①", "⑤"],a:2},
+  1076:{c:["④", "⑤", "①", "②", "③"],a:0},
+  1077:{c:["①", "④", "⑤", "③", "②"],a:0},
+  1078:{c:["②", "④", "⑤", "③", "①"],a:0},
+  1079:{c:["②", "④", "①", "⑤", "③"],a:4},
+  1080:{c:["③", "①", "②", "④", "⑤"],a:1},
+  1081:{c:["③", "①", "②", "④", "⑤"],a:2},
+  1082:{c:["⑤", "③", "④", "①", "②"],a:1},
+  1083:{c:["②", "⑤", "①", "④", "③"],a:2},
+  1084:{c:["②", "④", "③", "⑤", "①"],a:0},
+  1085:{c:["②", "①", "⑤", "④", "③"],a:4},
+  1086:{c:["②", "④", "③", "⑤", "①"],a:4},
+  1087:{c:["⑤", "④", "②", "①", "③"],a:2},
+  1088:{c:["①", "④", "②", "⑤", "③"],a:4},
+  1089:{c:["①", "②", "④", "⑤", "③"],a:2},
+  1090:{c:["②", "④", "①", "③", "⑤"],a:2},
+  1091:{c:["⑤", "③", "②", "①", "④"],a:2},
+  1092:{c:["④", "①", "②", "⑤", "③"],a:4},
+  1093:{c:["②", "③", "①", "⑤", "④"],a:2},
+  1094:{c:["①", "③", "⑤", "④", "②"],a:4},
+  1095:{c:["⑤", "④", "①", "③", "②"],a:3},
+  1096:{c:["①", "④", "③", "②", "⑤"],a:0},
+  1097:{c:["④", "③", "⑤", "①", "②"],a:4},
+  1098:{c:["①", "③", "⑤", "④", "②"],a:1},
+  1099:{c:["④", "③", "①", "②", "⑤"],a:0},
+  1100:{c:["⑤", "①", "④", "③", "②"],a:1},
+  1101:{c:["②", "①", "③", "⑤", "④"],a:0},
+  1102:{c:["①", "⑤", "③", "②", "④"],a:2},
+  1103:{c:["②", "③", "④", "①", "⑤"],a:3},
+  1104:{c:["⑤", "①", "③", "②", "④"],a:3},
+  1105:{c:["④", "⑤", "②", "③", "①"],a:3},
+  1106:{c:["④", "②", "③", "①", "⑤"],a:3},
+  1107:{c:["④", "①", "②", "⑤", "③"],a:2},
+  1108:{c:["⑤", "①", "③", "④", "②"],a:2},
+  1109:{c:["④", "①", "③", "②", "⑤"],a:1},
+  1110:{c:["②", "①", "④", "③", "⑤"],a:0},
+  1111:{c:["④", "①", "⑤", "③", "②"],a:3},
+  1112:{c:["①", "⑤", "③", "②", "④"],a:0},
+  1113:{c:["③", "④", "⑤", "②", "①"],a:3},
+  1114:{c:["①", "⑤", "②", "④", "③"],a:4},
+  1115:{c:["②", "⑤", "①", "④", "③"],a:3},
+  1116:{c:["④", "②", "③", "⑤", "①"],a:4},
+  1117:{c:["②", "③", "④", "①", "⑤"],a:0},
+  1118:{c:["③", "④", "⑤", "①", "②"],a:0},
+  1119:{c:["④", "⑤", "③", "①", "②"],a:3},
+  1120:{c:["④", "⑤", "③", "①", "②"],a:4},
+  1121:{c:["⑤", "①", "④", "②", "③"],a:4},
+  1122:{c:["①", "③", "④", "②", "⑤"],a:0},
+  1123:{c:["③", "①", "⑤", "②", "④"],a:3},
+  1124:{c:["③", "②", "⑤", "④", "①"],a:0},
+  1125:{c:["⑤", "②", "①", "④", "③"],a:2},
+  1126:{c:["③", "②", "⑤", "①", "④"],a:1},
+  1127:{c:["④", "①", "③", "②", "⑤"],a:2},
+  1128:{c:["③", "④", "⑤", "②", "①"],a:1},
+  1129:{c:["③", "①", "②", "④", "⑤"],a:1},
+  1130:{c:["①", "③", "⑤", "④", "②"],a:4},
+  1131:{c:["⑤", "④", "②", "③", "①"],a:3},
+  1132:{c:["④", "⑤", "②", "③", "①"],a:4},
+  1133:{c:["④", "①", "③", "②", "⑤"],a:3},
+  1134:{c:["④", "③", "⑤", "②", "①"],a:1},
+  1135:{c:["③", "④", "②", "⑤", "①"],a:4},
+  1136:{c:["⑤", "④", "③", "②", "①"],a:3},
+  1137:{c:["①", "④", "③", "②", "⑤"],a:2},
+  1138:{c:["⑤", "②", "③", "①", "④"],a:3},
+  1139:{c:["③", "④", "②", "⑤", "①"],a:2},
+  1140:{c:["①", "⑤", "③", "②", "④"],a:2},
+  1141:{c:["③", "④", "①", "②", "⑤"],a:1},
+  1142:{c:["①", "④", "⑤", "③", "②"],a:0},
+  1143:{c:["①", "②", "⑤", "④", "③"],a:1},
+  1144:{c:["①", "④", "②", "⑤", "③"],a:4},
+  1145:{c:["②", "①", "⑤", "④", "③"],a:1},
+  1146:{c:["③", "①", "④", "②", "⑤"],a:3},
+  1147:{c:["①", "④", "③", "⑤", "②"],a:2},
+  1148:{c:["③", "②", "①", "④", "⑤"],a:2},
+  1149:{c:["①", "⑤", "④", "③", "②"],a:4},
+  1150:{c:["③", "①", "④", "⑤", "②"],a:0},
+  1151:{c:["②", "④", "⑤", "①", "③"],a:3},
+  1152:{c:["⑤", "④", "③", "①", "②"],a:4},
+  1153:{c:["③", "②", "④", "⑤", "①"],a:0},
+  1154:{c:["③", "②", "⑤", "①", "④"],a:4},
+  1155:{c:["①", "⑤", "②", "④", "③"],a:0},
+  1156:{c:["⑤", "④", "③", "①", "②"],a:4},
+  1157:{c:["②", "①", "④", "⑤", "③"],a:4},
+  1158:{c:["①", "③", "⑤", "②", "④"],a:0},
+  1159:{c:["①", "②", "④", "⑤", "③"],a:1},
+  1160:{c:["①", "④", "③", "②", "⑤"],a:2},
+  1161:{c:["③", "②", "⑤", "④", "①"],a:4},
+  1162:{c:["④", "③", "②", "①", "⑤"],a:2},
+  1163:{c:["③", "④", "⑤", "②", "①"],a:0},
+  1164:{c:["⑤", "③", "①", "④", "②"],a:3},
+  1165:{c:["⑤", "①", "②", "④", "③"],a:1},
+  1166:{c:["⑤", "③", "②", "④", "①"],a:2},
+  1167:{c:["③", "④", "①", "⑤", "②"],a:0},
+  1168:{c:["③", "⑤", "④", "②", "①"],a:4},
+  1169:{c:["④", "⑤", "③", "②", "①"],a:3},
+  1170:{c:["⑤", "④", "③", "②", "①"],a:2},
+  1171:{c:["③", "④", "②", "①", "⑤"],a:3},
+  1172:{c:["①", "③", "④", "⑤", "②"],a:4},
+  1173:{c:["①", "③", "④", "②", "⑤"],a:1},
+  1174:{c:["①", "③", "④", "⑤", "②"],a:2},
+  1175:{c:["②", "①", "③", "④", "⑤"],a:1},
+  1176:{c:["⑤", "④", "①", "③", "②"],a:4},
+  1177:{c:["①", "②", "③", "④", "⑤"],a:2},
+  1178:{c:["②", "④", "③", "⑤", "①"],a:4},
+  1179:{c:["③", "④", "⑤", "①", "②"],a:4},
+  1180:{c:["①", "④", "②", "③", "⑤"],a:3},
+  1181:{c:["①", "⑤", "③", "②", "④"],a:0},
+  1182:{c:["④", "②", "⑤", "①", "③"],a:1},
+  1183:{c:["⑤", "②", "③", "①", "④"],a:2},
+  1184:{c:["③", "①", "⑤", "②", "④"],a:4}
+};
+
+// ══════════════════════════════════════
+//  PAGE MAP: [pdf_page, [q_start, q_end], title]
+// ══════════════════════════════════════
+const PAGE_MAP=[
+  [7,[1,22],"교과서문제 - 다항식 덧셈/뺄셈·곱셈"],
+  [8,[23,37],"교과서문제 - 곱셈공식변형·나눗셈"],
+  [9,[38,45],"유형익히기 - 다항식 덧셈/계수구하기"],
+  [10,[46,55],"유형익히기 - 곱셈공식·공통부분"],
+  [11,[56,60],"유형익히기 - 곱셈공식 활용"],
+  [12,[61,68],"유형익히기 - 변형·수의계산"],
+  [13,[69,75],"유형익히기 - 나눗셈"],
+  [14,[76,84],"유형익히기 - 나눗셈 심화"],
+  [15,[85,96],"시험에 꼭 나오는 문제"],
+  [16,[97,110],"시험에 꼭 나오는 문제 심화"],
+  [19,[111,123],"교과서문제 - 항등식"],
+  [20,[124,138],"유형익히기 - 항등식"],
+  [21,[139,152],"유형익히기 - 나머지정리"],
+  [22,[153,172],"유형익히기 - 인수정리"],
+  [23,[173,195],"시험에 꼭 나오는 문제"],
+  [26,[196,214],"교과서문제 - 인수분해 기본"],
+  [27,[215,230],"유형익히기 - 인수분해"],
+  [28,[231,248],"유형익히기 - 인수분해 심화"],
+  [29,[249,264],"유형익히기 - 복잡한 인수분해"],
+  [30,[265,279],"시험에 꼭 나오는 문제"],
+  [33,[280,299],"교과서문제 - 복소수"],
+  [34,[300,320],"유형익히기 - 복소수 연산"],
+  [35,[321,345],"유형익히기 - 복소수 심화"],
+  [36,[346,375],"시험에 꼭 나오는 문제"],
+  [39,[376,395],"교과서문제 - 이차방정식"],
+  [40,[396,415],"유형익히기 - 이차방정식"],
+  [41,[416,443],"유형익히기 - 이차방정식 심화"],
+  [42,[444,465],"유형익히기 - 판별식·근과계수"],
+  [43,[466,480],"시험에 꼭 나오는 문제"],
+  [46,[481,499],"교과서문제 - 이차함수"],
+  [47,[500,520],"유형익히기 - 이차함수"],
+  [48,[521,545],"유형익히기 - 이차함수 심화"],
+  [49,[546,566],"시험에 꼭 나오는 문제"],
+];
+// 567~1184 8문제씩
+(()=>{
+  const unitName=n=>n>=1093?'행렬':n>=1001?'조합':n>=911?'경우의수·순열':n>=775?'이차부등식':n>=629?'연립일차부등식':'여러가지방정식';
+  for(let s=567;s<=1184;s+=8){
+    const e=Math.min(s+7,1184);
+    PAGE_MAP.push([null,[s,e],unitName(s)]);
+  }
+})();
+
 const UNITS=[
   {id:1,name:'다항식의 연산',r:[1,110],c:'#FF5722'},
   {id:2,name:'항등식과 나머지정리',r:[111,195],c:'#8E44AD'},
@@ -499,189 +1636,30 @@ const UNITS=[
   {id:11,name:'조합',r:[1001,1092],c:'#E74C3C'},
   {id:12,name:'행렬',r:[1093,1184],c:'#3498DB'},
 ];
-
+const NUMS=['①','②','③','④','⑤'];
 let YT_CHANNEL_ID='';
 function ytUrl(n){
   const q=encodeURIComponent(`RPM 공통수학1 ${String(n).padStart(4,'0')}번 풀이`);
-  return YT_CHANNEL_ID?`https://www.youtube.com/results?search_query=${q}&channel=${YT_CHANNEL_ID}`
-    :`https://www.youtube.com/results?search_query=${q}`;
+  return YT_CHANNEL_ID?`https://www.youtube.com/results?search_query=${q}&channel=${YT_CHANNEL_ID}`:`https://www.youtube.com/results?search_query=${q}`;
 }
 
-const ANS={
-  1:'(1)3x³y²+2x²y-5xy³+y-7 (2)-7+(2x²+1)y+3x³y²-5xy³',
-  2:'3x²-xy+4y²',3:'2x²+7xy+3y²',4:'5x²+5xy+4y²',
-  5:'(1)x²-2xy+8y² (2)-10x²+14xy-14y²',
-  6:'(1)-2x³-x²+2x+6 (2)-x³-3x²+4x+7 (3)4x³+x²-2',
-  7:'2a³-6a²+12a',8:'x³+2x²-2x+3',9:'2a³-5a²b-17ab²+20b³',
-  10:'4x²+20x+25',11:'9x²-12x+4',12:'9x²-y²',13:'x²+5x+6',
-  14:'6x²+7x-20',15:'4x²+y²+9z²-4xy+6yz-12zx',
-  16:'x³+3x²+3x+1',17:'x³-6x²y+12xy²-8y³',
-  18:'a³+8',19:'27x³-1',20:'x³+6x²+11x+6',
-  21:'a³-b³+3ab+1',22:'16x⁴+36x²y²+81y⁴',
-  23:'(1)13 (2)45',24:'(1)22 (2)-100',25:'(1)14 (2)52',
-  26:'(1)14 (2)10√2',27:'(1)14 (2)34',
-  28:'㈎6 ㈏6 ㈐6 ㈑6 ㈒1',
-  29:'몫:2x²-2x-2, 나머지:3',30:'몫:2x-1, 나머지:4x+4',
-  31:'몫:3x²+3x+1, 나머지:2x+2',
-  32:'3x³-x²+4x+3=(x²+1)(3x-1)+x+4',
-  33:'2x³+x-3=(x²-x-1)(2x+2)+5x-1',
-  34:'㈎-1 ㈏0 ㈐-1 ㈑-3 ㈒-2 ㈓x²+3x-3 ㈔-2',
-  35:'몫:x²+x+1, 나머지:0',36:'몫:3x²+2x+6, 나머지:8',
-  37:'몫:2x²+2x+4, 나머지:-3',
-  38:'6x²+8xy-10y²',39:'x²+4xy-2y²',40:'④',
-  41:'0',42:'④',43:'5',44:'10',45:'20',
-  46:'⑤',47:'④',48:'-2',49:'18',50:'③',
-  51:'a²-b²-c⁴+2bc²',52:'x⁴-8x³+14x²+8x-15',
-  53:'108',54:'④',55:'10',56:'30√3',57:'47',
-  58:'⑤',59:'①',60:'②',61:'-2',62:'40',
-  63:'③',64:'32',65:'①',66:'④',67:'③',
-  68:'8',69:'9',70:'15',71:'⑤',72:'x²-x+5',
-  73:'몫:2x-1, 나머지:0',74:'x²-4x+7',
-  75:'몫:x+4, 나머지:2x',76:'몫:1/3Q(x), 나머지:R',
-  77:'④',78:'①',79:'19',80:'8',81:'②',82:'①',
-  83:'19',84:'125',85:'5',86:'52cm²',87:'47',
-  88:'④',89:'150',90:'②',91:'③',92:'⑤',93:'-3',
-  94:'③',95:'④',96:'⑤',97:'32-12√6',
-  98:'x²+3x-1',99:'x+4',100:'몫:2Q(x), 나머지:R',
-  101:'3',102:'④',103:'18',104:'2',105:'6',
-  106:'60',107:'②',108:'71/8',109:'6',110:'4',
-  111:'ㄴ,ㄹ,ㅁ',112:'a=4,b=-1,c=2',113:'a=6,b=3,c=-6',
-  114:'a=3/2,b=-2,c=-1/2',115:'a=1,b=3,c=-1',
-  116:'a=2,b=-3,c=6',117:'a=-3,b=1',118:'a=6,b=3,c=-1',
-  119:'(1)-2 (2)-66',120:'(1)-1 (2)17/4',
-  121:'3',122:'(1)4 (2)-20',123:'a=4,b=1',124:'2',
-  125:'3',126:'14',127:'③',128:'①',129:'84',
-  130:'2',131:'-1',132:'③',133:'④',134:'35',
-  135:'②',136:'-15',137:'32',138:'⑤',139:'④',
-  140:'60',141:'④',142:'-2',143:'2',144:'-1',
-  145:'5',146:'⑤',147:'⑤',148:'-x+16',149:'5x-6',
-  150:'-x²+2x+2',151:'2',152:'②',153:'-6',154:'②',
-  155:'-2',156:'②',157:'②',158:'18',159:'2',
-  160:'-20',161:'⑤',162:'3',163:'-6',164:'⑤',
-  165:'-4',166:'②',167:'100',168:'-1',169:'②',
-  170:'③',171:'97',172:'3',173:'-1',174:'3',
-  175:'5',176:'①',177:'-5',178:'①',179:'-6',
-  180:'-2',181:'-11',182:'3',183:'1',184:'①',
-  185:'3',186:'⑤',187:'x+1',188:'2',189:'2',
-  190:'6',191:'-27',192:'-18',193:'-6',194:'⑤',195:'-4',
-  196:'2a(a+2b²)',197:'(x-1)(y-1)',198:'(a+b)(c-d)',
-  199:'(2x+5y)²',200:'(8x+3y)(8x-3y)',201:'3(3a+4b)(3a-4b)',
-  202:'(x+2)(x+6)',203:'(x+2)(3x-4)',204:'(2x+3y)(3x-2y)',
-  205:'(a-b+c)²',206:'(x+y+1)²',207:'(x-2)³',
-  208:'(x+3y)³',209:'(x-2)(x²+2x+4)',
-  210:'(2a+3b)(4a²-6ab+9b²)',211:'(a²+a+1)(a²-a+1)',
-  212:'(x²+2xy+4y²)(x²-2xy+4y²)',
-  213:'(a-b+c)(a²+b²+c²+ab+bc-ca)',
-  214:'(x+y+1)(x²+y²+1-xy-x-y)',
-  215:'x(x-1)',216:'(x²+5x+8)(x²+5x-2)',
-  217:'(x+1)(x-1)(x²+6)',218:'(x²+x+5)(x²-x+5)',
-  219:'(x-y-1)(x-y-2)',220:'(y-a)(x+y+a)',
-  221:'(x-1)(x+2)(x-3)',222:'(x+1)(x-2)(x²-2x+3)',
-  223:'③',224:'-36',225:'③',226:'③',227:'②',
-  228:'①',229:'③',230:'4',231:'④',232:'1',
-  233:'-3',234:'10',235:'⑤',236:'5',237:'④',
-  238:'(x+1)(x-3)(x-y)',239:'①',240:'-1',
-  241:'(a+b)(b+c)(c+a)',242:'①',243:'②',244:'6',
-  245:'⑤',246:'⑤',247:'⑤',248:'22',249:'⑤',250:'③',
-  251:'④',252:'③',253:'④',254:'51',255:'180',
-  256:'24',257:'5/3',258:'9999',259:'③',260:'③',
-  261:'524',262:'⑤',263:'b=c인 이등변삼각형',264:'⑤',
-  265:'②',266:'②',267:'8',268:'④',269:'④',
-  270:'3(x-y)(y-z)(z-x)',271:'①',272:'⑤',
-  273:'6',274:'-220',275:'②',276:'22',277:'16',
-  278:'3',279:'√3',
-  280:'실수부분:0, 허수부분:4',281:'실수부분:1+√2, 허수부분:0',
-  282:'실수부분:-5, 허수부분:√3',283:'실수부분:3/2, 허수부분:-1/2',
-  284:'(1)ㄷ,ㅁ,ㅂ (2)ㄱ,ㄴ,ㄹ (3)ㄱ,ㄴ',
-  285:'x=2,y=0',286:'x=1,y=5',287:'x=2,y=2',
-  288:'-5-7i',289:'-3i-1',290:'-i',291:'7',
-  292:'3+7i',293:'3+5i',294:'11-2i',295:'1-4i',
-  296:'i',297:'-i',298:'i',299:'2',
-  300:'√3i',301:'5i',302:'-4√2i',303:'±i',304:'±2√2i',
-  305:'-4',306:'-√5i',307:'√3',308:'-3√2+√2/2·i',
-  309:'③④',310:'3',311:'20',312:'-7+14i',313:'②',
-  314:'③',315:'21',316:'1',317:'①',318:'③',
-  319:'-5',320:'⑤',321:'8/25',322:'-32',323:'-292i',
-  324:'4',325:'-3',326:'1',327:'④',328:'1',
-  329:'-11',330:'19',331:'②',332:'ㄱ,ㄴ',333:'②',
-  334:'-1',335:'3+2i',336:'④',337:'2±√3i',338:'3',
-  339:'④',340:'-1',341:'⑤',342:'103',343:'③',
-  344:'0',345:'1',346:'③',347:'⑤',348:'4',
-  349:'0',350:'x²-4',351:'-a-2b',352:'3',353:'②',
-  354:'ㄱ',355:'④',356:'④',357:'5',358:'5+13i',
-  359:'④',360:'-i',361:'⑤',362:'-4-3i',
-  363:'-4',364:'③',365:'5',366:'⑤',367:'13',
-  368:'12',369:'②',370:'③',371:'2',372:'20',
-  373:'-d',374:'100-i',375:'24',
-  376:'x=1 또는 x=4',377:'x=-1/2 또는 x=3/5',
-  378:'x=(-3±√5)/2',379:'x=4±2√3i',
-  380:'x=-1/2 또는 x=4, 실근',381:'x=3/2, 실근',
-  382:'x=-1±√2i, 허근',383:'(1)ㄱ,ㅂ (2)ㄷ,ㄹ (3)ㄴ,ㅁ',
-  384:'(1)k<9/4 (2)k=9/4 (3)k>9/4',
-  385:'(1)-2 (2)-2 (3)8 (4)12',
-  386:'x²-x-2=0',387:'x²-6x+1=0',388:'x²-4x+5=0',
-  389:'(x+1-√5)(x+1+√5)',390:'(x+5i)(x-5i)',
-  391:'2(x-(3+√7i)/4)(x-(3-√7i)/4)',
-  392:'a=-4,b=1',393:'a=-6,b=13',394:'④',
-  395:'18',396:'④',397:'1',398:'2',399:'-3',
-  400:'④',401:'14',402:'-1',403:'x=-1-√3 또는 x=1+√3',
-  404:'③',405:'-2+√2',406:'3',407:'200cm²',408:'③',
-  409:'②',410:'④',411:'-1',412:'12',413:'③',
-  414:'서로 다른 두 허근',415:'서로 다른 두 실근',
-  416:'①',417:'3',418:'⑤',419:'18',420:'⑤',
-  421:'2/3',422:'√13',423:'③',424:'44',425:'③',
-  426:'21/2',427:'2',428:'②',429:'-10',430:'1',
-  431:'⑤',432:'5',433:'2',434:'3',435:'②',
-  436:'②',437:'③',438:'18',439:'a=-6,b=1',
-  440:'13',441:'①',442:'2x²-5x+2=0',443:'5/2',
-  444:'2',445:'-2',446:'x=-6 또는 x=2',
-  447:'x=-8 또는 x=3',448:'1',449:'①',450:'3/2',
-  451:'①',452:'-69',453:'①',454:'-1',455:'10초',
-  456:'120m',457:'②',458:'8',459:'1',460:'ㄱ,ㄴ',
-  461:'정삼각형',462:'-19/10',463:'6',464:'③',
-  465:'2',466:'x²-8x-20=0',467:'①',
-  468:'⑤',469:'③',470:'x=(1±√17)/2',471:'-4/3',
-  472:'-1',473:'⑤',474:'6',475:'1/2·bc',
-  476:'x²-3x+2=0',477:'-1',478:'ㄱ,ㄴ,ㄷ',479:'1',480:'-1',
-  481:'0,2',482:'1,3',483:'2',484:'0',485:'1',
-  486:'(1)k<4 (2)k=4 (3)k>4',487:'k≤9',
-  488:'-3,-1',489:'2',490:'만나지 않는다.',
-  491:'서로 다른 두 점에서 만난다.',492:'한 점에서 만난다.(접한다.)',
-  493:'(1)k>-8 (2)k=-8 (3)k<-8',494:'k≤1/8',
-  495:'최댓값:1, 최솟값:-3',496:'최댓값:7, 최솟값:-1',
-  497:'최댓값:6, 최솟값:2',498:'최댓값:9, 최솟값:-7',
-  499:'최댓값:17/2, 최솟값:-2',
-  500:'①',501:'72',502:'4',503:'-7',504:'⑤',
-  505:'③',506:'(3,28)',507:'④',508:'8',509:'1/2',
-  510:'0',511:'1',512:'8',513:'1',514:'21/4',
-  515:'⑤',516:'-1',517:'28',518:'y=2',519:'1',
-  520:'④',521:'120',522:'16',523:'-5',524:'-3',
-  525:'1',526:'4',527:'8',528:'①',529:'5',
-  530:'-4',531:'②',532:'16',533:'①',534:'24',
-  535:'2/3',536:'50',537:'-1',538:'20',539:'63m',
-  540:'15',541:'1200m²',542:'18m',543:'40명',
-  544:'②',545:'-13',546:'10',547:'②',548:'5',
-  549:'②',550:'③',551:'-2',552:'-8/3',553:'7',
-  554:'10',555:'4',556:'⑤',557:'3',558:'-2',
-  559:'⑤',560:'1',561:'9b',562:'-23',563:'11/2',
-  564:'4/9',565:'③',566:'2',
-};
-
 // ── STATE ──
-let curUser=null,records={},curUnit=null,curList=[],curIdx=0,checked=false;
-let ansType='obj', mathValue='', selectedChoice=null;
+let curUser=null,records={};
+let curUnit=null,curUnitPages=[];  // 현재 단원의 페이지들
+let curPageIdx=0;                  // 현재 페이지 인덱스 (curUnitPages 내)
+let curPageQs=[];                  // 현재 페이지의 문제번호들
+let userSelections={};             // { qNum: choiceIdx }
+let graded=false;
 
 // ── AUTH ──
 async function doLogin(){
   const em=document.getElementById('lemail').value.trim();
   const pw=document.getElementById('lpassword').value;
   document.getElementById('lerr').textContent='';
-  try{
-    const {auth,signInWithEmailAndPassword}=window._fb;
-    await signInWithEmailAndPassword(auth,em,pw);
-  }catch(e){ document.getElementById('lerr').textContent='이메일 또는 비밀번호가 올바르지 않습니다.'; }
+  try{ await window._fb.signInWithEmailAndPassword(window._fb.auth,em,pw); }
+  catch(e){ document.getElementById('lerr').textContent='이메일 또는 비밀번호가 올바르지 않습니다.'; }
 }
-async function doLogout(){const {auth,signOut}=window._fb;await signOut(auth);location.reload();}
+async function doLogout(){ await window._fb.signOut(window._fb.auth); location.reload(); }
 
 window.addEventListener('load',()=>{
   const {auth,onAuthStateChanged,db,doc,getDoc}=window._fb;
@@ -710,15 +1688,13 @@ async function loadRecords(){
   try{
     const snap=await getDoc(doc(db,'students',curUser.uid,'data','records'));
     records=snap.exists()?(snap.data().records||{}):{};
-  }catch(e){records={};}
+  }catch(e){ records={}; }
 }
-async function saveRecord(n,rec){
+async function saveRecords(batch){
   const {db,doc,setDoc,serverTimestamp}=window._fb;
-  records[n]=rec;
-  try{
-    await setDoc(doc(db,'students',curUser.uid,'data','records'),
-      {records,updatedAt:serverTimestamp()},{merge:true});
-  }catch(e){}
+  Object.assign(records,batch);
+  try{ await setDoc(doc(db,'students',curUser.uid,'data','records'),{records,updatedAt:serverTimestamp()},{merge:true}); }
+  catch(e){}
 }
 
 // ── NAV ──
@@ -726,250 +1702,267 @@ function navTo(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.bn').forEach(b=>b.classList.remove('on'));
   document.getElementById('s-'+name).classList.add('on');
-  document.getElementById('bn-'+name).classList.add('on');
-  document.getElementById('fab').classList.toggle('show',name==='quiz');
+  const bnEl=document.getElementById('bn-'+name);
+  if(bnEl) bnEl.classList.add('on');
   document.getElementById('scrollEl').scrollTop=0;
   if(name==='wrong') renderWrong();
   if(name==='stats') renderStats();
   updateHeader();
 }
-function goHome(){navTo('home');renderHome();}
 
 // ── HOME ──
 function renderHome(){
+  navTo('home');
   const all=Object.keys(records).map(Number);
   const tot=all.length,ok=all.filter(n=>records[n]?.correct===true).length;
-  const ng=tot-ok,rt=tot>0?Math.round(ok/tot*100)+'%':'-';
   document.getElementById('hs-tot').textContent=tot;
   document.getElementById('hs-ok').textContent=ok;
-  document.getElementById('hs-ng').textContent=ng;
-  document.getElementById('hs-rt').textContent=rt;
-  const grid=document.getElementById('unitGrid');
-  grid.innerHTML='';
+  document.getElementById('hs-ng').textContent=tot-ok;
+  document.getElementById('hs-rt').textContent=tot>0?Math.round(ok/tot*100)+'%':'-';
+  const grid=document.getElementById('unitGrid'); grid.innerHTML='';
   UNITS.forEach(u=>{
     const total=u.r[1]-u.r[0]+1;
     const solved=all.filter(n=>n>=u.r[0]&&n<=u.r[1]).length;
     const okCnt=all.filter(n=>n>=u.r[0]&&n<=u.r[1]&&records[n]?.correct===true).length;
-    const prog=Math.round(solved/total*100);
-    const rate=solved>0?Math.round(okCnt/solved*100)+'%':'-';
-    const el=document.createElement('div');
-    el.className='unit-card';
+    const el=document.createElement('div'); el.className='unit-card';
     el.style.setProperty('--unit-c',u.c);
     el.innerHTML=`
       <div class="ubadge">${String(u.id).padStart(2,'0')}</div>
       <div class="uinfo">
         <div class="uname">${u.name}</div>
         <div class="urange">${u.r[0]}~${u.r[1]}번 · ${total}문제</div>
-        <div class="ubar"><div class="ubar-fill" style="width:${prog}%"></div></div>
+        <div class="ubar"><div class="ubar-fill" style="width:${Math.round(solved/total*100)}%"></div></div>
       </div>
-      <div class="uright"><div class="upct">${rate}</div><div class="ucnt">${solved}/${total}</div></div>`;
-    el.onclick=()=>startUnit(u);
+      <div class="uright">
+        <div class="upct">${solved>0?Math.round(okCnt/solved*100)+'%':'-'}</div>
+        <div class="ucnt">${solved}/${total}</div>
+      </div>`;
+    el.onclick=()=>openUnit(u);
     grid.appendChild(el);
   });
 }
 
-// ── QUIZ ──
-function startUnit(u){
-  curUnit=u;curList=[];curIdx=0;
-  for(let n=u.r[0];n<=u.r[1];n++) curList.push(n);
-  const fi=curList.findIndex(n=>!records[n]);
-  if(fi>=0) curIdx=fi;
-  document.getElementById('qUnitTitle').textContent=`${String(u.id).padStart(2,'0')}. ${u.name}`;
-  navTo('quiz');renderQ();
+// ── UNIT 페이지 목록 ──
+function openUnit(u){
+  curUnit=u;
+  curUnitPages=PAGE_MAP.filter(p=>p[1][0]>=u.r[0]&&p[1][1]<=u.r[1]);
+  document.getElementById('unitPageTitle').textContent=`${String(u.id).padStart(2,'0')}. ${u.name}`;
+  renderPageList();
+  navTo('unit');
 }
 
-function renderQ(){
-  const n=curList[curIdx];
-  const tot=curList.length;
-  document.getElementById('progFill').style.width=Math.round((curIdx+1)/tot*100)+'%';
-  document.getElementById('qCounter').textContent=`${curIdx+1}/${tot}`;
-  document.getElementById('qNumLbl').textContent=String(n).padStart(4,'0');
-  const u=UNITS.find(u=>n>=u.r[0]&&n<=u.r[1])||{name:''};
-  document.getElementById('qUnitTag').textContent=u.name;
-  const pos=curIdx/curList.length;
-  document.getElementById('qTypeTag').textContent=pos<0.33?'기본':pos<0.66?'유형':'심화';
-  resetInput();
-  renderQGrid();
+function renderPageList(){
+  const all=Object.keys(records).map(Number);
+  const list=document.getElementById('pageList'); list.innerHTML='';
+  curUnitPages.forEach((p,i)=>{
+    const [pdf,[qs,qe],title]=p;
+    const qNums=[];
+    for(let n=qs;n<=qe;n++) qNums.push(n);
+    const solved=qNums.filter(n=>records[n]).length;
+    const ok=qNums.filter(n=>records[n]?.correct===true).length;
+    const allDone=solved===qNums.length;
+    const el=document.createElement('div');
+    el.className=`page-item${allDone?' done':solved>0?' partial':''}`;
+    const scoreColor=allDone&&ok===qNums.length?'var(--green)':solved>0?'var(--primary)':'var(--muted)';
+    el.innerHTML=`
+      <div class="pi-num">P${i+1}</div>
+      <div class="pi-info">
+        <div class="pi-title">${title}</div>
+        <div class="pi-range">${qs}~${qe}번 · ${qNums.length}문제${pdf?` (교재 ${pdf}쪽)`:''}</div>
+      </div>
+      <div class="pi-right">
+        <div class="pi-score" style="color:${scoreColor}">${solved>0?ok+'/'+qNums.length:'-'}</div>
+        <div class="pi-cnt">${solved>0?Math.round(ok/qNums.length*100)+'%':''}</div>
+      </div>`;
+    el.onclick=()=>startPage(i);
+    list.appendChild(el);
+  });
+}
+
+// ── QUIZ - 페이지 단위 ──
+function startPage(pageIdx){
+  curPageIdx=pageIdx;
+  const [pdf,[qs,qe],title]=curUnitPages[pageIdx];
+  curPageQs=[];
+  for(let n=qs;n<=qe;n++) curPageQs.push(n);
+  userSelections={};
+  graded=false;
+
+  document.getElementById('qPageTitle').textContent=title;
+  document.getElementById('qPageCounter').textContent=`${pageIdx+1}/${curUnitPages.length}`;
+  document.getElementById('progFill').style.width=Math.round((pageIdx+1)/curUnitPages.length*100)+'%';
+  document.getElementById('resultSummary').style.display='none';
+  document.getElementById('gradeBtn').className='grade-btn';
+  document.getElementById('gradeBtn').disabled=true;
+  document.getElementById('gradeBtn').textContent='채점하기';
+
+  renderQItems();
+  navTo('quiz');
+}
+
+function renderQItems(){
+  const wrap=document.getElementById('qItemsWrap'); wrap.innerHTML='';
+  curPageQs.forEach(n=>{
+    const cd=CHOICES[n];
+    const rec=records[n];
+    const item=document.createElement('div');
+    item.className='q-item'+(rec?.correct===true?' correct':rec?.correct===false?' wrong':'');
+    item.id=`qi-${n}`;
+
+    const statusTxt=rec?.correct===true?'✅ 정답':rec?.correct===false?'❌ 오답':'미풀이';
+    const statusCls=rec?.correct===true?'ok':rec?.correct===false?'ng':'';
+    item.innerHTML=`
+      <div class="q-head">
+        <div class="q-head-left">
+          <div class="q-num">${String(n).padStart(4,'0')}</div>
+        </div>
+        <div class="q-status ${statusCls}" id="qs-${n}">${statusTxt}</div>
+      </div>
+      <div class="q-choices" id="qc-${n}"></div>`;
+    wrap.appendChild(item);
+
+    // 선택지 렌더링
+    const choiceWrap=document.getElementById(`qc-${n}`);
+    if(cd){
+      const row=document.createElement('div'); row.className='choice-row-q';
+      cd.c.forEach((txt,i)=>{
+        const btn=document.createElement('button');
+        btn.className='choice-btn-q';
+        btn.dataset.n=n; btn.dataset.i=i;
+        // 이전 기록 반영
+        if(rec&&rec.correct!==null){
+          if(i===cd.a) btn.classList.add('correct');
+          else if(rec.userAns===cd.c[i]&&rec.correct===false) btn.classList.add('wrong');
+          btn.disabled=true;
+        }
+        btn.innerHTML=`<div class="cn">${NUMS[i]}</div><div class="ct">${esc(txt)}</div>`;
+        btn.onclick=()=>selectQ(n,i);
+        row.appendChild(btn);
+      });
+      choiceWrap.appendChild(row);
+    } else {
+      choiceWrap.innerHTML='<div style="padding:10px;font-size:12px;color:var(--muted);">교재에서 확인하세요</div>';
+    }
+  });
+  updateGradeBar();
+}
+
+function selectQ(n,idx){
+  if(graded) return;
+  userSelections[n]=idx;
+  // 버튼 UI 업데이트
+  document.querySelectorAll(`.choice-btn-q[data-n="${n}"]`).forEach((btn,i)=>{
+    btn.classList.toggle('selected', i===idx);
+  });
+  updateGradeBar();
+}
+
+function updateGradeBar(){
+  const total=curPageQs.length;
+  const answered=Object.keys(userSelections).length;
+  // 이미 채점된 문제 포함
+  const prevAnswered=curPageQs.filter(n=>records[n]&&records[n].correct!==null).length;
+  const effectiveAnswered=answered+(prevAnswered-curPageQs.filter(n=>records[n]&&records[n].correct!==null&&userSelections[n]!==undefined).length);
+
+  const newAnswers=curPageQs.filter(n=>!records[n]||records[n].correct===null).length;
+  const myAnswers=Object.keys(userSelections).filter(n=>!records[n]||records[n].correct===null).length;
+
+  document.getElementById('gradeInfo').innerHTML=
+    `<b>${myAnswers}</b>/${newAnswers} 답 선택됨`;
+  document.getElementById('gradeBtn').disabled=(myAnswers===0);
+}
+
+function gradeAll(){
+  if(Object.keys(userSelections).length===0) return;
+  graded=true;
+  const batch={};
+  let ok=0, ng=0;
+
+  curPageQs.forEach(n=>{
+    const cd=CHOICES[n];
+    if(!cd) return;
+    const sel=userSelections[n];
+    if(sel===undefined) return; // 이미 채점된 것은 건드리지 않음
+
+    const isOk=(sel===cd.a);
+    if(isOk) ok++; else ng++;
+
+    batch[n]={correct:isOk, userAns:cd.c[sel], correctAns:cd.c[cd.a], ts:Date.now()};
+
+    // UI 반영
+    const item=document.getElementById(`qi-${n}`);
+    if(item){
+      item.classList.remove('correct','wrong');
+      item.classList.add(isOk?'correct':'wrong');
+    }
+    const statusEl=document.getElementById(`qs-${n}`);
+    if(statusEl){ statusEl.textContent=isOk?'✅ 정답':'❌ 오답'; statusEl.className=`q-status ${isOk?'ok':'ng'}`; }
+
+    document.querySelectorAll(`.choice-btn-q[data-n="${n}"]`).forEach((btn,i)=>{
+      btn.classList.remove('selected');
+      if(i===cd.a) btn.classList.add('correct');
+      else if(i===sel&&!isOk) btn.classList.add('wrong');
+      btn.disabled=true;
+    });
+  });
+
+  saveRecords(batch);
+  updateHeader();
+
+  // 결과 요약
+  const total=Object.keys(userSelections).length;
+  document.getElementById('rs-total').textContent=total;
+  document.getElementById('rs-ok').textContent=ok;
+  document.getElementById('rs-ng').textContent=ng;
+  document.getElementById('resultSummary').style.display='block';
+  document.getElementById('gradeBtn').textContent='채점 완료 ✓';
+  document.getElementById('gradeBtn').className='grade-btn done';
+  document.getElementById('gradeBtn').disabled=true;
   document.getElementById('scrollEl').scrollTop=0;
 }
 
-function resetInput(){
-  setType('obj');
-  document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');
-  selectedChoice=null;
-  mathValue='';
-  updateMathDisplay();
-  document.getElementById('resultBox').className='result';
-  document.getElementById('ytBtn').style.display='none';
-  document.getElementById('mathDisplay').className='math-display';
-  document.getElementById('checkBtn').textContent='✓ 채점하기';
-  checked=false;
+function retryPage(){
+  // 현재 페이지 기록 초기화 후 다시 풀기
+  curPageQs.forEach(n=>{ delete records[n]; });
+  userSelections={};
+  graded=false;
+  document.getElementById('resultSummary').style.display='none';
+  document.getElementById('gradeBtn').className='grade-btn';
+  document.getElementById('gradeBtn').disabled=true;
+  document.getElementById('gradeBtn').textContent='채점하기';
+  renderQItems();
 }
 
-function setType(t){
-  ansType=t;
-  document.getElementById('tab-obj').classList.toggle('on',t==='obj');
-  document.getElementById('tab-sub').classList.toggle('on',t==='sub');
-  document.getElementById('obj-area').style.display=t==='obj'?'block':'none';
-  document.getElementById('sub-area').style.display=t==='sub'?'block':'none';
-}
-
-// 객관식: 선택 즉시 채점
-function selectChoice(btn){
-  if(checked) return;
-  document.querySelectorAll('.choice-btn').forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected');
-  selectedChoice=btn.dataset.v;
-  onCheck();
-}
-
-// 수식 키보드
-function kb(v){
-  if(checked) return;
-  mathValue+=v;
-  updateMathDisplay();
-}
-function kbDel(){if(checked)return;mathValue=mathValue.slice(0,-1);updateMathDisplay();}
-function kbClear(){if(checked)return;mathValue='';updateMathDisplay();}
-
-function onHiddenKey(e){
-  if(checked)return;
-  if(e.key==='Backspace'){kbDel();e.preventDefault();}
-  else if(e.key==='Enter'){onCheck();e.preventDefault();}
-}
-function onHiddenInput(e){
-  if(checked)return;
-  const v=e.target.value;
-  if(v){mathValue+=v;e.target.value='';updateMathDisplay();}
-}
-
-function updateMathDisplay(){
-  const d=document.getElementById('mathDisplay');
-  if(mathValue){
-    d.innerHTML=`<span style="font-size:18px;letter-spacing:1px;">${esc(mathValue)}</span><span class="cursor"></span>`;
+function nextPage(){
+  if(curPageIdx<curUnitPages.length-1){
+    startPage(curPageIdx+1);
   } else {
-    d.innerHTML='<span class="math-placeholder">수식 키보드로 답 입력</span>';
-  }
-}
-function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
-// ── 채점 ──
-function onCheck(){
-  if(checked) return;
-  let userAns='';
-  if(ansType==='obj'){
-    if(!selectedChoice) return;
-    userAns=selectedChoice;
-  } else {
-    if(!mathValue.trim()) return;
-    userAns=mathValue.trim();
-  }
-  const n=curList[curIdx];
-  const correct=ANS[n];
-  const isOk=correct?matchAns(userAns,correct):null;
-  checked=true;
-  document.getElementById('checkBtn').textContent='다음으로 →';
-
-  if(ansType==='obj'){
-    document.querySelectorAll('.choice-btn').forEach(b=>{
-      const v=b.dataset.v;
-      if(correct&&matchAns(v,correct)) b.classList.add('correct');
-      else if(v===userAns&&!isOk) b.classList.add('wrong');
-    });
-  } else {
-    const d=document.getElementById('mathDisplay');
-    d.classList.remove('focus');
-    d.classList.add(isOk===null?'ok':isOk?'ok':'ng');
-  }
-
-  const box=document.getElementById('resultBox');
-  if(isOk===null){
-    box.className='result show ok';
-    document.getElementById('rIcon').textContent='📝';
-    document.getElementById('rTitle').textContent='저장되었습니다';
-    document.getElementById('rAns').textContent='교재에서 정답을 확인하세요';
-    saveRecord(n,{correct:null,userAns,ts:Date.now()});
-  } else if(isOk){
-    box.className='result show ok';
-    document.getElementById('rIcon').textContent='🎉';
-    document.getElementById('rTitle').textContent='정답입니다!';
-    document.getElementById('rAns').textContent='';
-    saveRecord(n,{correct:true,userAns,ts:Date.now()});
-  } else {
-    box.className='result show ng';
-    document.getElementById('rIcon').textContent='😢';
-    document.getElementById('rTitle').textContent='틀렸습니다';
-    document.getElementById('rAns').innerHTML=`정답: <b>${correct}</b>`;
-    saveRecord(n,{correct:false,userAns,correctAns:correct,ts:Date.now()});
-    const yt=document.getElementById('ytBtn');
-    yt.href=ytUrl(n);yt.style.display='flex';
-  }
-  updateHeader();renderQGrid();
-}
-
-function matchAns(u,c){
-  const nm=s=>s.replace(/\s+/g,'').toLowerCase().replace(/×/g,'*').replace(/÷/g,'/').replace(/－/g,'-').replace(/＋/g,'+');
-  if(nm(u)===nm(c)) return true;
-  const m={'①':'1','②':'2','③':'3','④':'4','⑤':'5'};
-  const r={'1':'①','2':'②','3':'③','4':'④','5':'⑤'};
-  if(m[u]&&nm(m[u])===nm(c)) return true;
-  if(r[u]&&nm(r[u])===nm(c)) return true;
-  if(m[c]&&nm(u)===nm(m[c])) return true;
-  return false;
-}
-
-function prevQ(){if(curIdx>0){curIdx--;renderQ();}}
-function nextQ(){
-  if(curIdx<curList.length-1){curIdx++;renderQ();}
-  else{
-    const ok=curList.filter(n=>records[n]?.correct===true).length;
-    alert(`🎊 단원 완료!\n정답 ${ok} / 전체 ${curList.length}문제`);
-    goHome();
+    alert('🎊 단원 완료! 모든 페이지를 풀었어요!');
+    renderPageList();
+    navTo('unit');
   }
 }
 
-function renderQGrid(){
-  const g=document.getElementById('qgrid');g.innerHTML='';
-  curList.forEach((n,i)=>{
-    const rec=records[n];
-    let cls='un';
-    if(rec?.correct===true) cls='ok';
-    else if(rec?.correct===false) cls='ng';
-    const btn=document.createElement('button');
-    btn.className=`qg-btn ${cls}${i===curIdx?' cur':''}`;
-    btn.textContent=String(n).slice(-3).padStart(3,'0');
-    btn.onclick=()=>{curIdx=i;renderQ();closeSheet();};
-    g.appendChild(btn);
-  });
-}
-function openSheet(){document.getElementById('overlay').classList.add('show');renderQGrid();}
-function closeSheet(){document.getElementById('overlay').classList.remove('show');}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ── WRONG ──
 function renderWrong(){
   const wrong=Object.keys(records).filter(k=>records[k]?.correct===false).map(Number).sort((a,b)=>a-b);
   document.getElementById('wrongSub').textContent=wrong.length>0?`틀린 문제 ${wrong.length}개`:'틀린 문제 없음 👍';
-  const list=document.getElementById('wrongList');list.innerHTML='';
-  if(!wrong.length){list.innerHTML='<div class="empty"><div class="ei">✅</div><p>오답 노트가 비어있어요!</p></div>';return;}
+  const list=document.getElementById('wrongList'); list.innerHTML='';
+  if(!wrong.length){ list.innerHTML='<div class="empty"><div class="ei">✅</div><p>오답 노트가 비어있어요!</p></div>'; return; }
   wrong.forEach(n=>{
     const rec=records[n];
     const u=UNITS.find(u=>n>=u.r[0]&&n<=u.r[1])||{name:'?'};
-    const el=document.createElement('div');el.className='wi';
+    const el=document.createElement('div'); el.className='wi';
     el.innerHTML=`
       <div class="wi-top"><span class="wi-num">문항 ${String(n).padStart(4,'0')}</span><span class="wi-unit">${u.name}</span></div>
-      <div class="wi-ans">내 답: <span class="m">${rec.userAns||'?'}</span> → 정답: <span class="c">${rec.correctAns||ANS[n]||'?'}</span></div>
+      <div class="wi-ans">내 답: <span class="m">${esc(rec.userAns||'?')}</span> → 정답: <span class="c">${esc(rec.correctAns||'?')}</span></div>
       <div class="wi-btns">
         <a class="wibtn wibtn-yt" href="${ytUrl(n)}" target="_blank">▶ 해설</a>
-        <button class="wibtn wibtn-retry" onclick="retryQ(${n})">다시 풀기</button>
       </div>`;
     list.appendChild(el);
   });
-}
-function retryQ(n){
-  const u=UNITS.find(u=>n>=u.r[0]&&n<=u.r[1]);if(!u)return;
-  curUnit=u;curList=[n];curIdx=0;
-  document.getElementById('qUnitTitle').textContent=`복습: ${String(n).padStart(4,'0')}번`;
-  navTo('quiz');renderQ();
 }
 
 // ── STATS ──
@@ -977,22 +1970,19 @@ function renderStats(){
   const all=Object.keys(records).map(Number);
   const tot=all.length,ok=all.filter(n=>records[n]?.correct===true).length;
   const ng=all.filter(n=>records[n]?.correct===false).length;
-  const rt=tot>0?Math.round(ok/tot*100):0;
   document.getElementById('st-tot').textContent=tot;
   document.getElementById('st-ok').textContent=ok;
   document.getElementById('st-ng').textContent=ng;
-  document.getElementById('st-rt').textContent=rt+'%';
-  const ul=document.getElementById('ustatList');ul.innerHTML='';
+  document.getElementById('st-rt').textContent=tot>0?Math.round(ok/tot*100)+'%':'0%';
+  const ul=document.getElementById('ustatList'); ul.innerHTML='';
   UNITS.forEach(u=>{
     const nums=all.filter(n=>n>=u.r[0]&&n<=u.r[1]);
     const c=nums.filter(n=>records[n]?.correct===true).length;
-    const t=nums.length,totalU=u.r[1]-u.r[0]+1;
-    const pct=t>0?Math.round(c/t*100):0;
-    const prog=Math.round(t/totalU*100);
-    const el=document.createElement('div');el.className='ustat';
+    const t=nums.length,total=u.r[1]-u.r[0]+1;
+    const el=document.createElement('div'); el.className='ustat';
     el.innerHTML=`
-      <div class="ustat-top"><span>${String(u.id).padStart(2,'0')} ${u.name}</span><span style="color:${u.c}">${t}/${totalU} · ${pct}%</span></div>
-      <div class="ustat-bar"><div class="ustat-fill" style="width:${prog}%;background:${u.c}"></div></div>`;
+      <div class="ustat-top"><span>${String(u.id).padStart(2,'0')} ${u.name}</span><span style="color:${u.c}">${t}/${total} · ${t>0?Math.round(c/t*100):0}%</span></div>
+      <div class="ustat-bar"><div class="ustat-fill" style="width:${Math.round(t/total*100)}%;background:${u.c}"></div></div>`;
     ul.appendChild(el);
   });
 }
