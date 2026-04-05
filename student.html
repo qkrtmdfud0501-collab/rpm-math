@@ -987,15 +987,17 @@ function openAiSol(n){
     document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">키 확인 중...</div>';
     document.getElementById('sol-popup').classList.remove('hide');
     var dbReady=typeof DB!=='undefined'&&DB;
+    console.log('[AI] DB ready:', dbReady, 'cache:', geminiKeyCache?'있음':'없음');
     var p=dbReady
       ? DB.collection('settings').doc('gemini').get().then(function(doc){
+          console.log('[AI] Firebase 응답 - exists:', doc.exists, 'data:', doc.exists?JSON.stringify(doc.data()):'없음');
           if(doc.exists&&doc.data().apiKey){
             geminiKeyCache=doc.data().apiKey;
             localStorage.setItem('gemini_key',geminiKeyCache);
             return geminiKeyCache;
           }
           return null;
-        }).catch(function(){return null;})
+        }).catch(function(e){console.log('[AI] Firebase 오류:', e.message);return null;})
       : Promise.resolve(null);
     p.then(function(k){
       if(k){
