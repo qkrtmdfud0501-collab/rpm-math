@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>RPM 수학 학습</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+  // ── Firebase 설정 (config.js에서 관리) ──
+  // 실제 배포 시 아래 값을 Firebase 콘솔에서 발급받은 값으로 교체
+  const firebaseConfig = {
+    apiKey: "AIzaSyARHy35Dd2n0Fw1sUs-U4zY0BY9WVneMJ4",
+    authDomain: "rpm-57f1a.firebaseapp.com",
+    projectId: "rpm-57f1a",
+    storageBucket: "rpm-57f1a.firebasestorage.app",
+    messagingSenderId: "681087068656",
+    appId: "1:681087068656:web:68c9d3ef6df32dceb89535"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  // 전역으로 노출
+  window._fb = { auth, db, signInWithEmailAndPassword, signOut, onAuthStateChanged,
+    doc, getDoc, setDoc, updateDoc, collection, addDoc, serverTimestamp };
+</script>
+<style>
+/* ════════════════════════════════════
+   DESIGN SYSTEM
+════════════════════════════════════ */
+:root {
+  --bg:      #F0F3F8;
+  --surface: #FFFFFF;
+  --dark:    #1A1D2E;
+  --navy:    #252A4A;
+  --primary: #FF4D1C;
+  --orange:  #FF8C42;
+  --green:   #26D07C;
+  --red:     #FF3B5C;
+  --gold:    #FFB800;
+  --muted:   #8B95A7;
+  --border:  #E8ECF4;
+  --r:       14px;
+  --shadow:  0 4px 20px rgba(26,29,46,0.08);
+  --shadow-sm: 0 2px 8px rgba(26,29,46,0.06);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;font-family:'Noto Sans KR',sans-serif;color:var(--dark);background:var(--bg);}
+
+/* ─ LAYOUT ─ */
+#app{display:flex;flex-direction:column;height:100%;overflow:hidden;}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.scroll::-webkit-scrollbar{width:3px;}
+.scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* ─ TOP BAR ─ */
+.topbar{
+  background:var(--dark);padding:0 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:56px;flex-shrink:0;
+  box-shadow:0 2px 12px rgba(0,0,0,0.25);z-index:50;
+}
+.tbar-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--primary);letter-spacing:2px;}
+.tbar-user{display:flex;align-items:center;gap:10px;}
+.tbar-name{font-size:12px;color:rgba(255,255,255,0.65);}
+.tbar-pills{display:flex;gap:6px;}
+.pill{
+  background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);
+  border-radius:20px;padding:4px 10px;font-size:11px;color:white;
+  display:flex;align-items:center;gap:4px;
+}
+.pill b{color:var(--gold);}
+.logout-btn{
+  background:none;border:1px solid rgba(255,255,255,0.2);
+  border-radius:8px;padding:5px 10px;color:rgba(255,255,255,0.6);
+  font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;
+}
+
+/* ─ BOTTOM NAV ─ */
+.bnav{
+  background:var(--surface);border-top:1px solid var(--border);
+  display:flex;flex-shrink:0;
+  box-shadow:0 -4px 16px rgba(0,0,0,0.05);
+}
+.bn{
+  flex:1;border:none;background:none;cursor:pointer;
+  padding:10px 4px 8px;display:flex;flex-direction:column;
+  align-items:center;gap:3px;
+  font-family:'Noto Sans KR',sans-serif;font-size:10px;color:var(--muted);
+  transition:color .2s;
+}
+.bn .ico{font-size:21px;transition:transform .2s;}
+.bn.on{color:var(--primary);}
+.bn.on .ico{transform:scale(1.15);}
+
+/* ─ SCREENS ─ */
+.screen{display:none;padding:16px;animation:fadeIn .2s ease;}
+.screen.on{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ─ LOGIN SCREEN ─ */
+#s-login{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-height:100%;gap:0;padding:40px 24px;
+}
+.login-card{
+  width:100%;max-width:380px;background:var(--surface);
+  border-radius:24px;padding:36px 32px;box-shadow:var(--shadow);
+}
+.login-logo{
+  text-align:center;margin-bottom:28px;
+}
+.login-logo .big{font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--primary);letter-spacing:4px;}
+.login-logo .sub{font-size:13px;color:var(--muted);margin-top:-4px;}
+.lfield{margin-bottom:14px;}
+.lfield label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;}
+.linput{
+  width:100%;border:2px solid var(--border);border-radius:10px;
+  padding:12px 14px;font-size:14px;font-family:'Noto Sans KR',sans-serif;
+  outline:none;transition:border-color .2s;background:white;
+}
+.linput:focus{border-color:var(--primary);}
+.lbtn{
+  width:100%;background:var(--primary);color:white;border:none;
+  border-radius:10px;padding:14px;font-size:15px;font-weight:700;
+  font-family:'Noto Sans KR',sans-serif;cursor:pointer;margin-top:6px;
+  transition:opacity .2s;
+}
+.lbtn:active{opacity:.85;}
+.lerr{font-size:12px;color:var(--red);margin-top:10px;text-align:center;}
+
+/* ─ HOME ─ */
+.home-banner{
+  background:linear-gradient(135deg,var(--dark) 0%,var(--navy) 100%);
+  border-radius:var(--r);padding:20px;margin-bottom:14px;color:white;
+  position:relative;overflow:hidden;
+}
+.home-banner::before{
+  content:'RPM';position:absolute;right:-10px;top:-10px;
+  font-family:'Bebas Neue',sans-serif;font-size:120px;color:rgba(255,255,255,0.04);
+  line-height:1;pointer-events:none;
+}
+.hb-name{font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:2px;}
+.hb-title{font-size:20px;font-weight:900;}
+.hb-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;}
+.hb-stat{background:rgba(255,255,255,0.08);border-radius:10px;padding:10px;text-align:center;}
+.hb-stat .n{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--orange);line-height:1;}
+.hb-stat .l{font-size:9px;color:rgba(255,255,255,0.5);margin-top:2px;}
+
+.sec-title{font-size:14px;font-weight:700;margin-bottom:10px;
+  display:flex;align-items:center;gap:8px;}
+.sec-title::before{content:'';width:3px;height:16px;background:var(--primary);border-radius:2px;}
+
+.unit-grid{display:flex;flex-direction:column;gap:8px;}
+.unit-card{
+  background:var(--surface);border-radius:var(--r);padding:14px 16px;
+  display:flex;align-items:center;gap:14px;cursor:pointer;
+  border:2px solid transparent;box-shadow:var(--shadow-sm);
+  transition:all .2s;
+}
+.unit-card:hover{border-color:var(--unit-c);transform:translateX(3px);}
+.unit-card:active{transform:scale(.98);}
+.ubadge{
+  width:44px;height:44px;border-radius:11px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;font-size:18px;color:white;
+  background:var(--unit-c);
+}
+.uinfo{flex:1;min-width:0;}
+.uname{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.urange{font-size:11px;color:var(--muted);margin-top:1px;}
+.ubar{height:4px;background:var(--bg);border-radius:2px;margin-top:6px;overflow:hidden;}
+.ubar-fill{height:100%;border-radius:2px;background:var(--unit-c);transition:width .5s;}
+.uright{text-align:right;flex-shrink:0;}
+.upct{font-size:13px;font-weight:700;color:var(--unit-c);}
+.ucnt{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* ─ QUIZ ─ */
+.quiz-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.back-btn{
+  width:36px;height:36px;border:none;background:var(--surface);
+  border-radius:10px;cursor:pointer;font-size:18px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--shadow-sm);
+}
+.quiz-title{font-size:14px;font-weight:700;flex:1;}
+.quiz-counter{font-size:12px;color:var(--muted);white-space:nowrap;}
+
+.progbar{height:6px;background:var(--border);border-radius:3px;margin-bottom:14px;overflow:hidden;}
+.progfill{height:100%;background:linear-gradient(90deg,var(--primary),var(--gold));border-radius:3px;transition:width .35s;}
+
+/* 문제 카드 */
+.qcard{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:12px;}
+.qcard-top{
+  background:linear-gradient(135deg,var(--dark),var(--navy));
+  padding:10px 16px;display:flex;justify-content:space-between;align-items:center;
+}
+.qnum{font-family:'Bebas Neue',sans-serif;font-size:20px;color:white;}
+.qtags{display:flex;gap:5px;}
+.qtag{font-size:10px;color:rgba(255,255,255,0.65);background:rgba(255,255,255,0.1);border-radius:6px;padding:2px 8px;}
+
+.qbody{padding:20px;min-height:160px;}
+/* PDF 이미지 표시 */
+.qbody img{width:100%;border-radius:8px;display:block;}
+/* 텍스트 폴백 */
+.qtext{font-size:14px;line-height:1.9;color:var(--dark);}
+.qtext .notice{
+  text-align:center;padding:16px;background:var(--bg);
+  border-radius:10px;color:var(--muted);font-size:13px;
+}
+.qnum-big{
+  font-family:'Bebas Neue',sans-serif;font-size:48px;
+  color:var(--primary);line-height:1;
+}
+
+/* 답 입력 */
+.ans-wrap{padding:0 16px 16px;}
+.ans-label{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:7px;letter-spacing:.5px;text-transform:uppercase;}
+.ans-row{display:flex;gap:8px;}
+.ans-input{
+  flex:1;border:2px solid var(--border);border-radius:10px;
+  padding:12px 14px;font-size:15px;
+  font-family:'Noto Sans KR',sans-serif;outline:none;
+  transition:border-color .2s;background:white;
+}
+.ans-input:focus{border-color:var(--primary);}
+.ans-input.ok{border-color:var(--green);background:#F0FFF7;}
+.ans-input.ng{border-color:var(--red);background:#FFF5F7;}
+.check-btn{
+  padding:12px 18px;border:none;border-radius:10px;
+  background:var(--primary);color:white;
+  font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;
+  cursor:pointer;white-space:nowrap;transition:all .2s;flex-shrink:0;
+}
+.check-btn:active{transform:scale(.96);}
+
+/* 결과 */
+.result{display:none;margin-top:10px;border-radius:10px;padding:12px 14px;}
+.result.show{display:flex;gap:10px;align-items:flex-start;}
+.result.ok{background:#EDFFF5;border:1px solid #B2F5D0;}
+.result.ng{background:#FFF5F7;border:1px solid #FFD0DA;}
+.r-icon{font-size:24px;flex-shrink:0;}
+.r-body{flex:1;}
+.r-title{font-size:14px;font-weight:700;margin-bottom:2px;}
+.r-ans{font-size:13px;color:var(--muted);}
+.r-ans b{color:var(--green);}
+
+/* 유튜브 버튼 */
+.yt-btn{
+  display:flex;align-items:center;gap:8px;
+  background:#FF0000;color:white;border:none;
+  border-radius:8px;padding:10px 16px;margin-top:10px;
+  font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;text-decoration:none;width:fit-content;
+  transition:opacity .2s;
+}
+.yt-btn:active{opacity:.85;}
+
+/* 이전/다음 */
+.qnav{display:flex;gap:8px;padding:0 16px 16px;}
+.qnav-btn{
+  flex:1;padding:13px;border-radius:10px;border:none;
+  font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;
+  cursor:pointer;transition:all .2s;
+}
+.qnav-prev{background:var(--border);color:var(--dark);}
+.qnav-next{background:var(--primary);color:white;}
+.qnav-next:active{transform:scale(.97);}
+
+/* 목록 모달 */
+.fab{
+  position:fixed;bottom:74px;right:14px;z-index:99;
+  width:50px;height:50px;border-radius:50%;
+  background:var(--primary);color:white;border:none;
+  font-size:20px;cursor:pointer;display:none;
+  align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(255,77,28,.4);
+  transition:transform .2s;
+}
+.fab.show{display:flex;}
+.fab:active{transform:scale(.92);}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;}
+.overlay.show{display:flex;}
+.sheet{
+  background:var(--surface);border-radius:20px 20px 0 0;width:100%;
+  max-height:70vh;display:flex;flex-direction:column;
+  animation:slideUp .25s ease;
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-head{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;flex-shrink:0;
+}
+.sheet-head h3{font-size:15px;font-weight:700;}
+.sheet-close{
+  width:28px;height:28px;border:none;background:var(--border);
+  border-radius:50%;cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+}
+.sheet-body{overflow-y:auto;padding:12px;flex:1;}
+.qgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
+.qg-btn{
+  aspect-ratio:1;border-radius:8px;border:none;cursor:pointer;
+  font-size:11px;font-weight:700;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;
+}
+.qg-btn.un{background:var(--border);color:var(--dark);}
+.qg-btn.ok{background:#B2F5D0;color:#1A6640;}
+.qg-btn.ng{background:#FFD0DA;color:#8B1A2E;}
+.qg-btn.cur{outline:2.5px solid var(--primary);outline-offset:1px;}
+
+/* 손글씨 */
+.canvas-card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:12px;}
+.canvas-bar{
+  padding:8px 12px;background:#F7F8FA;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.canvas-bar-lbl{font-size:11px;font-weight:600;color:var(--muted);flex-shrink:0;}
+.ctool{
+  width:28px;height:28px;border:1px solid var(--border);border-radius:6px;
+  background:white;cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.ctool.on{background:var(--primary);color:white;border-color:var(--primary);}
+.cclr{
+  width:20px;height:20px;border-radius:50%;cursor:pointer;
+  border:2px solid white;box-shadow:0 0 0 1px var(--border);transition:box-shadow .15s;
+}
+.cclr.on{box-shadow:0 0 0 2px var(--primary);}
+canvas#cvs{display:block;width:100%;touch-action:none;background:#FFFDF0;cursor:crosshair;}
+
+/* 오답노트 */
+.wrong-banner{
+  background:linear-gradient(135deg,#8B1A2E,var(--red));
+  border-radius:var(--r);padding:16px;margin-bottom:14px;color:white;
+}
+.wrong-banner h2{font-size:16px;font-weight:700;}
+.wrong-banner p{font-size:12px;opacity:.75;margin-top:3px;}
+.wrong-list{display:flex;flex-direction:column;gap:8px;}
+.wi{
+  background:var(--surface);border-radius:12px;
+  border-left:4px solid var(--red);padding:14px 16px;box-shadow:var(--shadow-sm);
+}
+.wi-top{display:flex;justify-content:space-between;margin-bottom:7px;}
+.wi-num{font-size:13px;font-weight:700;color:var(--red);}
+.wi-unit{font-size:11px;color:var(--muted);}
+.wi-ans{font-size:12px;margin-bottom:9px;}
+.wi-ans .m{color:var(--red);font-weight:600;}
+.wi-ans .c{color:var(--green);font-weight:600;}
+.wi-btns{display:flex;gap:7px;}
+.wibtn{
+  padding:6px 13px;border-radius:7px;border:none;
+  font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:600;cursor:pointer;
+  text-decoration:none;display:inline-flex;align-items:center;gap:4px;
+}
+.wibtn-yt{background:var(--red);color:white;}
+.wibtn-retry{background:var(--border);color:var(--dark);}
+
+/* 통계 */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.scard{background:var(--surface);border-radius:var(--r);padding:16px;text-align:center;box-shadow:var(--shadow-sm);}
+.scard .sn{font-family:'Bebas Neue',sans-serif;font-size:42px;line-height:1;}
+.scard .sl{font-size:11px;color:var(--muted);margin-top:1px;}
+.ustat-list{display:flex;flex-direction:column;gap:7px;}
+.ustat{background:var(--surface);border-radius:10px;padding:12px 14px;box-shadow:var(--shadow-sm);}
+.ustat-top{display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:6px;}
+.ustat-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.ustat-fill{height:100%;border-radius:2px;}
+
+/* empty */
+.empty{text-align:center;padding:48px 20px;color:var(--muted);}
+.empty .ei{font-size:48px;margin-bottom:12px;}
+.empty p{font-size:13px;line-height:1.7;}
+
+/* responsive – PC */
+@media(min-width:768px){
+  #app{flex-direction:row;}
+  .topbar{display:none;}
+  .bnav{
+    flex-direction:column;width:80px;height:100%;
+    border-top:none;border-right:1px solid var(--border);
+    padding:20px 0;
+  }
+  .bn{padding:14px 4px;font-size:9px;}
+  .bn .ico{font-size:24px;}
+  .scroll{padding:0;}
+  .screen{max-width:720px;margin:0 auto;padding:24px;}
+  .fab{bottom:24px;}
+
+  /* PC 전용 사이드 로고 */
+  .bnav::before{
+    content:'RPM';font-family:'Bebas Neue',sans-serif;
+    font-size:18px;color:var(--primary);letter-spacing:2px;
+    display:block;text-align:center;padding:0 0 20px;
+    border-bottom:1px solid var(--border);margin-bottom:10px;
+  }
+}
+</style>
+</head>
+<body>
+<div id="app" style="display:none;">
+
+  <!-- ─ TOP BAR (모바일) ─ -->
+  <div class="topbar">
+    <div>
+      <div class="tbar-logo">RPM 数学</div>
+    </div>
+    <div class="tbar-user">
+      <div class="tbar-pills">
+        <div class="pill">✅ <b id="hc">0</b></div>
+        <div class="pill">❌ <b id="hw">0</b></div>
+      </div>
+      <div class="tbar-name" id="tbarName"></div>
+      <button class="logout-btn" onclick="doLogout()">로그아웃</button>
+    </div>
+  </div>
+
+  <!-- ─ SCROLL ─ -->
+  <div class="scroll" id="scrollEl">
+
+    <!-- LOGIN (auth 없을 때) -->
+    <div id="s-login" style="display:none;">
+      <div class="login-card">
+        <div class="login-logo">
+          <div class="big">RPM</div>
+          <div class="sub">공통수학 1 · 학습 시스템</div>
+        </div>
+        <div class="lfield">
+          <label>이메일</label>
+          <input class="linput" type="email" id="lemail" placeholder="student@school.com">
+        </div>
+        <div class="lfield">
+          <label>비밀번호</label>
+          <input class="linput" type="password" id="lpassword" placeholder="비밀번호 입력"
+            onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <button class="lbtn" onclick="doLogin()">로그인</button>
+        <div class="lerr" id="lerr"></div>
+      </div>
+    </div>
+
+    <!-- HOME -->
+    <div class="screen on" id="s-home">
+      <div class="home-banner">
+        <div class="hb-name" id="hbName">안녕하세요</div>
+        <div class="hb-title">오늘도 열심히 공부해요! 📚</div>
+        <div class="hb-stats">
+          <div class="hb-stat"><div class="n" id="hs-tot">0</div><div class="l">총 풀이</div></div>
+          <div class="hb-stat"><div class="n" id="hs-ok">0</div><div class="l">정답</div></div>
+          <div class="hb-stat"><div class="n" id="hs-ng">0</div><div class="l">오답</div></div>
+          <div class="hb-stat"><div class="n" id="hs-rt">-</div><div class="l">정답률</div></div>
+        </div>
+      </div>
+      <div class="sec-title">단원 선택</div>
+      <div class="unit-grid" id="unitGrid"></div>
+    </div>
+
+    <!-- QUIZ -->
+    <div class="screen" id="s-quiz">
+      <div class="quiz-header">
+        <button class="back-btn" onclick="goHome()">←</button>
+        <div class="quiz-title" id="qUnitTitle">단원</div>
+        <div class="quiz-counter" id="qCounter">1/1</div>
+      </div>
+      <div class="progbar"><div class="progfill" id="progFill" style="width:5%"></div></div>
+
+      <div class="qcard">
+        <div class="qcard-top">
+          <span class="qnum" id="qNumLbl">0001</span>
+          <div class="qtags">
+            <span class="qtag" id="qUnitTag"></span>
+            <span class="qtag" id="qTypeTag"></span>
+          </div>
+        </div>
+        <!-- 문제 본문: PDF 이미지 또는 텍스트 -->
+        <div class="qbody" id="qBody"></div>
+        <!-- 답 입력 -->
+        <div class="ans-wrap">
+          <div class="ans-label">정답 입력</div>
+          <div class="ans-row">
+            <input class="ans-input" type="text" id="ansInput"
+              placeholder="답 입력 (①②③ 또는 숫자/식)"
+              onkeydown="if(event.key==='Enter')onCheck()">
+            <button class="check-btn" id="checkBtn" onclick="onCheck()">채점</button>
+          </div>
+          <div class="result" id="resultBox">
+            <div class="r-icon" id="rIcon"></div>
+            <div class="r-body">
+              <div class="r-title" id="rTitle"></div>
+              <div class="r-ans" id="rAns"></div>
+            </div>
+          </div>
+          <a class="yt-btn" id="ytBtn" href="#" target="_blank" style="display:none">
+            ▶ 해설 영상 보기
+          </a>
+        </div>
+        <div class="qnav">
+          <button class="qnav-btn qnav-prev" onclick="prevQ()">← 이전</button>
+          <button class="qnav-btn qnav-next" id="nextBtn" onclick="nextQ()">다음 →</button>
+        </div>
+      </div>
+
+      <!-- 손글씨 -->
+      <div class="canvas-card">
+        <div class="canvas-bar">
+          <span class="canvas-bar-lbl">✏ 풀이</span>
+          <div style="display:flex;gap:5px;">
+            <button class="ctool on" id="tPen" onclick="setTool('pen')">✏️</button>
+            <button class="ctool" id="tErase" onclick="setTool('erase')">🧹</button>
+            <button class="ctool" onclick="clearCvs()">🗑️</button>
+          </div>
+          <div style="display:flex;gap:5px;" id="clrGroup">
+            <div class="cclr on" style="background:#222" data-c="#222222" onclick="setClr(this)"></div>
+            <div class="cclr" style="background:#FF3B5C" data-c="#FF3B5C" onclick="setClr(this)"></div>
+            <div class="cclr" style="background:#2980B9" data-c="#2980B9" onclick="setClr(this)"></div>
+            <div class="cclr" style="background:#26D07C" data-c="#26D07C" onclick="setClr(this)"></div>
+            <div class="cclr" style="background:#8E44AD" data-c="#8E44AD" onclick="setClr(this)"></div>
+          </div>
+          <select id="szSel" onchange="pSz=+this.value"
+            style="border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:11px;background:white;">
+            <option value="2">얇게</option>
+            <option value="4" selected>보통</option>
+            <option value="8">굵게</option>
+            <option value="14">매우굵게</option>
+          </select>
+        </div>
+        <canvas id="cvs" height="200"></canvas>
+      </div>
+    </div>
+
+    <!-- WRONG -->
+    <div class="screen" id="s-wrong">
+      <div class="wrong-banner">
+        <h2>❌ 오답 노트</h2>
+        <p id="wrongSub">틀린 문제를 복습하세요</p>
+      </div>
+      <div class="wrong-list" id="wrongList"></div>
+    </div>
+
+    <!-- STATS -->
+    <div class="screen" id="s-stats">
+      <div style="font-size:18px;font-weight:900;margin-bottom:14px;">📊 학습 통계</div>
+      <div class="stats-grid">
+        <div class="scard"><div class="sn" id="st-tot">0</div><div class="sl">총 풀이</div></div>
+        <div class="scard"><div class="sn" id="st-rt" style="color:var(--primary)">0%</div><div class="sl">정답률</div></div>
+        <div class="scard"><div class="sn" id="st-ok" style="color:var(--green)">0</div><div class="sl">정답</div></div>
+        <div class="scard"><div class="sn" id="st-ng" style="color:var(--red)">0</div><div class="sl">오답</div></div>
+      </div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:9px;">단원별 성취도</div>
+      <div class="ustat-list" id="ustatList"></div>
+    </div>
+
+  </div><!-- /scroll -->
+
+  <!-- ─ BOTTOM NAV ─ -->
+  <div class="bnav">
+    <button class="bn on" id="bn-home" onclick="navTo('home')"><span class="ico">🏠</span><span>단원</span></button>
+    <button class="bn" id="bn-quiz" onclick="navTo('quiz')"><span class="ico">📖</span><span>문제</span></button>
+    <button class="bn" id="bn-wrong" onclick="navTo('wrong')"><span class="ico">❌</span><span>오답</span></button>
+    <button class="bn" id="bn-stats" onclick="navTo('stats')"><span class="ico">📊</span><span>통계</span></button>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fab" onclick="openSheet()">≡</button>
+
+<!-- 문제 목록 시트 -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeSheet()">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h3>문제 목록</h3>
+      <button class="sheet-close" onclick="closeSheet()">✕</button>
+    </div>
+    <div class="sheet-body"><div class="qgrid" id="qgrid"></div></div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+//  CONSTANTS
+// ════════════════════════════════════════════
+const UNITS=[
+  {id:1, name:'다항식의 연산',r:[1,110],c:'#FF5722'},
+  {id:2, name:'항등식과 나머지정리',r:[111,195],c:'#8E44AD'},
+  {id:3, name:'인수분해',r:[196,279],c:'#2980B9'},
+  {id:4, name:'복소수',r:[280,375],c:'#16A085'},
+  {id:5, name:'이차방정식',r:[376,480],c:'#E67E22'},
+  {id:6, name:'이차방정식과 이차함수',r:[481,566],c:'#C0392B'},
+  {id:7, name:'여러 가지 방정식',r:[567,628],c:'#1ABC9C'},
+  {id:8, name:'연립일차부등식',r:[629,774],c:'#F39C12'},
+  {id:9, name:'이차부등식과 연립이차부등식',r:[775,910],c:'#9B59B6'},
+  {id:10,name:'경우의 수와 순열',r:[911,1000],c:'#27AE60'},
+  {id:11,name:'조합',r:[1001,1092],c:'#E74C3C'},
+  {id:12,name:'행렬',r:[1093,1184],c:'#3498DB'},
+];
+
+// 유튜브 설정 – 관리자 페이지에서 설정한 채널 ID를 Firestore에서 읽어옴
+let YT_CHANNEL_ID = '';   // 예: UCxxxxxxxx
+let YT_CHANNEL_NAME = 'RPM 수학';
+function ytUrl(n){
+  const q = encodeURIComponent(`RPM 공통수학1 ${String(n).padStart(4,'0')}번 풀이`);
+  if(YT_CHANNEL_ID)
+    return `https://www.youtube.com/results?search_query=${q}&sp=EgIQAQ%253D%253D` +
+           `&channel=${YT_CHANNEL_ID}`;
+  return `https://www.youtube.com/results?search_query=${q}`;
+}
+
+// 정답 DB (빠른정답 PDF 전체 수록)
+const ANS={
+  1:'(1)3x³y²+2x²y-5xy³+y-7 (2)-7+(2x²+1)y+3x³y²-5xy³',
+  2:'3x²-xy+4y²',3:'2x²+7xy+3y²',4:'5x²+5xy+4y²',
+  5:'(1)x²-2xy+8y² (2)-10x²+14xy-14y²',
+  6:'(1)-2x³-x²+2x+6 (2)-x³-3x²+4x+7 (3)4x³+x²-2',
+  7:'2a³-6a²+12a',8:'x³+2x²-2x+3',9:'2a³-5a²b-17ab²+20b³',
+  10:'4x²+20x+25',11:'9x²-12x+4',12:'9x²-y²',13:'x²+5x+6',
+  14:'6x²+7x-20',15:'4x²+y²+9z²-4xy+6yz-12zx',
+  16:'x³+3x²+3x+1',17:'x³-6x²y+12xy²-8y³',
+  18:'a³+8',19:'27x³-1',20:'x³+6x²+11x+6',
+  21:'a³-b³+3ab+1',22:'16x⁴+36x²y²+81y⁴',
+  23:'(1)13 (2)45',24:'(1)22 (2)-100',25:'(1)14 (2)52',
+  26:'(1)14 (2)10√2',27:'(1)14 (2)34',
+  28:'㈎6 ㈏6 ㈐6 ㈑6 ㈒1',
+  29:'몫:2x²-2x-2, 나머지:3',30:'몫:2x-1, 나머지:4x+4',
+  31:'몫:3x²+3x+1, 나머지:2x+2',
+  32:'3x³-x²+4x+3=(x²+1)(3x-1)+x+4',
+  33:'2x³+x-3=(x²-x-1)(2x+2)+5x-1',
+  34:'㈎-1 ㈏0 ㈐-1 ㈑-3 ㈒-2 ㈓x²+3x-3 ㈔-2',
+  35:'몫:x²+x+1, 나머지:0',36:'몫:3x²+2x+6, 나머지:8',
+  37:'몫:2x²+2x+4, 나머지:-3',
+  38:'6x²+8xy-10y²',39:'x²+4xy-2y²',40:'④',
+  41:'0',42:'④',43:'5',44:'10',45:'20',
+  46:'⑤',47:'④',48:'-2',49:'18',50:'③',
+  51:'a²-b²-c⁴+2bc²',52:'x⁴-8x³+14x²+8x-15',
+  53:'108',54:'④',55:'10',56:'30√3',57:'47',
+  58:'⑤',59:'①',60:'②',61:'-2',62:'40',
+  63:'③',64:'32',65:'①',66:'④',67:'③',
+  68:'8',69:'9',70:'15',71:'⑤',72:'x²-x+5',
+  73:'몫:2x-1, 나머지:0',74:'x²-4x+7',
+  75:'몫:x+4, 나머지:2x',76:'몫:1/3Q(x), 나머지:R',
+  77:'④',78:'①',79:'19',80:'8',81:'②',82:'①',
+  83:'19',84:'125',85:'5',86:'52cm²',87:'47',
+  88:'④',89:'150',90:'②',91:'③',92:'⑤',93:'-3',
+  94:'③',95:'④',96:'⑤',97:'32-12√6',
+  98:'x²+3x-1',99:'x+4',100:'몫:2Q(x), 나머지:R',
+  101:'3',102:'④',103:'18',104:'2',105:'6',
+  106:'60',107:'②',108:'71/8',109:'6',110:'4',
+  111:'ㄴ,ㄹ,ㅁ',112:'a=4,b=-1,c=2',113:'a=6,b=3,c=-6',
+  114:'a=3/2,b=-2,c=-1/2',115:'a=1,b=3,c=-1',
+  116:'a=2,b=-3,c=6',117:'a=-3,b=1',118:'a=6,b=3,c=-1',
+  119:'(1)-2 (2)-66',120:'(1)-1 (2)17/4',
+  121:'3',122:'(1)4 (2)-20',123:'a=4,b=1',124:'2',
+  125:'3',126:'14',127:'③',128:'①',129:'84',
+  130:'2',131:'-1',132:'③',133:'④',134:'35',
+  135:'②',136:'-15',137:'32',138:'⑤',139:'④',
+  140:'60',141:'④',142:'-2',143:'2',144:'-1',
+  145:'5',146:'⑤',147:'⑤',148:'-x+16',149:'5x-6',
+  150:'-x²+2x+2',151:'2',152:'②',153:'-6',154:'②',
+  155:'-2',156:'②',157:'②',158:'18',159:'2',
+  160:'-20',161:'⑤',162:'3',163:'-6',164:'⑤',
+  165:'-4',166:'②',167:'100',168:'-1',169:'②',
+  170:'③',171:'97',172:'3',173:'-1',174:'3',
+  175:'5',176:'①',177:'-5',178:'①',179:'-6',
+  180:'-2',181:'-11',182:'3',183:'1',184:'①',
+  185:'3',186:'⑤',187:'x+1',188:'2',189:'2',
+  190:'6',191:'-27',192:'-18',193:'-6',194:'⑤',195:'-4',
+  196:'2a(a+2b²)',197:'(x-1)(y-1)',198:'(a+b)(c-d)',
+  199:'(2x+5y)²',200:'(8x+3y)(8x-3y)',201:'3(3a+4b)(3a-4b)',
+  202:'(x+2)(x+6)',203:'(x+2)(3x-4)',204:'(2x+3y)(3x-2y)',
+  205:'(a-b+c)²',206:'(x+y+1)²',207:'(x-2)³',
+  208:'(x+3y)³',209:'(x-2)(x²+2x+4)',
+  210:'(2a+3b)(4a²-6ab+9b²)',211:'(a²+a+1)(a²-a+1)',
+  212:'(x²+2xy+4y²)(x²-2xy+4y²)',
+  213:'(a-b+c)(a²+b²+c²+ab+bc-ca)',
+  214:'(x+y+1)(x²+y²+1-xy-x-y)',
+  215:'x(x-1)',216:'(x²+5x+8)(x²+5x-2)',
+  217:'(x+1)(x-1)(x²+6)',218:'(x²+x+5)(x²-x+5)',
+  219:'(x-y-1)(x-y-2)',220:'(y-a)(x+y+a)',
+  221:'(x-1)(x+2)(x-3)',222:'(x+1)(x-2)(x²-2x+3)',
+  223:'③',224:'-36',225:'③',226:'③',227:'②',
+  228:'①',229:'③',230:'4',231:'④',232:'1',
+  233:'-3',234:'10',235:'⑤',236:'5',237:'④',
+  238:'(x+1)(x-3)(x-y)',239:'①',240:'-1',
+  241:'(a+b)(b+c)(c+a)',242:'①',243:'②',244:'6',
+  245:'⑤',246:'⑤',247:'⑤',248:'22',249:'⑤',250:'③',
+  251:'④',252:'③',253:'④',254:'51',255:'180',
+  256:'24',257:'5/3',258:'9999',259:'③',260:'③',
+  261:'524',262:'⑤',263:'b=c인 이등변삼각형',264:'⑤',
+  265:'②',266:'②',267:'8',268:'④',269:'④',
+  270:'3(x-y)(y-z)(z-x)',271:'①',272:'⑤',
+  273:'6',274:'-220',275:'②',276:'22',277:'16',
+  278:'3',279:'√3',
+  280:'실수부분:0, 허수부분:4',281:'실수부분:1+√2, 허수부분:0',
+  282:'실수부분:-5, 허수부분:√3',283:'실수부분:3/2, 허수부분:-1/2',
+  284:'(1)ㄷ,ㅁ,ㅂ (2)ㄱ,ㄴ,ㄹ (3)ㄱ,ㄴ',
+  285:'x=2,y=0',286:'x=1,y=5',287:'x=2,y=2',
+  288:'-5-7i',289:'-3i-1',290:'-i',291:'7',
+  292:'3+7i',293:'3+5i',294:'11-2i',295:'1-4i',
+  296:'i',297:'-i',298:'i',299:'2',
+  300:'√3i',301:'5i',302:'-4√2i',303:'±i',304:'±2√2i',
+  305:'-4',306:'-√5i',307:'√3',308:'-3√2+√2/2·i',
+  309:'③④',310:'3',311:'20',312:'-7+14i',313:'②',
+  314:'③',315:'21',316:'1',317:'①',318:'③',
+  319:'-5',320:'⑤',321:'8/25',322:'-32',323:'-292i',
+  324:'4',325:'-3',326:'1',327:'④',328:'1',
+  329:'-11',330:'19',331:'②',332:'ㄱ,ㄴ',333:'②',
+  334:'-1',335:'3+2i',336:'④',337:'2±√3i',338:'3',
+  339:'④',340:'-1',341:'⑤',342:'103',343:'③',
+  344:'0',345:'1',346:'③',347:'⑤',348:'4',
+  349:'0',350:'x²-4',351:'-a-2b',352:'3',353:'②',
+  354:'ㄱ',355:'④',356:'④',357:'5',358:'5+13i',
+  359:'④',360:'-i',361:'⑤',362:'-4-3i',
+  363:'-4',364:'③',365:'5',366:'⑤',367:'13',
+  368:'12',369:'②',370:'③',371:'2',372:'20',
+  373:'-d',374:'100-i',375:'24',
+  376:'x=1 또는 x=4',377:'x=-1/2 또는 x=3/5',
+  378:'x=(-3±√5)/2',379:'x=4±2√3i',
+  380:'x=-1/2 또는 x=4, 실근',381:'x=3/2, 실근',
+  382:'x=-1±√2i, 허근',383:'(1)ㄱ,ㅂ (2)ㄷ,ㄹ (3)ㄴ,ㅁ',
+  384:'(1)k<9/4 (2)k=9/4 (3)k>9/4',
+  385:'(1)-2 (2)-2 (3)8 (4)12',
+  386:'x²-x-2=0',387:'x²-6x+1=0',388:'x²-4x+5=0',
+  389:'(x+1-√5)(x+1+√5)',390:'(x+5i)(x-5i)',
+  391:'2(x-(3+√7i)/4)(x-(3-√7i)/4)',
+  392:'a=-4,b=1',393:'a=-6,b=13',394:'④',
+  395:'18',396:'④',397:'1',398:'2',399:'-3',
+  400:'④',401:'14',402:'-1',403:'x=-1-√3 또는 x=1+√3',
+  404:'③',405:'-2+√2',406:'3',407:'200cm²',408:'③',
+  409:'②',410:'④',411:'-1',412:'12',413:'③',
+  414:'서로 다른 두 허근',415:'서로 다른 두 실근',
+  416:'①',417:'3',418:'⑤',419:'18',420:'⑤',
+  421:'2/3',422:'√13',423:'③',424:'44',425:'③',
+  426:'21/2',427:'2',428:'②',429:'-10',430:'1',
+  431:'⑤',432:'5',433:'2',434:'3',435:'②',
+  436:'②',437:'③',438:'18',439:'a=-6,b=1',
+  440:'13',441:'①',442:'2x²-5x+2=0',443:'5/2',
+  444:'2',445:'-2',446:'x=-6 또는 x=2',
+  447:'x=-8 또는 x=3',448:'1',449:'①',450:'3/2',
+  451:'①',452:'-69',453:'①',454:'-1',455:'10초',
+  456:'120m',457:'②',458:'8',459:'1',460:'ㄱ,ㄴ',
+  461:'정삼각형',462:'-19/10',463:'6',464:'③',
+  465:'2',466:'x²-8x-20=0',467:'①',
+  468:'⑤',469:'③',470:'x=(1±√17)/2',471:'-4/3',
+  472:'-1',473:'⑤',474:'6',475:'1/2·bc',
+  476:'x²-3x+2=0',477:'-1',478:'ㄱ,ㄴ,ㄷ',479:'1',480:'-1',
+  481:'0,2',482:'1,3',483:'2',484:'0',485:'1',
+  486:'(1)k<4 (2)k=4 (3)k>4',487:'k≤9',
+  488:'-3,-1',489:'2',490:'만나지 않는다.',
+  491:'서로 다른 두 점에서 만난다.',492:'한 점에서 만난다.(접한다.)',
+  493:'(1)k>-8 (2)k=-8 (3)k<-8',494:'k≤1/8',
+  495:'최댓값:1, 최솟값:-3',496:'최댓값:7, 최솟값:-1',
+  497:'최댓값:6, 최솟값:2',498:'최댓값:9, 최솟값:-7',
+  499:'최댓값:17/2, 최솟값:-2',
+  500:'①',501:'72',502:'4',503:'-7',504:'⑤',
+  505:'③',506:'(3,28)',507:'④',508:'8',509:'1/2',
+  510:'0',511:'1',512:'8',513:'1',514:'21/4',
+  515:'⑤',516:'-1',517:'28',518:'y=2',519:'1',
+  520:'④',521:'120',522:'16',523:'-5',524:'-3',
+  525:'1',526:'4',527:'8',528:'①',529:'5',
+  530:'-4',531:'②',532:'16',533:'①',534:'24',
+  535:'2/3',536:'50',537:'-1',538:'20',539:'63m',
+  540:'15',541:'1200m²',542:'18m',543:'40명',
+  544:'②',545:'-13',546:'10',547:'②',548:'5',
+  549:'②',550:'③',551:'-2',552:'-8/3',553:'7',
+  554:'10',555:'4',556:'⑤',557:'3',558:'-2',
+  559:'⑤',560:'1',561:'9b',562:'-23',563:'11/2',
+  564:'4/9',565:'③',566:'2',
+};
+
+// PDF 이미지 경로 설정 (배포 시 실제 경로로 교체)
+// 예: /images/q_0038.png 형식
+const IMG_BASE = './images/';
+function qImgPath(n){ return `${IMG_BASE}q_${String(n).padStart(4,'0')}.png`; }
+
+// ════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════
+let curUser = null;
+let records = {};   // { qNum: { correct, userAns, correctAns, ts } }
+let curUnit = null;
+let curList = [];
+let curIdx  = 0;
+let checked = false;
+
+// ════════════════════════════════════════════
+//  AUTH
+// ════════════════════════════════════════════
+async function doLogin(){
+  const em = document.getElementById('lemail').value.trim();
+  const pw = document.getElementById('lpassword').value;
+  const err = document.getElementById('lerr');
+  err.textContent = '';
+  try {
+    const {auth, signInWithEmailAndPassword} = window._fb;
+    await signInWithEmailAndPassword(auth, em, pw);
+  } catch(e){
+    err.textContent = '이메일 또는 비밀번호가 올바르지 않습니다.';
+  }
+}
+async function doLogout(){
+  const {auth, signOut} = window._fb;
+  await signOut(auth);
+  location.reload();
+}
+
+// Auth 상태 감지
+window.addEventListener('load', ()=>{
+  const {auth, onAuthStateChanged, db, doc, getDoc} = window._fb;
+  onAuthStateChanged(auth, async user=>{
+    if(!user){
+      document.getElementById('s-login').style.display='flex';
+      document.getElementById('app').style.display='none';
+      return;
+    }
+    curUser = user;
+    document.getElementById('s-login').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('tbarName').textContent = user.displayName || user.email;
+    document.getElementById('hbName').textContent =
+      `${user.displayName || user.email.split('@')[0]}님, 안녕하세요!`;
+
+    // Firestore에서 학습 기록 로드
+    await loadRecords();
+
+    // 유튜브 채널 설정 로드
+    try{
+      const snap = await getDoc(doc(db,'settings','youtube'));
+      if(snap.exists()){
+        YT_CHANNEL_ID = snap.data().channelId || '';
+        YT_CHANNEL_NAME = snap.data().channelName || 'RPM 수학';
+      }
+    }catch(e){}
+
+    renderHome();
+    updateHeader();
+  });
+});
+
+async function loadRecords(){
+  const {db, doc, getDoc} = window._fb;
+  try{
+    const snap = await getDoc(doc(db,'students',curUser.uid,'data','records'));
+    records = snap.exists() ? (snap.data().records||{}) : {};
+  }catch(e){ records = {}; }
+}
+
+async function saveRecord(n, rec){
+  const {db, doc, setDoc, serverTimestamp} = window._fb;
+  records[n] = rec;
+  try{
+    await setDoc(doc(db,'students',curUser.uid,'data','records'),
+      {records, updatedAt: serverTimestamp()}, {merge:true});
+  }catch(e){ console.warn('save failed', e); }
+}
+
+// ════════════════════════════════════════════
+//  NAV
+// ════════════════════════════════════════════
+function navTo(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.bn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('s-'+name).classList.add('on');
+  document.getElementById('bn-'+name).classList.add('on');
+  document.getElementById('fab').classList.toggle('show', name==='quiz');
+  document.getElementById('scrollEl').scrollTop=0;
+  if(name==='wrong') renderWrong();
+  if(name==='stats') renderStats();
+  updateHeader();
+}
+function goHome(){ navTo('home'); renderHome(); }
+
+// ════════════════════════════════════════════
+//  HOME
+// ════════════════════════════════════════════
+function renderHome(){
+  const all = Object.keys(records).map(Number);
+  const tot = all.length;
+  const ok  = all.filter(n=>records[n]?.correct===true).length;
+  const ng  = tot-ok;
+  const rt  = tot>0 ? Math.round(ok/tot*100)+'%' : '-';
+  document.getElementById('hs-tot').textContent = tot;
+  document.getElementById('hs-ok').textContent  = ok;
+  document.getElementById('hs-ng').textContent  = ng;
+  document.getElementById('hs-rt').textContent  = rt;
+
+  const grid = document.getElementById('unitGrid');
+  grid.innerHTML='';
+  UNITS.forEach(u=>{
+    const total= u.r[1]-u.r[0]+1;
+    const solved= all.filter(n=>n>=u.r[0]&&n<=u.r[1]).length;
+    const okCnt= all.filter(n=>n>=u.r[0]&&n<=u.r[1]&&records[n]?.correct===true).length;
+    const prog = Math.round(solved/total*100);
+    const rate = solved>0 ? Math.round(okCnt/solved*100)+'%' : '-';
+
+    const el=document.createElement('div');
+    el.className='unit-card';
+    el.style.setProperty('--unit-c',u.c);
+    el.innerHTML=`
+      <div class="ubadge">${String(u.id).padStart(2,'0')}</div>
+      <div class="uinfo">
+        <div class="uname">${u.name}</div>
+        <div class="urange">${u.r[0]}~${u.r[1]}번 · ${total}문제</div>
+        <div class="ubar"><div class="ubar-fill" style="width:${prog}%"></div></div>
+      </div>
+      <div class="uright">
+        <div class="upct">${rate}</div>
+        <div class="ucnt">${solved}/${total}</div>
+      </div>`;
+    el.onclick=()=>startUnit(u);
+    grid.appendChild(el);
+  });
+}
+
+// ════════════════════════════════════════════
+//  QUIZ
+// ════════════════════════════════════════════
+function startUnit(u){
+  curUnit=u; curList=[]; curIdx=0;
+  for(let n=u.r[0];n<=u.r[1];n++) curList.push(n);
+  // 첫 미풀이 문제로 이동
+  const fi=curList.findIndex(n=>!records[n]);
+  if(fi>=0) curIdx=fi;
+  document.getElementById('qUnitTitle').textContent=`${String(u.id).padStart(2,'0')}. ${u.name}`;
+  navTo('quiz'); renderQ();
+}
+
+function renderQ(){
+  const n=curList[curIdx];
+  const tot=curList.length;
+  const pct=Math.round((curIdx+1)/tot*100);
+  document.getElementById('progFill').style.width=pct+'%';
+  document.getElementById('qCounter').textContent=`${curIdx+1}/${tot}`;
+  document.getElementById('qNumLbl').textContent=String(n).padStart(4,'0');
+
+  const u=UNITS.find(u=>n>=u.r[0]&&n<=u.r[1])||{name:'',id:0};
+  document.getElementById('qUnitTag').textContent=u.name;
+  const pos=curIdx/curList.length;
+  document.getElementById('qTypeTag').textContent=pos<0.33?'기본':pos<0.66?'유형':'심화';
+
+  // 문제 본문: 이미지 우선, 없으면 안내
+  const body=document.getElementById('qBody');
+  const img=new Image();
+  img.onload=()=>{ body.innerHTML=''; body.appendChild(img); };
+  img.onerror=()=>{
+    body.innerHTML=`
+      <div class="qtext">
+        <div class="notice">
+          <div class="qnum-big">${String(n).padStart(4,'0')}</div>
+          <div style="margin-top:8px;font-size:13px;">교재 PDF의 해당 문제를 확인하세요</div>
+          <div style="margin-top:6px;font-size:11px;color:#BDC3C7;">
+            ${ANS[n]?'✅ 자동 채점 가능':'⚠ 정답 DB 없음 (교재 직접 확인)'}
+          </div>
+        </div>
+      </div>`;
+  };
+  img.src=qImgPath(n);
+  img.style.cssText='width:100%;border-radius:8px;';
+
+  // 입력 초기화
+  const inp=document.getElementById('ansInput');
+  inp.value=''; inp.className='ans-input'; inp.disabled=false;
+  document.getElementById('resultBox').className='result';
+  document.getElementById('ytBtn').style.display='none';
+  document.getElementById('checkBtn').textContent='채점';
+  checked=false;
+  clearCvs();
+  renderQGrid();
+  setTimeout(()=>inp.focus(),100);
+}
+
+function onCheck(){
+  if(checked){ nextQ(); return; }
+  const n=curList[curIdx];
+  const user=document.getElementById('ansInput').value.trim();
+  if(!user) return;
+  const correct=ANS[n];
+  const isOk=correct ? matchAns(user,correct) : null;
+
+  const inp=document.getElementById('ansInput');
+  inp.disabled=true; checked=true;
+  document.getElementById('checkBtn').textContent='다음 →';
+
+  const box=document.getElementById('resultBox');
+  if(isOk===null){
+    box.className='result show ok';
+    document.getElementById('rIcon').textContent='📝';
+    document.getElementById('rTitle').textContent='입력이 저장되었습니다.';
+    document.getElementById('rAns').textContent='교재에서 직접 정답을 확인하세요.';
+    saveRecord(n,{correct:null,userAns:user,ts:Date.now()});
+  } else if(isOk){
+    inp.className='ans-input ok';
+    box.className='result show ok';
+    document.getElementById('rIcon').textContent='🎉';
+    document.getElementById('rTitle').textContent='정답입니다!';
+    document.getElementById('rAns').textContent='';
+    saveRecord(n,{correct:true,userAns:user,ts:Date.now()});
+  } else {
+    inp.className='ans-input ng';
+    box.className='result show ng';
+    document.getElementById('rIcon').textContent='😢';
+    document.getElementById('rTitle').textContent='틀렸습니다.';
+    document.getElementById('rAns').innerHTML=`정답: <b>${correct}</b>`;
+    saveRecord(n,{correct:false,userAns:user,correctAns:correct,ts:Date.now()});
+    const yt=document.getElementById('ytBtn');
+    yt.href=ytUrl(n); yt.style.display='flex';
+  }
+  updateHeader(); renderQGrid();
+}
+
+function matchAns(u,c){
+  const nm=s=>s.replace(/\s+/g,'').toLowerCase();
+  if(nm(u)===nm(c)) return true;
+  const m={'①':'1','②':'2','③':'3','④':'4','⑤':'5'};
+  const r={'1':'①','2':'②','3':'③','4':'④','5':'⑤'};
+  if(m[u]&&nm(m[u])===nm(c)) return true;
+  if(r[u]&&nm(r[u])===nm(c)) return true;
+  if(m[c]&&nm(u)===nm(m[c])) return true;
+  return false;
+}
+
+function prevQ(){ if(curIdx>0){curIdx--;renderQ();} }
+function nextQ(){
+  if(curIdx<curList.length-1){curIdx++;renderQ();}
+  else{
+    const ok=curList.filter(n=>records[n]?.correct===true).length;
+    alert(`🎊 단원 완료!\n정답 ${ok} / 전체 ${curList.length}문제`);
+    goHome();
+  }
+}
+
+// 문제 목록 시트
+function renderQGrid(){
+  const g=document.getElementById('qgrid');
+  g.innerHTML='';
+  curList.forEach((n,i)=>{
+    const rec=records[n];
+    let cls='un';
+    if(rec?.correct===true) cls='ok';
+    else if(rec?.correct===false) cls='ng';
+    const btn=document.createElement('button');
+    btn.className=`qg-btn ${cls}${i===curIdx?' cur':''}`;
+    btn.textContent=String(n).slice(-3).padStart(3,'0');
+    btn.onclick=()=>{curIdx=i;renderQ();closeSheet();};
+    g.appendChild(btn);
+  });
+}
+function openSheet(){document.getElementById('overlay').classList.add('show');renderQGrid();}
+function closeSheet(){document.getElementById('overlay').classList.remove('show');}
+
+// ════════════════════════════════════════════
+//  WRONG NOTE
+// ════════════════════════════════════════════
+function renderWrong(){
+  const wrong=Object.keys(records).filter(k=>records[k]?.correct===false).map(Number).sort((a,b)=>a-b);
+  document.getElementById('wrongSub').textContent=
+    wrong.length>0?`틀린 문제 ${wrong.length}개 — 복습이 필요합니다`:'틀린 문제가 없어요 👍';
+  const list=document.getElementById('wrongList');
+  list.innerHTML='';
+  if(!wrong.length){
+    list.innerHTML='<div class="empty"><div class="ei">✅</div><p>오답 노트가 비어있어요!<br>모든 문제를 맞췄거나<br>아직 풀지 않았습니다.</p></div>';
+    return;
+  }
+  wrong.forEach(n=>{
+    const rec=records[n];
+    const u=UNITS.find(u=>n>=u.r[0]&&n<=u.r[1])||{name:'?'};
+    const el=document.createElement('div');
+    el.className='wi';
+    el.innerHTML=`
+      <div class="wi-top">
+        <span class="wi-num">문항 ${String(n).padStart(4,'0')}</span>
+        <span class="wi-unit">${u.name}</span>
+      </div>
+      <div class="wi-ans">
+        내 답: <span class="m">${rec.userAns||'?'}</span>
+        &nbsp;→&nbsp;
+        정답: <span class="c">${rec.correctAns||ANS[n]||'?'}</span>
+      </div>
+      <div class="wi-btns">
+        <a class="wibtn wibtn-yt" href="${ytUrl(n)}" target="_blank">▶ 해설 영상</a>
+        <button class="wibtn wibtn-retry" onclick="retryQ(${n})">다시 풀기</button>
+      </div>`;
+    list.appendChild(el);
+  });
+}
+
+function retryQ(n){
+  const u=UNITS.find(u=>n>=u.r[0]&&n<=u.r[1]);
+  if(!u) return;
+  curUnit=u; curList=[n]; curIdx=0;
+  document.getElementById('qUnitTitle').textContent=`복습: 문항 ${String(n).padStart(4,'0')}`;
+  navTo('quiz'); renderQ();
+}
+
+// ════════════════════════════════════════════
+//  STATS
+// ════════════════════════════════════════════
+function renderStats(){
+  const all=Object.keys(records).map(Number);
+  const tot=all.length;
+  const ok=all.filter(n=>records[n]?.correct===true).length;
+  const ng=all.filter(n=>records[n]?.correct===false).length;
+  const rt=tot>0?Math.round(ok/tot*100):0;
+  document.getElementById('st-tot').textContent=tot;
+  document.getElementById('st-ok').textContent=ok;
+  document.getElementById('st-ng').textContent=ng;
+  document.getElementById('st-rt').textContent=rt+'%';
+
+  const ul=document.getElementById('ustatList');
+  ul.innerHTML='';
+  UNITS.forEach(u=>{
+    const nums=all.filter(n=>n>=u.r[0]&&n<=u.r[1]);
+    const c=nums.filter(n=>records[n]?.correct===true).length;
+    const t=nums.length;
+    const pct=t>0?Math.round(c/t*100):0;
+    const totalU=u.r[1]-u.r[0]+1;
+    const prog=Math.round(t/totalU*100);
+    const el=document.createElement('div');
+    el.className='ustat';
+    el.innerHTML=`
+      <div class="ustat-top">
+        <span>${String(u.id).padStart(2,'0')} ${u.name}</span>
+        <span style="color:${u.c}">${t}/${totalU} · ${pct}%</span>
+      </div>
+      <div class="ustat-bar"><div class="ustat-fill" style="width:${prog}%;background:${u.c}"></div></div>`;
+    ul.appendChild(el);
+  });
+}
+
+function updateHeader(){
+  const all=Object.keys(records).map(Number);
+  const ok=all.filter(n=>records[n]?.correct===true).length;
+  const ng=all.filter(n=>records[n]?.correct===false).length;
+  document.getElementById('hc').textContent=ok;
+  document.getElementById('hw').textContent=ng;
+}
+
+// ════════════════════════════════════════════
+//  CANVAS
+// ════════════════════════════════════════════
+const cvs=document.getElementById('cvs');
+const ctx2=cvs.getContext('2d');
+let drawing=false, tool='pen', pColor='#222222', pSz=4;
+
+function resizeCvs(){cvs.width=cvs.parentElement.clientWidth; cvs.height=200;}
+window.addEventListener('resize',resizeCvs); resizeCvs();
+
+function setTool(t){
+  tool=t;
+  document.getElementById('tPen').classList.toggle('on',t==='pen');
+  document.getElementById('tErase').classList.toggle('on',t==='erase');
+}
+function setClr(el){
+  document.querySelectorAll('.cclr').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on'); pColor=el.dataset.c; setTool('pen');
+}
+function clearCvs(){ctx2.clearRect(0,0,cvs.width,cvs.height);}
+
+function xy(e){
+  const r=cvs.getBoundingClientRect();
+  const sx=cvs.width/r.width, sy=cvs.height/r.height;
+  const s=e.touches?e.touches[0]:e;
+  return{x:(s.clientX-r.left)*sx, y:(s.clientY-r.top)*sy};
+}
+function dn(e){e.preventDefault();drawing=true;const p=xy(e);ctx2.beginPath();ctx2.moveTo(p.x,p.y);}
+function mv(e){
+  e.preventDefault();if(!drawing)return;
+  const p=xy(e);
+  ctx2.lineWidth=tool==='erase'?pSz*7:pSz;
+  ctx2.lineCap='round';ctx2.lineJoin='round';
+  ctx2.strokeStyle=tool==='erase'?'#FFFDF0':pColor;
+  ctx2.lineTo(p.x,p.y);ctx2.stroke();ctx2.beginPath();ctx2.moveTo(p.x,p.y);
+}
+function up(){drawing=false;}
+cvs.addEventListener('mousedown',dn);cvs.addEventListener('mousemove',mv);
+cvs.addEventListener('mouseup',up);cvs.addEventListener('mouseleave',up);
+cvs.addEventListener('touchstart',dn,{passive:false});
+cvs.addEventListener('touchmove',mv,{passive:false});
+cvs.addEventListener('touchend',up);
+</script>
+</body>
+</html>

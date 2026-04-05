@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RPM 관리자 | 교사용</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, updateProfile,
+    signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser }
+    from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, getDocs, deleteDoc,
+    collection, query, orderBy, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyARHy35Dd2n0Fw1sUs-U4zY0BY9WVneMJ4",
+    authDomain: "rpm-57f1a.firebaseapp.com",
+    projectId: "rpm-57f1a",
+    storageBucket: "rpm-57f1a.firebasestorage.app",
+    messagingSenderId: "681087068656",
+    appId: "1:681087068656:web:68c9d3ef6df32dceb89535"
+  };
+  const app=initializeApp(firebaseConfig);
+  const auth=getAuth(app);
+  const db=getFirestore(app);
+  window._fb={auth,db,createUserWithEmailAndPassword,updateProfile,
+    signInWithEmailAndPassword,signOut,onAuthStateChanged,deleteUser,
+    doc,getDoc,setDoc,getDocs,deleteDoc,collection,query,orderBy,serverTimestamp};
+</script>
+<style>
+:root{
+  --bg:#F0F3F8;--surface:#fff;--dark:#1A1D2E;--navy:#252A4A;
+  --primary:#FF4D1C;--green:#26D07C;--red:#FF3B5C;--gold:#FFB800;
+  --muted:#8B95A7;--border:#E8ECF4;--r:12px;
+  --shadow:0 4px 20px rgba(26,29,46,0.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--dark);background:var(--bg);min-height:100vh;}
+
+/* ─ LAYOUT ─ */
+.layout{display:flex;min-height:100vh;}
+.sidebar{
+  width:220px;background:var(--dark);flex-shrink:0;
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;z-index:10;
+}
+.sb-logo{
+  padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.sb-logo .big{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--primary);letter-spacing:2px;}
+.sb-logo .sub{font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px;}
+.sb-badge{
+  background:rgba(255,77,28,0.15);border:1px solid rgba(255,77,28,0.3);
+  border-radius:6px;padding:3px 8px;font-size:10px;color:var(--primary);
+  display:inline-block;margin-top:6px;
+}
+.sb-nav{flex:1;padding:14px 0;}
+.sbn{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 20px;font-size:13px;color:rgba(255,255,255,0.6);
+  cursor:pointer;border-left:3px solid transparent;transition:all .2s;
+}
+.sbn:hover{color:white;background:rgba(255,255,255,0.05);}
+.sbn.on{color:white;border-left-color:var(--primary);background:rgba(255,77,28,0.1);}
+.sbn .icon{font-size:16px;width:20px;text-align:center;}
+.sb-bottom{padding:16px 20px;border-top:1px solid rgba(255,255,255,0.08);}
+.sb-admin{font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:8px;}
+.sb-logout{
+  width:100%;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);
+  border:1px solid rgba(255,255,255,0.12);border-radius:8px;
+  padding:8px;font-family:'Noto Sans KR',sans-serif;font-size:12px;cursor:pointer;
+}
+
+.content{margin-left:220px;flex:1;padding:28px;}
+.page{display:none;}
+.page.on{display:block;}
+
+/* ─ LOGIN ─ */
+#p-login{
+  margin-left:0;display:flex;align-items:center;justify-content:center;
+  min-height:100vh;background:var(--dark);
+}
+#p-login.on{display:flex;}
+.login-box{
+  background:var(--surface);border-radius:20px;padding:36px 32px;
+  width:100%;max-width:360px;box-shadow:var(--shadow);
+}
+.login-box .logo-big{font-family:'Bebas Neue',sans-serif;font-size:40px;color:var(--primary);letter-spacing:3px;}
+.login-box .logo-sub{font-size:12px;color:var(--muted);margin-bottom:28px;}
+.login-box .badge{
+  display:inline-block;background:#FFF3F0;color:var(--primary);
+  border:1px solid rgba(255,77,28,.2);border-radius:6px;
+  padding:3px 10px;font-size:11px;font-weight:600;margin-bottom:24px;
+}
+.lf{margin-bottom:14px;}
+.lf label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px;}
+.li{
+  width:100%;border:2px solid var(--border);border-radius:9px;
+  padding:11px 13px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;
+}
+.li:focus{border-color:var(--primary);}
+.lbtn{
+  width:100%;background:var(--primary);color:white;border:none;
+  border-radius:9px;padding:13px;font-size:14px;font-weight:700;
+  font-family:'Noto Sans KR',sans-serif;cursor:pointer;margin-top:4px;
+}
+.lerr{font-size:12px;color:var(--red);margin-top:8px;text-align:center;}
+
+/* ─ CARDS ─ */
+.page-title{font-size:22px;font-weight:900;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+.card{background:var(--surface);border-radius:var(--r);padding:22px;box-shadow:var(--shadow);margin-bottom:16px;}
+.card-title{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.card-title::before{content:'';width:3px;height:18px;background:var(--primary);border-radius:2px;}
+
+/* ─ OVERVIEW ─ */
+.ov-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.ov-card{background:var(--surface);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);}
+.ov-card .n{font-family:'Bebas Neue',sans-serif;font-size:40px;line-height:1;}
+.ov-card .l{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* ─ 학생 목록 ─ */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{
+  background:#F7F8FA;padding:10px 14px;text-align:left;
+  font-size:11px;font-weight:700;color:var(--muted);
+  border-bottom:1px solid var(--border);white-space:nowrap;
+}
+td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#FAFBFF;}
+.tag{
+  display:inline-block;border-radius:5px;padding:2px 8px;
+  font-size:11px;font-weight:600;
+}
+.tag-ok{background:#EDFFF5;color:#1A6640;}
+.tag-ng{background:#FFF5F7;color:#8B1A2E;}
+.tag-gray{background:#F0F3F8;color:var(--muted);}
+
+/* 학생 추가 폼 */
+.add-form{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;}
+.field label{font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px;}
+.field input{
+  width:100%;border:2px solid var(--border);border-radius:8px;
+  padding:10px 12px;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;
+}
+.field input:focus{border-color:var(--primary);}
+.btn{
+  padding:10px 18px;border:none;border-radius:8px;cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;
+  white-space:nowrap;transition:all .2s;
+}
+.btn-primary{background:var(--primary);color:white;}
+.btn-primary:hover{opacity:.9;}
+.btn-danger{background:#FFF5F7;color:var(--red);border:1px solid #FFD0DA;}
+.btn-danger:hover{background:var(--red);color:white;}
+.btn-sm{padding:6px 12px;font-size:12px;}
+.btn-info{background:#EFF6FF;color:#1E40AF;border:1px solid #BFDBFE;}
+.btn-info:hover{background:#DBEAFE;}
+
+/* 성적 분석 */
+.unit-analysis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.ua-card{
+  background:#F7F8FA;border-radius:9px;padding:14px;
+  border-left:3px solid var(--uc);
+}
+.ua-name{font-size:12px;font-weight:600;margin-bottom:6px;}
+.ua-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:5px;}
+.ua-fill{height:100%;border-radius:3px;background:var(--uc);}
+.ua-stat{font-size:11px;color:var(--muted);}
+
+/* 설정 */
+.settings-form{max-width:480px;}
+.sf-row{margin-bottom:18px;}
+.sf-row label{font-size:13px;font-weight:600;display:block;margin-bottom:7px;}
+.sf-row input,.sf-row textarea{
+  width:100%;border:2px solid var(--border);border-radius:8px;
+  padding:10px 13px;font-size:14px;font-family:'Noto Sans KR',sans-serif;
+  outline:none;resize:vertical;
+}
+.sf-row input:focus,.sf-row textarea:focus{border-color:var(--primary);}
+.sf-hint{font-size:11px;color:var(--muted);margin-top:5px;}
+.save-btn{background:var(--primary);color:white;border:none;border-radius:8px;
+  padding:12px 28px;font-size:14px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;}
+.success-msg{color:var(--green);font-size:13px;margin-top:10px;display:none;}
+
+/* 알림 토스트 */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:999;
+  background:var(--dark);color:white;border-radius:10px;
+  padding:12px 20px;font-size:13px;font-weight:500;
+  box-shadow:0 8px 24px rgba(0,0,0,0.2);
+  transform:translateY(20px);opacity:0;transition:all .3s;pointer-events:none;
+}
+.toast.show{transform:none;opacity:1;}
+
+/* 반응형 */
+@media(max-width:900px){
+  .sidebar{display:none;}
+  .content{margin-left:0;padding:16px;}
+  .ov-grid{grid-template-columns:1fr 1fr;}
+  .add-form{grid-template-columns:1fr 1fr;}
+  .unit-analysis{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- 로그인 -->
+  <div class="page on" id="p-login">
+    <div class="login-box">
+      <div class="logo-big">RPM</div>
+      <div class="logo-sub">공통수학 1 · 학습 관리 시스템</div>
+      <div class="badge">👩‍🏫 교사 관리자</div>
+      <div class="lf"><label>관리자 이메일</label><input class="li" type="email" id="ae" placeholder="admin@school.com"></div>
+      <div class="lf"><label>비밀번호</label><input class="li" type="password" id="ap" placeholder="비밀번호"
+        onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="lbtn" onclick="doLogin()">관리자 로그인</button>
+      <div class="lerr" id="aerr"></div>
+    </div>
+  </div>
+
+  <!-- 사이드바 -->
+  <div class="sidebar" id="sidebar" style="display:none">
+    <div class="sb-logo">
+      <div class="big">RPM 数学</div>
+      <div class="sub">공통수학 1</div>
+      <div class="sb-badge">👩‍🏫 관리자</div>
+    </div>
+    <div class="sb-nav">
+      <div class="sbn on" id="nav-overview" onclick="navTo('overview')"><span class="icon">📊</span> 현황 개요</div>
+      <div class="sbn" id="nav-students" onclick="navTo('students')"><span class="icon">👥</span> 학생 관리</div>
+      <div class="sbn" id="nav-analysis" onclick="navTo('analysis')"><span class="icon">📈</span> 성적 분석</div>
+      <div class="sbn" id="nav-settings" onclick="navTo('settings')"><span class="icon">⚙️</span> 시스템 설정</div>
+    </div>
+    <div class="sb-bottom">
+      <div class="sb-admin" id="sbAdmin"></div>
+      <button class="sb-logout" onclick="doLogout()">로그아웃</button>
+    </div>
+  </div>
+
+  <!-- 컨텐츠 -->
+  <div class="content" id="mainContent" style="display:none">
+
+    <!-- ─ 현황 개요 ─ -->
+    <div class="page on" id="p-overview">
+      <div class="page-title">📊 현황 개요</div>
+      <div class="ov-grid">
+        <div class="ov-card"><div class="n" id="ov-students">0</div><div class="l">등록 학생</div></div>
+        <div class="ov-card"><div class="n" id="ov-solved" style="color:var(--primary)">0</div><div class="l">총 풀이 수</div></div>
+        <div class="ov-card"><div class="n" id="ov-rate" style="color:var(--green)">0%</div><div class="l">평균 정답률</div></div>
+        <div class="ov-card"><div class="n" id="ov-wrong" style="color:var(--red)">0</div><div class="l">총 오답 수</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">학생별 진도 현황</div>
+        <div class="table-wrap">
+          <table id="overviewTable">
+            <thead>
+              <tr>
+                <th>이름</th><th>이메일</th><th>풀이</th><th>정답</th><th>정답률</th><th>오답</th><th>마지막 학습</th>
+              </tr>
+            </thead>
+            <tbody id="overviewBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─ 학생 관리 ─ -->
+    <div class="page" id="p-students">
+      <div class="page-title">👥 학생 관리</div>
+
+      <div class="card">
+        <div class="card-title">학생 추가</div>
+        <div class="add-form">
+          <div class="field"><label>이름</label><input type="text" id="sName" placeholder="홍길동"></div>
+          <div class="field"><label>이메일</label><input type="email" id="sEmail" placeholder="student@school.com"></div>
+          <div class="field"><label>비밀번호 (초기)</label><input type="password" id="sPw" placeholder="임시 비밀번호"></div>
+          <button class="btn btn-primary" onclick="addStudent()">+ 추가</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">학생 목록 <span id="studentCountBadge" style="font-size:12px;color:var(--muted);font-weight:400;"></span></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>이름</th><th>이메일</th><th>풀이</th><th>정답률</th><th>등록일</th><th>관리</th></tr>
+            </thead>
+            <tbody id="studentBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─ 성적 분석 ─ -->
+    <div class="page" id="p-analysis">
+      <div class="page-title">📈 성적 분석</div>
+
+      <div class="card">
+        <div class="card-title">학생 선택</div>
+        <select id="analysisSel" onchange="loadStudentDetail()"
+          style="border:2px solid var(--border);border-radius:8px;padding:9px 13px;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;min-width:200px;">
+          <option value="">-- 학생 선택 --</option>
+        </select>
+      </div>
+
+      <div id="analysisDetail" style="display:none">
+        <div class="card">
+          <div class="card-title" id="detailName">학생 성적</div>
+          <div class="ov-grid" style="margin-bottom:0">
+            <div class="ov-card"><div class="n" id="d-tot">0</div><div class="l">총 풀이</div></div>
+            <div class="ov-card"><div class="n" id="d-ok" style="color:var(--green)">0</div><div class="l">정답</div></div>
+            <div class="ov-card"><div class="n" id="d-ng" style="color:var(--red)">0</div><div class="l">오답</div></div>
+            <div class="ov-card"><div class="n" id="d-rt" style="color:var(--primary)">0%</div><div class="l">정답률</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">단원별 성취도</div>
+          <div class="unit-analysis" id="unitAnalysis"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">오답 문제 목록</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>문항</th><th>단원</th><th>내 답</th><th>정답</th><th>해설 영상</th></tr></thead>
+              <tbody id="wrongDetailBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─ 시스템 설정 ─ -->
+    <div class="page" id="p-settings">
+      <div class="page-title">⚙️ 시스템 설정</div>
+      <div class="card">
+        <div class="card-title">유튜브 채널 설정</div>
+        <div class="settings-form">
+          <div class="sf-row">
+            <label>채널 이름</label>
+            <input type="text" id="ytName" placeholder="예: 개념원리 수학">
+            <div class="sf-hint">해설 영상 버튼에 표시되는 채널 이름</div>
+          </div>
+          <div class="sf-row">
+            <label>유튜브 채널 ID</label>
+            <input type="text" id="ytChId" placeholder="예: UCxxxxxxxxxxxxxxxx">
+            <div class="sf-hint">
+              채널 URL에서 확인: youtube.com/channel/<b>채널ID</b><br>
+              입력 시 해설 검색이 해당 채널로 필터링됩니다
+            </div>
+          </div>
+          <div class="sf-row">
+            <label>문제 이미지 경로 (기본값)</label>
+            <input type="text" id="imgBase" placeholder="./images/" value="./images/">
+            <div class="sf-hint">q_0001.png 형식의 이미지 파일 폴더 경로</div>
+          </div>
+          <button class="save-btn" onclick="saveSettings()">설정 저장</button>
+          <div class="success-msg" id="saveMsg">✅ 저장되었습니다!</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">PDF 이미지 변환 안내</div>
+        <div style="font-size:13px;line-height:1.9;color:var(--muted);">
+          <p style="margin-bottom:8px;">📌 <b>PDF → 이미지 자동 변환 방법</b></p>
+          <div style="background:#F7F8FA;border-radius:8px;padding:14px;font-family:monospace;font-size:12px;">
+            # Python으로 PDF 페이지를 문제 이미지로 변환<br>
+            pip install pdf2image pillow<br><br>
+            python extract_questions.py RPM_공통수학1.pdf ./images/
+          </div>
+          <p style="margin-top:12px;">생성된 이미지 파일 예: <code>q_0001.png</code>, <code>q_0002.png</code> …</p>
+          <p style="margin-top:6px;">추출 스크립트는 <b>extract_questions.py</b> 파일을 사용하세요.</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /layout -->
+
+<!-- 토스트 알림 -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════
+//  DATA
+// ════════════════════════════════════════════
+const UNITS=[
+  {id:1,name:'다항식의 연산',r:[1,110],c:'#FF5722'},
+  {id:2,name:'항등식과 나머지정리',r:[111,195],c:'#8E44AD'},
+  {id:3,name:'인수분해',r:[196,279],c:'#2980B9'},
+  {id:4,name:'복소수',r:[280,375],c:'#16A085'},
+  {id:5,name:'이차방정식',r:[376,480],c:'#E67E22'},
+  {id:6,name:'이차방정식과 이차함수',r:[481,566],c:'#C0392B'},
+  {id:7,name:'여러 가지 방정식',r:[567,628],c:'#1ABC9C'},
+  {id:8,name:'연립일차부등식',r:[629,774],c:'#F39C12'},
+  {id:9,name:'이차부등식과 연립이차부등식',r:[775,910],c:'#9B59B6'},
+  {id:10,name:'경우의 수와 순열',r:[911,1000],c:'#27AE60'},
+  {id:11,name:'조합',r:[1001,1092],c:'#E74C3C'},
+  {id:12,name:'행렬',r:[1093,1184],c:'#3498DB'},
+];
+
+let students=[];   // { uid, name, email, createdAt, records }
+
+// ════════════════════════════════════════════
+//  AUTH
+// ════════════════════════════════════════════
+async function doLogin(){
+  const em=document.getElementById('ae').value.trim();
+  const pw=document.getElementById('ap').value;
+  const err=document.getElementById('aerr');
+  err.textContent='';
+  try{
+    const {auth,signInWithEmailAndPassword}=window._fb;
+    await signInWithEmailAndPassword(auth,em,pw);
+  }catch(e){ err.textContent='이메일 또는 비밀번호가 올바르지 않습니다.'; }
+}
+async function doLogout(){
+  const {auth,signOut}=window._fb;
+  await signOut(auth); location.reload();
+}
+
+window.addEventListener('load',()=>{
+  const {auth,onAuthStateChanged}=window._fb;
+  onAuthStateChanged(auth,async user=>{
+    if(!user){ return; }
+    // 관리자 확인 (Firestore admin 컬렉션)
+    const {db,doc,getDoc}=window._fb;
+    const snap=await getDoc(doc(db,'admins',user.uid));
+    if(!snap.exists()){
+      alert('관리자 권한이 없습니다.');
+      doLogout(); return;
+    }
+    document.getElementById('p-login').classList.remove('on');
+    document.getElementById('sidebar').style.display='flex';
+    document.getElementById('mainContent').style.display='block';
+    document.getElementById('sbAdmin').textContent=user.email;
+    loadSettings();
+    await loadStudents();
+    renderOverview();
+  });
+});
+
+// ════════════════════════════════════════════
+//  NAV
+// ════════════════════════════════════════════
+function navTo(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.sbn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('p-'+name).classList.add('on');
+  document.getElementById('nav-'+name).classList.add('on');
+  if(name==='overview') renderOverview();
+  if(name==='students') renderStudents();
+  if(name==='analysis') renderAnalysisSel();
+}
+
+// ════════════════════════════════════════════
+//  STUDENTS
+// ════════════════════════════════════════════
+async function loadStudents(){
+  const {db,collection,getDocs}=window._fb;
+  try{
+    const snap=await getDocs(collection(db,'students'));
+    students=[];
+    for(const d of snap.docs){
+      const data=d.data();
+      // records 서브컬렉션 로드
+      let records={};
+      try{
+        const {doc,getDoc}=window._fb;
+        const recSnap=await getDoc(doc(db,'students',d.id,'data','records'));
+        if(recSnap.exists()) records=recSnap.data().records||{};
+      }catch(e){}
+      students.push({uid:d.id,...data,records});
+    }
+  }catch(e){ console.warn(e); }
+}
+
+async function addStudent(){
+  const name=document.getElementById('sName').value.trim();
+  const email=document.getElementById('sEmail').value.trim();
+  const pw=document.getElementById('sPw').value;
+  if(!name||!email||!pw){ showToast('⚠ 모든 항목을 입력하세요'); return; }
+
+  try{
+    const {auth,db,createUserWithEmailAndPassword,updateProfile,doc,setDoc,serverTimestamp}=window._fb;
+    // 학생 계정 생성
+    const cred=await createUserWithEmailAndPassword(auth,email,pw);
+    await updateProfile(cred.user,{displayName:name});
+    // Firestore에 학생 정보 저장
+    await setDoc(doc(db,'students',cred.user.uid),{
+      name, email, createdAt:serverTimestamp(), role:'student'
+    });
+    showToast(`✅ ${name} 학생이 추가되었습니다`);
+    document.getElementById('sName').value='';
+    document.getElementById('sEmail').value='';
+    document.getElementById('sPw').value='';
+    await loadStudents();
+    renderStudents();
+    renderOverview();
+  }catch(e){
+    showToast('❌ 오류: '+e.message);
+  }
+}
+
+async function deleteStudent(uid, name){
+  if(!confirm(`${name} 학생을 삭제하시겠습니까?\n모든 학습 데이터가 삭제됩니다.`)) return;
+  const {db,doc,deleteDoc}=window._fb;
+  try{
+    await deleteDoc(doc(db,'students',uid));
+    await deleteDoc(doc(db,'students',uid,'data','records'));
+    students=students.filter(s=>s.uid!==uid);
+    showToast(`🗑 ${name} 학생이 삭제되었습니다`);
+    renderStudents(); renderOverview();
+  }catch(e){ showToast('❌ 삭제 실패: '+e.message); }
+}
+
+function renderStudents(){
+  const body=document.getElementById('studentBody');
+  body.innerHTML='';
+  document.getElementById('studentCountBadge').textContent=`(총 ${students.length}명)`;
+  if(!students.length){
+    body.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:30px;">등록된 학생이 없습니다</td></tr>';
+    return;
+  }
+  students.forEach(s=>{
+    const all=Object.keys(s.records||{}).map(Number);
+    const tot=all.length;
+    const ok=all.filter(n=>s.records[n]?.correct===true).length;
+    const rt=tot>0?Math.round(ok/tot*100)+'%':'-';
+    const created=s.createdAt?.toDate?.()?.toLocaleDateString('ko-KR')||'-';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><b>${s.name}</b></td>
+      <td style="color:var(--muted);font-size:12px;">${s.email}</td>
+      <td>${tot}</td>
+      <td><span class="tag ${tot>0?(parseInt(rt)>=70?'tag-ok':'tag-ng'):'tag-gray'}">${rt}</span></td>
+      <td style="font-size:12px;color:var(--muted);">${created}</td>
+      <td>
+        <button class="btn btn-info btn-sm" onclick="viewStudent('${s.uid}')">📊 분석</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.uid}','${s.name}')" style="margin-left:4px;">삭제</button>
+      </td>`;
+    body.appendChild(tr);
+  });
+}
+
+// ════════════════════════════════════════════
+//  OVERVIEW
+// ════════════════════════════════════════════
+function renderOverview(){
+  const cnt=students.length;
+  let totalSolved=0, totalOk=0, totalNg=0;
+  const body=document.getElementById('overviewBody');
+  body.innerHTML='';
+
+  students.forEach(s=>{
+    const all=Object.keys(s.records||{}).map(Number);
+    const tot=all.length;
+    const ok=all.filter(n=>s.records[n]?.correct===true).length;
+    const ng=all.filter(n=>s.records[n]?.correct===false).length;
+    totalSolved+=tot; totalOk+=ok; totalNg+=ng;
+    const rt=tot>0?Math.round(ok/tot*100)+'%':'-';
+    // 마지막 학습 시간
+    const lastTs=Math.max(...all.map(n=>s.records[n]?.ts||0));
+    const lastDate=lastTs>0?new Date(lastTs).toLocaleDateString('ko-KR'):'-';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><b>${s.name}</b></td>
+      <td style="font-size:12px;color:var(--muted);">${s.email}</td>
+      <td>${tot}</td>
+      <td style="color:var(--green);font-weight:600;">${ok}</td>
+      <td><span class="tag ${tot>0?(parseInt(rt)>=70?'tag-ok':'tag-ng'):'tag-gray'}">${rt}</span></td>
+      <td style="color:var(--red);">${ng}</td>
+      <td style="font-size:12px;color:var(--muted);">${lastDate}</td>`;
+    body.appendChild(tr);
+  });
+
+  const avgRate=totalSolved>0?Math.round(totalOk/totalSolved*100)+'%':'-';
+  document.getElementById('ov-students').textContent=cnt;
+  document.getElementById('ov-solved').textContent=totalSolved;
+  document.getElementById('ov-rate').textContent=avgRate;
+  document.getElementById('ov-wrong').textContent=totalNg;
+}
+
+// ════════════════════════════════════════════
+//  ANALYSIS
+// ════════════════════════════════════════════
+function renderAnalysisSel(){
+  const sel=document.getElementById('analysisSel');
+  sel.innerHTML='<option value="">-- 학생 선택 --</option>';
+  students.forEach(s=>{
+    const opt=document.createElement('option');
+    opt.value=s.uid; opt.textContent=s.name;
+    sel.appendChild(opt);
+  });
+}
+
+function viewStudent(uid){
+  navTo('analysis');
+  document.getElementById('analysisSel').value=uid;
+  loadStudentDetail();
+}
+
+function loadStudentDetail(){
+  const uid=document.getElementById('analysisSel').value;
+  if(!uid){ document.getElementById('analysisDetail').style.display='none'; return; }
+  const s=students.find(s=>s.uid===uid);
+  if(!s) return;
+
+  document.getElementById('analysisDetail').style.display='block';
+  document.getElementById('detailName').textContent=`${s.name} 학생 성적`;
+
+  const all=Object.keys(s.records||{}).map(Number);
+  const tot=all.length;
+  const ok=all.filter(n=>s.records[n]?.correct===true).length;
+  const ng=all.filter(n=>s.records[n]?.correct===false).length;
+  const rt=tot>0?Math.round(ok/tot*100)+'%':'-';
+  document.getElementById('d-tot').textContent=tot;
+  document.getElementById('d-ok').textContent=ok;
+  document.getElementById('d-ng').textContent=ng;
+  document.getElementById('d-rt').textContent=rt;
+
+  // 단원별
+  const ua=document.getElementById('unitAnalysis');
+  ua.innerHTML='';
+  UNITS.forEach(u=>{
+    const nums=all.filter(n=>n>=u.r[0]&&n<=u.r[1]);
+    const c=nums.filter(n=>s.records[n]?.correct===true).length;
+    const t=nums.length;
+    const total=u.r[1]-u.r[0]+1;
+    const pct=t>0?Math.round(c/t*100):0;
+    const prog=Math.round(t/total*100);
+    const el=document.createElement('div');
+    el.className='ua-card';
+    el.style.setProperty('--uc',u.c);
+    el.innerHTML=`
+      <div class="ua-name">${String(u.id).padStart(2,'0')} ${u.name}</div>
+      <div class="ua-bar"><div class="ua-fill" style="width:${prog}%"></div></div>
+      <div class="ua-stat">${t}/${total} 풀이 · 정답률 ${pct}%</div>`;
+    ua.appendChild(el);
+  });
+
+  // 오답 목록
+  const wrong=all.filter(n=>s.records[n]?.correct===false).sort((a,b)=>a-b);
+  const wb=document.getElementById('wrongDetailBody');
+  wb.innerHTML='';
+  if(!wrong.length){
+    wb.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px;">오답 없음 👍</td></tr>';
+    return;
+  }
+  wrong.forEach(n=>{
+    const rec=s.records[n];
+    const u=UNITS.find(u=>n>=u.r[0]&&n<=u.r[1])||{name:'?'};
+    const ytQ=encodeURIComponent(`RPM 공통수학1 ${String(n).padStart(4,'0')}번 풀이`);
+    const ytLink=`https://www.youtube.com/results?search_query=${ytQ}`;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><b>${String(n).padStart(4,'0')}</b></td>
+      <td style="font-size:12px;">${u.name}</td>
+      <td><span class="tag tag-ng">${rec.userAns||'?'}</span></td>
+      <td><span class="tag tag-ok">${rec.correctAns||'?'}</span></td>
+      <td><a href="${ytLink}" target="_blank" style="color:var(--red);font-size:12px;font-weight:600;text-decoration:none;">▶ 해설</a></td>`;
+    wb.appendChild(tr);
+  });
+}
+
+// ════════════════════════════════════════════
+//  SETTINGS
+// ════════════════════════════════════════════
+async function loadSettings(){
+  const {db,doc,getDoc}=window._fb;
+  try{
+    const snap=await getDoc(doc(db,'settings','youtube'));
+    if(snap.exists()){
+      document.getElementById('ytName').value=snap.data().channelName||'';
+      document.getElementById('ytChId').value=snap.data().channelId||'';
+    }
+    const snap2=await getDoc(doc(db,'settings','app'));
+    if(snap2.exists()){
+      document.getElementById('imgBase').value=snap2.data().imgBase||'./images/';
+    }
+  }catch(e){}
+}
+
+async function saveSettings(){
+  const {db,doc,setDoc,serverTimestamp}=window._fb;
+  try{
+    await setDoc(doc(db,'settings','youtube'),{
+      channelName: document.getElementById('ytName').value.trim(),
+      channelId: document.getElementById('ytChId').value.trim(),
+      updatedAt: serverTimestamp()
+    });
+    await setDoc(doc(db,'settings','app'),{
+      imgBase: document.getElementById('imgBase').value.trim(),
+      updatedAt: serverTimestamp()
+    });
+    const msg=document.getElementById('saveMsg');
+    msg.style.display='block';
+    setTimeout(()=>msg.style.display='none',3000);
+    showToast('✅ 설정이 저장되었습니다');
+  }catch(e){ showToast('❌ 저장 실패: '+e.message); }
+}
+
+// ════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>
