@@ -1046,6 +1046,7 @@ function openAiSol(n){
   var BASE_URL='https://qkrtmdfud0501-collab.github.io/rpm-math/pages/';
 
   function callGemini(parts){
+    console.log('[AI] 사용 키:', key?key.substring(0,12)+'...':'없음');
     return fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
