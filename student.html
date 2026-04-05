@@ -1069,14 +1069,11 @@ function openAiSol(n){
   fetchPromise.then(function(r){
     if(r.status===400||r.status===403){
       localStorage.removeItem('gemini_key');
+      geminiKeyCache='';
       throw new Error('API_KEY_INVALID');
     }
-    return r.json();
-  })
-  .then(function(r){
-    if(r.status===400||r.status===403){
-      localStorage.removeItem('gemini_key');
-      throw new Error('API_KEY_INVALID');
+    if(r.status===429){
+      throw new Error('RATE_LIMIT');
     }
     return r.json();
   })
@@ -1089,17 +1086,22 @@ function openAiSol(n){
     renderAiResponse(text);
   })
   .catch(function(e){
+    var msg='';
     if(e.message==='API_KEY_INVALID'){
-      document.getElementById('sol-popup-body').innerHTML=
-        '<div style="text-align:center;padding:20px;color:#ff3b5c">'+
-        '<div style="font-size:24px;margin-bottom:8px">&#10006;</div>'+
-        '<div style="font-size:13px;font-weight:700;margin-bottom:8px">API 키가 올바르지 않습니다</div>'+
-        '<button onclick="apiReinput()" style="background:#1a1d2e;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif">API 키 다시 입력</button>'+
-        '</div>';
+      msg='<div style="font-size:22px;margin-bottom:8px">&#10006;</div>'+
+          '<div style="font-size:13px;font-weight:700;color:#ff3b5c;margin-bottom:12px">API 키가 올바르지 않습니다</div>'+
+          '<div style="font-size:11px;color:#8b95a7;margin-bottom:12px">관리자 페이지 설정 탭에서 키를 다시 확인해주세요</div>';
+    } else if(e.message==='RATE_LIMIT'){
+      msg='<div style="font-size:22px;margin-bottom:8px">&#8987;</div>'+
+          '<div style="font-size:13px;font-weight:700;color:#ff9500;margin-bottom:8px">요청이 너무 많습니다</div>'+
+          '<div style="font-size:11px;color:#8b95a7">1~2분 후 다시 시도해주세요<br>(무료 플랜: 분당 15회 제한)</div>';
     } else {
-      document.getElementById('sol-popup-body').innerHTML=
-        '<div style="text-align:center;padding:20px;color:#8b95a7;font-size:13px">해설을 불러오지 못했습니다.<br>잠시 후 다시 시도해주세요.</div>';
+      msg='<div style="font-size:22px;margin-bottom:8px">&#9888;</div>'+
+          '<div style="font-size:13px;font-weight:700;color:#8b95a7;margin-bottom:8px">해설을 불러오지 못했습니다</div>'+
+          '<div style="font-size:11px;color:#8b95a7">잠시 후 다시 시도해주세요</div>';
     }
+    document.getElementById('sol-popup-body').innerHTML=
+      '<div style="text-align:center;padding:24px">'+msg+'</div>';
   });
 }
 
