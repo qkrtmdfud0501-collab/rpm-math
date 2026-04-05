@@ -1009,21 +1009,69 @@ function openAiSol(n){
   document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">AI가 풀이를 생성하는 중...</div>';
   document.getElementById('sol-popup').classList.remove('hide');
   
+  // 문제번호 → PDF 페이지 찾기
+  var pageNum=null;
+  for(var i=0;i<PAGE_MAP.length;i++){
+    if(PAGE_MAP[i][0]&&n>=PAGE_MAP[i][1][0]&&n<=PAGE_MAP[i][1][1]){
+      pageNum=PAGE_MAP[i][0];
+      break;
+    }
+  }
+
   // CHOICES에서 문제 정보 가져오기
   var cd=CHOICES[n];
-  var prompt='';
+  var promptText='RPM 공통수학1 '+numStr+'번 문제입니다.\n';
   if(cd){
-    var choicesText=cd.c.map(function(c,i){return '('+(i+1)+') '+c;}).join(', ');
+    var choicesText=cd.c.map(function(c,i){return '('+(i+1)+') '+c;}).join('\n');
     var answerText=cd.c[cd.a];
-    prompt='RPM 공통수학1 '+numStr+'번 문제입니다.\n\n보기: '+choicesText+'\n정답: '+answerText+'\n\n이 문제의 풀이 과정을 단계별로 한국어로 설명해주세요. 수식은 일반 텍스트로 표현하세요. 각 단계를 명확하게 구분하고 최종 정답을 강조해주세요.';
-  } else {
-    prompt='RPM 공통수학1 '+numStr+'번 문제의 풀이 방법을 단계별로 한국어로 설명해주세요. 이 문제가 속한 단원의 개념과 함께 접근 방법을 알려주세요.';
+    promptText+='\n보기:\n'+choicesText+'\n\n정답: '+answerText+'\n';
   }
-  
-  fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+  promptText+='\n위 문제의 풀이 과정을 단계별로 한국어로 설명해주세요. 이미지에 문제가 보이면 이미지를 우선 참고하세요. 수식은 명확하게 표현하고, 각 단계를 구분하여 최종 정답을 강조해주세요.';
+
+  // 이미지 URL 구성 (GitHub Pages)
+  var BASE_URL='https://qkrtmdfud0501-collab.github.io/rpm-math/pages/';
+
+  function callGemini(parts){
+    return fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:parts}]})
+    });
+  }
+
+  // 페이지 이미지 있으면 base64로 fetch해서 Gemini Vision 사용
+  var fetchPromise;
+  if(pageNum){
+    var imgUrl=BASE_URL+'page-'+String(pageNum).padStart(3,'0')+'.jpg';
+    fetchPromise=fetch(imgUrl)
+      .then(function(r){return r.blob();})
+      .then(function(blob){
+        return new Promise(function(resolve){
+          var reader=new FileReader();
+          reader.onloadend=function(){
+            var b64=reader.result.split(',')[1];
+            resolve(callGemini([
+              {inline_data:{mime_type:'image/jpeg',data:b64}},
+              {text:promptText}
+            ]));
+          };
+          reader.readAsDataURL(blob);
+        });
+      })
+      .catch(function(){
+        // 이미지 실패하면 텍스트만으로 시도
+        return callGemini([{text:promptText}]);
+      });
+  } else {
+    fetchPromise=Promise.resolve(callGemini([{text:promptText}]));
+  }
+
+  fetchPromise.then(function(r){
+    if(r.status===400||r.status===403){
+      localStorage.removeItem('gemini_key');
+      throw new Error('API_KEY_INVALID');
+    }
+    return r.json();
   })
   .then(function(r){
     if(r.status===400||r.status===403){
