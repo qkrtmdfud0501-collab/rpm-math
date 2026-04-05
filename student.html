@@ -584,6 +584,15 @@ function startSession(user){
   renderHome();
   updateHeader();
   updateBookProgress();
+  // 로그인 즉시 Firebase에서 Gemini 키 로드 시도
+  if(typeof DB!=='undefined'&&DB){
+    DB.collection('settings').doc('gemini').get().then(function(doc){
+      if(doc.exists&&doc.data().apiKey){
+        geminiKeyCache=doc.data().apiKey;
+        localStorage.setItem('gemini_key',geminiKeyCache);
+      }
+    }).catch(function(){});
+  }
 }
 
 function doLogout(){
@@ -972,35 +981,32 @@ function openAiSol(n){
   curSolNum=n;
   var key=geminiKeyCache||localStorage.getItem('gemini_key')||'';
   if(!key){
-    // 캐시 없으면 Firebase에서 실시간으로 한번 더 시도
-    var numStr=String(n).padStart(4,'0');
-    document.getElementById('sol-popup-title').textContent=numStr+'번 AI 해설';
-    document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">AI 해설 준비 중...</div>';
+    // 로딩 팝업 먼저 띄우고 Firebase에서 키 재시도
+    var numStr2=String(n).padStart(4,'0');
+    document.getElementById('sol-popup-title').textContent=numStr2+'번 AI 해설';
+    document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">키 확인 중...</div>';
     document.getElementById('sol-popup').classList.remove('hide');
-    if(typeof DB!=='undefined'&&DB){
-      DB.collection('settings').doc('gemini').get().then(function(doc){
-        if(doc.exists&&doc.data().apiKey){
-          geminiKeyCache=doc.data().apiKey;
-          localStorage.setItem('gemini_key',geminiKeyCache);
-          openAiSol(n); // 키 받았으니 다시 실행
-        } else {
-          document.getElementById('sol-popup').classList.add('hide');
-          document.getElementById('api-key-input').value='';
-          document.getElementById('api-err').textContent='';
-          document.getElementById('api-popup').classList.remove('hide');
-        }
-      }).catch(function(){
+    var dbReady=typeof DB!=='undefined'&&DB;
+    var p=dbReady
+      ? DB.collection('settings').doc('gemini').get().then(function(doc){
+          if(doc.exists&&doc.data().apiKey){
+            geminiKeyCache=doc.data().apiKey;
+            localStorage.setItem('gemini_key',geminiKeyCache);
+            return geminiKeyCache;
+          }
+          return null;
+        }).catch(function(){return null;})
+      : Promise.resolve(null);
+    p.then(function(k){
+      if(k){
+        openAiSol(n);
+      } else {
         document.getElementById('sol-popup').classList.add('hide');
         document.getElementById('api-key-input').value='';
-        document.getElementById('api-err').textContent='';
+        document.getElementById('api-err').textContent='선생님이 아직 API 키를 등록하지 않았습니다';
         document.getElementById('api-popup').classList.remove('hide');
-      });
-      return;
-    }
-    document.getElementById('sol-popup').classList.add('hide');
-    document.getElementById('api-key-input').value='';
-    document.getElementById('api-err').textContent='';
-    document.getElementById('api-popup').classList.remove('hide');
+      }
+    });
     return;
   }
   
