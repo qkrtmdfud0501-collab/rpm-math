@@ -5,16 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>RPM 수학 학습</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
-<!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
     from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, serverTimestamp }
+  import { getFirestore, doc, getDoc, setDoc, serverTimestamp }
     from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-
-  // ── Firebase 설정 (config.js에서 관리) ──
-  // 실제 배포 시 아래 값을 Firebase 콘솔에서 발급받은 값으로 교체
   const firebaseConfig = {
     apiKey: "AIzaSyARHy35Dd2n0Fw1sUs-U4zY0BY9WVneMJ4",
     authDomain: "rpm-57f1a.firebaseapp.com",
@@ -23,426 +19,283 @@
     messagingSenderId: "681087068656",
     appId: "1:681087068656:web:68c9d3ef6df32dceb89535"
   };
-
-  const app  = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db   = getFirestore(app);
-
-  // 전역으로 노출
-  window._fb = { auth, db, signInWithEmailAndPassword, signOut, onAuthStateChanged,
-    doc, getDoc, setDoc, updateDoc, collection, addDoc, serverTimestamp };
+  const app=initializeApp(firebaseConfig);
+  const auth=getAuth(app);
+  const db=getFirestore(app);
+  window._fb={auth,db,signInWithEmailAndPassword,signOut,onAuthStateChanged,
+    doc,getDoc,setDoc,serverTimestamp};
 </script>
 <style>
-/* ════════════════════════════════════
-   DESIGN SYSTEM
-════════════════════════════════════ */
-:root {
-  --bg:      #F0F3F8;
-  --surface: #FFFFFF;
-  --dark:    #1A1D2E;
-  --navy:    #252A4A;
-  --primary: #FF4D1C;
-  --orange:  #FF8C42;
-  --green:   #26D07C;
-  --red:     #FF3B5C;
-  --gold:    #FFB800;
-  --muted:   #8B95A7;
-  --border:  #E8ECF4;
-  --r:       14px;
-  --shadow:  0 4px 20px rgba(26,29,46,0.08);
-  --shadow-sm: 0 2px 8px rgba(26,29,46,0.06);
+:root{
+  --bg:#F0F3F8;--surface:#fff;--dark:#1A1D2E;--navy:#252A4A;
+  --primary:#FF4D1C;--green:#26D07C;--red:#FF3B5C;--gold:#FFB800;
+  --muted:#8B95A7;--border:#E8ECF4;--r:14px;
+  --shadow:0 4px 20px rgba(26,29,46,0.08);
+  --shadow-sm:0 2px 8px rgba(26,29,46,0.06);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;font-family:'Noto Sans KR',sans-serif;color:var(--dark);background:var(--bg);}
-
-/* ─ LAYOUT ─ */
 #app{display:flex;flex-direction:column;height:100%;overflow:hidden;}
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .scroll::-webkit-scrollbar{width:3px;}
 .scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 
-/* ─ TOP BAR ─ */
-.topbar{
-  background:var(--dark);padding:0 20px;
-  display:flex;align-items:center;justify-content:space-between;
-  height:56px;flex-shrink:0;
-  box-shadow:0 2px 12px rgba(0,0,0,0.25);z-index:50;
-}
-.tbar-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--primary);letter-spacing:2px;}
-.tbar-user{display:flex;align-items:center;gap:10px;}
-.tbar-name{font-size:12px;color:rgba(255,255,255,0.65);}
-.tbar-pills{display:flex;gap:6px;}
-.pill{
-  background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);
-  border-radius:20px;padding:4px 10px;font-size:11px;color:white;
-  display:flex;align-items:center;gap:4px;
-}
+/* TOP BAR */
+.topbar{background:var(--dark);padding:0 14px;display:flex;align-items:center;
+  justify-content:space-between;height:50px;flex-shrink:0;box-shadow:0 2px 12px rgba(0,0,0,.25);z-index:50;}
+.tbar-logo{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--primary);letter-spacing:2px;}
+.tbar-right{display:flex;align-items:center;gap:7px;}
+.pill{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);
+  border-radius:20px;padding:3px 8px;font-size:11px;color:white;display:flex;align-items:center;gap:3px;}
 .pill b{color:var(--gold);}
-.logout-btn{
-  background:none;border:1px solid rgba(255,255,255,0.2);
-  border-radius:8px;padding:5px 10px;color:rgba(255,255,255,0.6);
-  font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;
-}
+.tbar-name{font-size:11px;color:rgba(255,255,255,.5);}
+.logout-btn{background:none;border:1px solid rgba(255,255,255,.18);border-radius:7px;
+  padding:4px 8px;color:rgba(255,255,255,.55);font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 
-/* ─ BOTTOM NAV ─ */
-.bnav{
-  background:var(--surface);border-top:1px solid var(--border);
-  display:flex;flex-shrink:0;
-  box-shadow:0 -4px 16px rgba(0,0,0,0.05);
-}
-.bn{
-  flex:1;border:none;background:none;cursor:pointer;
-  padding:10px 4px 8px;display:flex;flex-direction:column;
-  align-items:center;gap:3px;
-  font-family:'Noto Sans KR',sans-serif;font-size:10px;color:var(--muted);
-  transition:color .2s;
-}
-.bn .ico{font-size:21px;transition:transform .2s;}
+/* BOTTOM NAV */
+.bnav{background:var(--surface);border-top:1px solid var(--border);display:flex;flex-shrink:0;box-shadow:0 -4px 16px rgba(0,0,0,.05);}
+.bn{flex:1;border:none;background:none;cursor:pointer;padding:8px 4px 6px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  font-family:'Noto Sans KR',sans-serif;font-size:10px;color:var(--muted);transition:color .2s;}
+.bn .ico{font-size:19px;transition:transform .2s;}
 .bn.on{color:var(--primary);}
-.bn.on .ico{transform:scale(1.15);}
+.bn.on .ico{transform:scale(1.1);}
 
-/* ─ SCREENS ─ */
-.screen{display:none;padding:16px;animation:fadeIn .2s ease;}
+/* SCREENS */
+.screen{display:none;padding:12px;animation:fadeIn .2s ease;}
 .screen.on{display:block;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 
-/* ─ LOGIN SCREEN ─ */
-#s-login{
-  display:flex;flex-direction:column;align-items:center;
-  justify-content:center;min-height:100%;gap:0;padding:40px 24px;
-}
-.login-card{
-  width:100%;max-width:380px;background:var(--surface);
-  border-radius:24px;padding:36px 32px;box-shadow:var(--shadow);
-}
-.login-logo{
-  text-align:center;margin-bottom:28px;
-}
-.login-logo .big{font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--primary);letter-spacing:4px;}
-.login-logo .sub{font-size:13px;color:var(--muted);margin-top:-4px;}
-.lfield{margin-bottom:14px;}
-.lfield label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;}
-.linput{
-  width:100%;border:2px solid var(--border);border-radius:10px;
-  padding:12px 14px;font-size:14px;font-family:'Noto Sans KR',sans-serif;
-  outline:none;transition:border-color .2s;background:white;
-}
+/* LOGIN */
+#s-login{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;padding:32px 20px;}
+.login-card{width:100%;max-width:360px;background:var(--surface);border-radius:20px;padding:30px 26px;box-shadow:var(--shadow);}
+.login-logo{text-align:center;margin-bottom:22px;}
+.login-logo .big{font-family:'Bebas Neue',sans-serif;font-size:44px;color:var(--primary);letter-spacing:4px;}
+.login-logo .sub{font-size:12px;color:var(--muted);}
+.lfield{margin-bottom:11px;}
+.lfield label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;}
+.linput{width:100%;border:2px solid var(--border);border-radius:9px;padding:11px 13px;
+  font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color .2s;}
 .linput:focus{border-color:var(--primary);}
-.lbtn{
-  width:100%;background:var(--primary);color:white;border:none;
-  border-radius:10px;padding:14px;font-size:15px;font-weight:700;
-  font-family:'Noto Sans KR',sans-serif;cursor:pointer;margin-top:6px;
-  transition:opacity .2s;
-}
-.lbtn:active{opacity:.85;}
-.lerr{font-size:12px;color:var(--red);margin-top:10px;text-align:center;}
+.lbtn{width:100%;background:var(--primary);color:white;border:none;border-radius:9px;
+  padding:12px;font-size:15px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;margin-top:4px;}
+.lerr{font-size:12px;color:var(--red);margin-top:7px;text-align:center;}
 
-/* ─ HOME ─ */
-.home-banner{
-  background:linear-gradient(135deg,var(--dark) 0%,var(--navy) 100%);
-  border-radius:var(--r);padding:20px;margin-bottom:14px;color:white;
-  position:relative;overflow:hidden;
-}
-.home-banner::before{
-  content:'RPM';position:absolute;right:-10px;top:-10px;
-  font-family:'Bebas Neue',sans-serif;font-size:120px;color:rgba(255,255,255,0.04);
-  line-height:1;pointer-events:none;
-}
-.hb-name{font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:2px;}
-.hb-title{font-size:20px;font-weight:900;}
-.hb-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;}
-.hb-stat{background:rgba(255,255,255,0.08);border-radius:10px;padding:10px;text-align:center;}
-.hb-stat .n{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--orange);line-height:1;}
-.hb-stat .l{font-size:9px;color:rgba(255,255,255,0.5);margin-top:2px;}
-
-.sec-title{font-size:14px;font-weight:700;margin-bottom:10px;
-  display:flex;align-items:center;gap:8px;}
-.sec-title::before{content:'';width:3px;height:16px;background:var(--primary);border-radius:2px;}
-
-.unit-grid{display:flex;flex-direction:column;gap:8px;}
-.unit-card{
-  background:var(--surface);border-radius:var(--r);padding:14px 16px;
-  display:flex;align-items:center;gap:14px;cursor:pointer;
-  border:2px solid transparent;box-shadow:var(--shadow-sm);
-  transition:all .2s;
-}
-.unit-card:hover{border-color:var(--unit-c);transform:translateX(3px);}
+/* HOME */
+.home-banner{background:linear-gradient(135deg,var(--dark),var(--navy));border-radius:var(--r);
+  padding:16px;margin-bottom:11px;color:white;position:relative;overflow:hidden;}
+.home-banner::before{content:'RPM';position:absolute;right:-8px;top:-6px;
+  font-family:'Bebas Neue',sans-serif;font-size:100px;color:rgba(255,255,255,.04);line-height:1;pointer-events:none;}
+.hb-name{font-size:12px;color:rgba(255,255,255,.55);margin-bottom:2px;}
+.hb-title{font-size:17px;font-weight:900;}
+.hb-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:11px;}
+.hb-stat{background:rgba(255,255,255,.08);border-radius:8px;padding:8px;text-align:center;}
+.hb-stat .n{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--orange);line-height:1;}
+.hb-stat .l{font-size:9px;color:rgba(255,255,255,.4);margin-top:1px;}
+.sec-title{font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:7px;}
+.sec-title::before{content:'';width:3px;height:15px;background:var(--primary);border-radius:2px;}
+.unit-grid{display:flex;flex-direction:column;gap:6px;}
+.unit-card{background:var(--surface);border-radius:var(--r);padding:11px 13px;
+  display:flex;align-items:center;gap:11px;cursor:pointer;border:2px solid transparent;
+  box-shadow:var(--shadow-sm);transition:all .2s;}
 .unit-card:active{transform:scale(.98);}
-.ubadge{
-  width:44px;height:44px;border-radius:11px;flex-shrink:0;
+.ubadge{width:40px;height:40px;border-radius:10px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  font-family:'Bebas Neue',sans-serif;font-size:18px;color:white;
-  background:var(--unit-c);
-}
+  font-family:'Bebas Neue',sans-serif;font-size:16px;color:white;background:var(--unit-c);}
 .uinfo{flex:1;min-width:0;}
-.uname{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.urange{font-size:11px;color:var(--muted);margin-top:1px;}
-.ubar{height:4px;background:var(--bg);border-radius:2px;margin-top:6px;overflow:hidden;}
+.uname{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.urange{font-size:10px;color:var(--muted);margin-top:1px;}
+.ubar{height:3px;background:var(--bg);border-radius:2px;margin-top:5px;overflow:hidden;}
 .ubar-fill{height:100%;border-radius:2px;background:var(--unit-c);transition:width .5s;}
 .uright{text-align:right;flex-shrink:0;}
-.upct{font-size:13px;font-weight:700;color:var(--unit-c);}
-.ucnt{font-size:10px;color:var(--muted);margin-top:2px;}
+.upct{font-size:12px;font-weight:700;color:var(--unit-c);}
+.ucnt{font-size:10px;color:var(--muted);margin-top:1px;}
 
-/* ─ QUIZ ─ */
-.quiz-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
-.back-btn{
-  width:36px;height:36px;border:none;background:var(--surface);
-  border-radius:10px;cursor:pointer;font-size:18px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:var(--shadow-sm);
-}
-.quiz-title{font-size:14px;font-weight:700;flex:1;}
-.quiz-counter{font-size:12px;color:var(--muted);white-space:nowrap;}
-
-.progbar{height:6px;background:var(--border);border-radius:3px;margin-bottom:14px;overflow:hidden;}
+/* QUIZ */
+.quiz-header{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.back-btn{width:32px;height:32px;border:none;background:var(--surface);border-radius:8px;
+  cursor:pointer;font-size:15px;flex-shrink:0;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm);}
+.quiz-title{font-size:12px;font-weight:700;flex:1;}
+.quiz-counter{font-size:11px;color:var(--muted);white-space:nowrap;}
+.progbar{height:5px;background:var(--border);border-radius:3px;margin-bottom:10px;overflow:hidden;}
 .progfill{height:100%;background:linear-gradient(90deg,var(--primary),var(--gold));border-radius:3px;transition:width .35s;}
 
 /* 문제 카드 */
-.qcard{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:12px;}
-.qcard-top{
-  background:linear-gradient(135deg,var(--dark),var(--navy));
-  padding:10px 16px;display:flex;justify-content:space-between;align-items:center;
-}
-.qnum{font-family:'Bebas Neue',sans-serif;font-size:20px;color:white;}
-.qtags{display:flex;gap:5px;}
-.qtag{font-size:10px;color:rgba(255,255,255,0.65);background:rgba(255,255,255,0.1);border-radius:6px;padding:2px 8px;}
-
-.qbody{padding:20px;min-height:160px;}
-/* PDF 이미지 표시 */
-.qbody img{width:100%;border-radius:8px;display:block;}
-/* 텍스트 폴백 */
-.qtext{font-size:14px;line-height:1.9;color:var(--dark);}
-.qtext .notice{
-  text-align:center;padding:16px;background:var(--bg);
-  border-radius:10px;color:var(--muted);font-size:13px;
-}
-.qnum-big{
-  font-family:'Bebas Neue',sans-serif;font-size:48px;
-  color:var(--primary);line-height:1;
-}
+.qcard{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:10px;}
+.qcard-top{background:linear-gradient(135deg,var(--dark),var(--navy));
+  padding:16px 18px;display:flex;justify-content:space-between;align-items:flex-end;}
+.qnum-display{font-family:'Bebas Neue',sans-serif;font-size:72px;color:white;line-height:.9;}
+.qnum-sub{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;padding-bottom:4px;}
+.qtag{font-size:10px;color:rgba(255,255,255,.5);background:rgba(255,255,255,.09);
+  border-radius:5px;padding:2px 7px;}
+.qunit-tag{font-size:11px;color:rgba(255,255,255,.75);font-weight:600;max-width:120px;text-align:right;line-height:1.3;}
 
 /* 답 입력 */
-.ans-wrap{padding:0 16px 16px;}
-.ans-label{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:7px;letter-spacing:.5px;text-transform:uppercase;}
-.ans-row{display:flex;gap:8px;}
-.ans-input{
-  flex:1;border:2px solid var(--border);border-radius:10px;
-  padding:12px 14px;font-size:15px;
-  font-family:'Noto Sans KR',sans-serif;outline:none;
-  transition:border-color .2s;background:white;
-}
-.ans-input:focus{border-color:var(--primary);}
-.ans-input.ok{border-color:var(--green);background:#F0FFF7;}
-.ans-input.ng{border-color:var(--red);background:#FFF5F7;}
-.check-btn{
-  padding:12px 18px;border:none;border-radius:10px;
-  background:var(--primary);color:white;
-  font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;
-  cursor:pointer;white-space:nowrap;transition:all .2s;flex-shrink:0;
-}
-.check-btn:active{transform:scale(.96);}
+.ans-wrap{padding:13px 14px 14px;}
+.ans-label{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;letter-spacing:.4px;}
+
+/* 탭 */
+.type-tabs{display:flex;gap:5px;margin-bottom:10px;}
+.type-tab{padding:6px 14px;border-radius:7px;border:1px solid var(--border);
+  font-size:12px;font-weight:600;cursor:pointer;background:white;
+  font-family:'Noto Sans KR',sans-serif;transition:all .15s;color:var(--muted);}
+.type-tab.on{background:var(--primary);color:white;border-color:var(--primary);}
+
+/* 객관식 */
+.choice-row{display:flex;gap:6px;margin-bottom:6px;}
+.choice-btn{flex:1;padding:13px 2px;border:2px solid var(--border);border-radius:10px;
+  background:white;font-size:18px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;
+  transition:all .15s;font-weight:700;}
+.choice-btn:active{transform:scale(.94);}
+.choice-btn.selected{border-color:var(--primary);background:#FFF3F0;color:var(--primary);}
+.choice-btn.correct{border-color:var(--green);background:#EDFFF5;color:#1A6640;}
+.choice-btn.wrong{border-color:var(--red);background:#FFF5F7;color:var(--red);}
+
+/* 수식 디스플레이 */
+.math-display{min-height:50px;border:2px solid var(--border);border-radius:10px;
+  padding:11px 13px;font-size:18px;background:white;margin-bottom:8px;
+  display:flex;align-items:center;flex-wrap:wrap;cursor:text;
+  transition:border-color .2s;position:relative;letter-spacing:1px;}
+.math-display.focus{border-color:var(--primary);}
+.math-display.ok{border-color:var(--green);background:#F0FFF7;}
+.math-display.ng{border-color:var(--red);background:#FFF5F7;}
+.cursor{display:inline-block;width:2px;height:22px;background:var(--primary);
+  animation:blink .8s infinite;vertical-align:middle;margin:0 1px;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.math-placeholder{color:var(--muted);font-size:13px;font-style:italic;}
+
+/* 수식 키보드 */
+.mathkb{background:#F0F3F8;border-radius:10px;padding:7px;margin-bottom:7px;}
+.kb-section{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.5px;
+  padding:2px 2px 4px;text-transform:uppercase;}
+.kb-row{display:flex;gap:4px;margin-bottom:4px;}
+.kb-row:last-child{margin-bottom:0;}
+.kb-btn{flex:1;padding:9px 2px;border:1px solid #DDE1EC;border-radius:6px;
+  background:white;font-size:14px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;
+  transition:all .1s;text-align:center;font-weight:600;color:var(--dark);min-width:0;
+  box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.kb-btn:active{background:var(--primary);color:white;transform:scale(.93);}
+.kb-btn.op{background:#EFF6FF;color:#1E40AF;border-color:#C7D9F8;}
+.kb-btn.fn{background:#F5F0FF;color:#5B21B6;border-color:#DDD6FE;}
+.kb-btn.del{background:#FFF5F7;color:var(--red);border-color:#FFD0DA;}
+.kb-btn.go{background:var(--primary);color:white;border-color:var(--primary);flex:2;font-size:13px;}
 
 /* 결과 */
-.result{display:none;margin-top:10px;border-radius:10px;padding:12px 14px;}
-.result.show{display:flex;gap:10px;align-items:flex-start;}
+.result{display:none;margin-top:8px;border-radius:9px;padding:11px 13px;}
+.result.show{display:flex;gap:8px;align-items:flex-start;}
 .result.ok{background:#EDFFF5;border:1px solid #B2F5D0;}
 .result.ng{background:#FFF5F7;border:1px solid #FFD0DA;}
-.r-icon{font-size:24px;flex-shrink:0;}
-.r-body{flex:1;}
-.r-title{font-size:14px;font-weight:700;margin-bottom:2px;}
-.r-ans{font-size:13px;color:var(--muted);}
+.r-icon{font-size:21px;flex-shrink:0;}
+.r-title{font-size:13px;font-weight:700;margin-bottom:2px;}
+.r-ans{font-size:12px;color:var(--muted);}
 .r-ans b{color:var(--green);}
-
-/* 유튜브 버튼 */
-.yt-btn{
-  display:flex;align-items:center;gap:8px;
-  background:#FF0000;color:white;border:none;
-  border-radius:8px;padding:10px 16px;margin-top:10px;
-  font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;
-  cursor:pointer;text-decoration:none;width:fit-content;
-  transition:opacity .2s;
-}
-.yt-btn:active{opacity:.85;}
+.yt-btn{display:flex;align-items:center;gap:6px;background:#FF0000;color:white;
+  border:none;border-radius:7px;padding:8px 13px;margin-top:7px;
+  font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;
+  cursor:pointer;text-decoration:none;width:fit-content;}
 
 /* 이전/다음 */
-.qnav{display:flex;gap:8px;padding:0 16px 16px;}
-.qnav-btn{
-  flex:1;padding:13px;border-radius:10px;border:none;
-  font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;
-  cursor:pointer;transition:all .2s;
-}
+.qnav{display:flex;gap:6px;padding:0 14px 13px;}
+.qnav-btn{flex:1;padding:11px;border-radius:9px;border:none;
+  font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;}
 .qnav-prev{background:var(--border);color:var(--dark);}
 .qnav-next{background:var(--primary);color:white;}
-.qnav-next:active{transform:scale(.97);}
 
-/* 목록 모달 */
-.fab{
-  position:fixed;bottom:74px;right:14px;z-index:99;
-  width:50px;height:50px;border-radius:50%;
-  background:var(--primary);color:white;border:none;
-  font-size:20px;cursor:pointer;display:none;
-  align-items:center;justify-content:center;
-  box-shadow:0 4px 16px rgba(255,77,28,.4);
-  transition:transform .2s;
-}
+/* FAB + SHEET */
+.fab{position:fixed;bottom:66px;right:12px;z-index:99;width:46px;height:46px;border-radius:50%;
+  background:var(--primary);color:white;border:none;font-size:18px;cursor:pointer;
+  display:none;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(255,77,28,.4);}
 .fab.show{display:flex;}
-.fab:active{transform:scale(.92);}
-
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;}
 .overlay.show{display:flex;}
-.sheet{
-  background:var(--surface);border-radius:20px 20px 0 0;width:100%;
-  max-height:70vh;display:flex;flex-direction:column;
-  animation:slideUp .25s ease;
-}
+.sheet{background:var(--surface);border-radius:18px 18px 0 0;width:100%;
+  max-height:68vh;display:flex;flex-direction:column;animation:slideUp .22s ease;}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.sheet-head{
-  padding:14px 18px;border-bottom:1px solid var(--border);
-  display:flex;justify-content:space-between;align-items:center;flex-shrink:0;
-}
-.sheet-head h3{font-size:15px;font-weight:700;}
-.sheet-close{
-  width:28px;height:28px;border:none;background:var(--border);
-  border-radius:50%;cursor:pointer;font-size:14px;
-  display:flex;align-items:center;justify-content:center;
-}
-.sheet-body{overflow-y:auto;padding:12px;flex:1;}
-.qgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
-.qg-btn{
-  aspect-ratio:1;border-radius:8px;border:none;cursor:pointer;
-  font-size:11px;font-weight:700;transition:all .15s;
-  display:flex;align-items:center;justify-content:center;
-}
+.sheet-head{padding:11px 15px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.sheet-head h3{font-size:13px;font-weight:700;}
+.sheet-close{width:24px;height:24px;border:none;background:var(--border);border-radius:50%;cursor:pointer;font-size:12px;}
+.sheet-body{overflow-y:auto;padding:9px;flex:1;}
+.qgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
+.qg-btn{aspect-ratio:1;border-radius:7px;border:none;cursor:pointer;font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;transition:all .1s;}
 .qg-btn.un{background:var(--border);color:var(--dark);}
 .qg-btn.ok{background:#B2F5D0;color:#1A6640;}
 .qg-btn.ng{background:#FFD0DA;color:#8B1A2E;}
-.qg-btn.cur{outline:2.5px solid var(--primary);outline-offset:1px;}
+.qg-btn.cur{outline:2px solid var(--primary);outline-offset:1px;}
 
-/* 손글씨 */
-.canvas-card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:12px;}
-.canvas-bar{
-  padding:8px 12px;background:#F7F8FA;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-}
-.canvas-bar-lbl{font-size:11px;font-weight:600;color:var(--muted);flex-shrink:0;}
-.ctool{
-  width:28px;height:28px;border:1px solid var(--border);border-radius:6px;
-  background:white;cursor:pointer;font-size:14px;
-  display:flex;align-items:center;justify-content:center;transition:all .15s;
-}
-.ctool.on{background:var(--primary);color:white;border-color:var(--primary);}
-.cclr{
-  width:20px;height:20px;border-radius:50%;cursor:pointer;
-  border:2px solid white;box-shadow:0 0 0 1px var(--border);transition:box-shadow .15s;
-}
-.cclr.on{box-shadow:0 0 0 2px var(--primary);}
-canvas#cvs{display:block;width:100%;touch-action:none;background:#FFFDF0;cursor:crosshair;}
-
-/* 오답노트 */
-.wrong-banner{
-  background:linear-gradient(135deg,#8B1A2E,var(--red));
-  border-radius:var(--r);padding:16px;margin-bottom:14px;color:white;
-}
-.wrong-banner h2{font-size:16px;font-weight:700;}
-.wrong-banner p{font-size:12px;opacity:.75;margin-top:3px;}
-.wrong-list{display:flex;flex-direction:column;gap:8px;}
-.wi{
-  background:var(--surface);border-radius:12px;
-  border-left:4px solid var(--red);padding:14px 16px;box-shadow:var(--shadow-sm);
-}
-.wi-top{display:flex;justify-content:space-between;margin-bottom:7px;}
+/* WRONG */
+.wrong-banner{background:linear-gradient(135deg,#8B1A2E,var(--red));border-radius:var(--r);
+  padding:13px;margin-bottom:11px;color:white;}
+.wrong-list{display:flex;flex-direction:column;gap:6px;}
+.wi{background:var(--surface);border-radius:10px;border-left:4px solid var(--red);padding:11px 13px;box-shadow:var(--shadow-sm);}
+.wi-top{display:flex;justify-content:space-between;margin-bottom:5px;}
 .wi-num{font-size:13px;font-weight:700;color:var(--red);}
-.wi-unit{font-size:11px;color:var(--muted);}
-.wi-ans{font-size:12px;margin-bottom:9px;}
+.wi-unit{font-size:10px;color:var(--muted);}
+.wi-ans{font-size:12px;margin-bottom:8px;}
 .wi-ans .m{color:var(--red);font-weight:600;}
 .wi-ans .c{color:var(--green);font-weight:600;}
-.wi-btns{display:flex;gap:7px;}
-.wibtn{
-  padding:6px 13px;border-radius:7px;border:none;
-  font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:600;cursor:pointer;
-  text-decoration:none;display:inline-flex;align-items:center;gap:4px;
-}
+.wi-btns{display:flex;gap:5px;}
+.wibtn{padding:5px 10px;border-radius:6px;border:none;font-family:'Noto Sans KR',sans-serif;
+  font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:3px;}
 .wibtn-yt{background:var(--red);color:white;}
 .wibtn-retry{background:var(--border);color:var(--dark);}
 
-/* 통계 */
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
-.scard{background:var(--surface);border-radius:var(--r);padding:16px;text-align:center;box-shadow:var(--shadow-sm);}
-.scard .sn{font-family:'Bebas Neue',sans-serif;font-size:42px;line-height:1;}
-.scard .sl{font-size:11px;color:var(--muted);margin-top:1px;}
-.ustat-list{display:flex;flex-direction:column;gap:7px;}
-.ustat{background:var(--surface);border-radius:10px;padding:12px 14px;box-shadow:var(--shadow-sm);}
-.ustat-top{display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:6px;}
-.ustat-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:11px;}
+.scard{background:var(--surface);border-radius:var(--r);padding:13px;text-align:center;box-shadow:var(--shadow-sm);}
+.scard .sn{font-family:'Bebas Neue',sans-serif;font-size:38px;line-height:1;}
+.scard .sl{font-size:10px;color:var(--muted);margin-top:1px;}
+.ustat-list{display:flex;flex-direction:column;gap:5px;}
+.ustat{background:var(--surface);border-radius:8px;padding:10px 12px;box-shadow:var(--shadow-sm);}
+.ustat-top{display:flex;justify-content:space-between;font-size:11px;font-weight:600;margin-bottom:5px;}
+.ustat-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
 .ustat-fill{height:100%;border-radius:2px;}
+.empty{text-align:center;padding:38px 20px;color:var(--muted);}
+.empty .ei{font-size:40px;margin-bottom:9px;}
 
-/* empty */
-.empty{text-align:center;padding:48px 20px;color:var(--muted);}
-.empty .ei{font-size:48px;margin-bottom:12px;}
-.empty p{font-size:13px;line-height:1.7;}
-
-/* responsive – PC */
+/* PC */
 @media(min-width:768px){
   #app{flex-direction:row;}
   .topbar{display:none;}
-  .bnav{
-    flex-direction:column;width:80px;height:100%;
-    border-top:none;border-right:1px solid var(--border);
-    padding:20px 0;
-  }
-  .bn{padding:14px 4px;font-size:9px;}
-  .bn .ico{font-size:24px;}
-  .scroll{padding:0;}
-  .screen{max-width:720px;margin:0 auto;padding:24px;}
-  .fab{bottom:24px;}
-
-  /* PC 전용 사이드 로고 */
-  .bnav::before{
-    content:'RPM';font-family:'Bebas Neue',sans-serif;
-    font-size:18px;color:var(--primary);letter-spacing:2px;
-    display:block;text-align:center;padding:0 0 20px;
-    border-bottom:1px solid var(--border);margin-bottom:10px;
-  }
+  .bnav{flex-direction:column;width:72px;height:100%;border-top:none;border-right:1px solid var(--border);padding:16px 0;}
+  .bn{padding:11px 4px;font-size:9px;}
+  .bn .ico{font-size:21px;}
+  .screen{max-width:660px;margin:0 auto;padding:20px;}
+  .fab{bottom:20px;}
+  .bnav::before{content:'RPM';font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--primary);
+    letter-spacing:2px;display:block;text-align:center;padding:0 0 16px;
+    border-bottom:1px solid var(--border);margin-bottom:8px;}
 }
 </style>
 </head>
 <body>
 <div id="app" style="display:none;">
 
-  <!-- ─ TOP BAR (모바일) ─ -->
   <div class="topbar">
-    <div>
-      <div class="tbar-logo">RPM 数学</div>
-    </div>
-    <div class="tbar-user">
-      <div class="tbar-pills">
-        <div class="pill">✅ <b id="hc">0</b></div>
-        <div class="pill">❌ <b id="hw">0</b></div>
-      </div>
+    <div class="tbar-logo">RPM 数学</div>
+    <div class="tbar-right">
+      <div class="pill">✅ <b id="hc">0</b></div>
+      <div class="pill">❌ <b id="hw">0</b></div>
       <div class="tbar-name" id="tbarName"></div>
       <button class="logout-btn" onclick="doLogout()">로그아웃</button>
     </div>
   </div>
 
-  <!-- ─ SCROLL ─ -->
   <div class="scroll" id="scrollEl">
 
-    <!-- LOGIN (auth 없을 때) -->
+    <!-- LOGIN -->
     <div id="s-login" style="display:none;">
       <div class="login-card">
         <div class="login-logo">
           <div class="big">RPM</div>
           <div class="sub">공통수학 1 · 학습 시스템</div>
         </div>
-        <div class="lfield">
-          <label>이메일</label>
-          <input class="linput" type="email" id="lemail" placeholder="student@school.com">
-        </div>
-        <div class="lfield">
-          <label>비밀번호</label>
-          <input class="linput" type="password" id="lpassword" placeholder="비밀번호 입력"
-            onkeydown="if(event.key==='Enter')doLogin()">
-        </div>
+        <div class="lfield"><label>이메일</label>
+          <input class="linput" type="email" id="lemail" placeholder="student@school.com"></div>
+        <div class="lfield"><label>비밀번호</label>
+          <input class="linput" type="password" id="lpassword" placeholder="비밀번호"
+            onkeydown="if(event.key==='Enter')doLogin()"></div>
         <button class="lbtn" onclick="doLogin()">로그인</button>
         <div class="lerr" id="lerr"></div>
       </div>
@@ -452,7 +305,7 @@ canvas#cvs{display:block;width:100%;touch-action:none;background:#FFFDF0;cursor:
     <div class="screen on" id="s-home">
       <div class="home-banner">
         <div class="hb-name" id="hbName">안녕하세요</div>
-        <div class="hb-title">오늘도 열심히 공부해요! 📚</div>
+        <div class="hb-title">오늘도 열심히! 📚</div>
         <div class="hb-stats">
           <div class="hb-stat"><div class="n" id="hs-tot">0</div><div class="l">총 풀이</div></div>
           <div class="hb-stat"><div class="n" id="hs-ok">0</div><div class="l">정답</div></div>
@@ -471,27 +324,106 @@ canvas#cvs{display:block;width:100%;touch-action:none;background:#FFFDF0;cursor:
         <div class="quiz-title" id="qUnitTitle">단원</div>
         <div class="quiz-counter" id="qCounter">1/1</div>
       </div>
-      <div class="progbar"><div class="progfill" id="progFill" style="width:5%"></div></div>
+      <div class="progbar"><div class="progfill" id="progFill" style="width:0%"></div></div>
 
       <div class="qcard">
+        <!-- 문항번호 크게 -->
         <div class="qcard-top">
-          <span class="qnum" id="qNumLbl">0001</span>
-          <div class="qtags">
-            <span class="qtag" id="qUnitTag"></span>
-            <span class="qtag" id="qTypeTag"></span>
+          <div class="qnum-display" id="qNumLbl">0001</div>
+          <div class="qnum-sub">
+            <span class="qtag" id="qTypeTag">기본</span>
+            <span class="qunit-tag" id="qUnitTag"></span>
           </div>
         </div>
-        <!-- 문제 본문: PDF 이미지 또는 텍스트 -->
-        <div class="qbody" id="qBody"></div>
-        <!-- 답 입력 -->
+
         <div class="ans-wrap">
-          <div class="ans-label">정답 입력</div>
-          <div class="ans-row">
-            <input class="ans-input" type="text" id="ansInput"
-              placeholder="답 입력 (①②③ 또는 숫자/식)"
-              onkeydown="if(event.key==='Enter')onCheck()">
-            <button class="check-btn" id="checkBtn" onclick="onCheck()">채점</button>
+          <div class="ans-label">📝 답 입력</div>
+
+          <!-- 답 유형 탭 -->
+          <div class="type-tabs">
+            <button class="type-tab on" id="tab-obj" onclick="setType('obj')">① 객관식</button>
+            <button class="type-tab" id="tab-sub" onclick="setType('sub')">✏ 주관식</button>
           </div>
+
+          <!-- 객관식 -->
+          <div id="obj-area">
+            <div class="choice-row">
+              <button class="choice-btn" data-v="①" onclick="selectChoice(this)">①</button>
+              <button class="choice-btn" data-v="②" onclick="selectChoice(this)">②</button>
+              <button class="choice-btn" data-v="③" onclick="selectChoice(this)">③</button>
+              <button class="choice-btn" data-v="④" onclick="selectChoice(this)">④</button>
+              <button class="choice-btn" data-v="⑤" onclick="selectChoice(this)">⑤</button>
+            </div>
+          </div>
+
+          <!-- 주관식 수식 입력기 -->
+          <div id="sub-area" style="display:none;">
+            <div class="math-display" id="mathDisplay">
+              <span class="math-placeholder">수식 키보드로 답 입력</span>
+            </div>
+            <!-- 숨겨진 input (일반 키보드 지원용) -->
+            <input id="hiddenInput" style="position:fixed;opacity:0;width:1px;height:1px;top:-100px;"
+              onkeydown="onHiddenKey(event)" oninput="onHiddenInput(event)">
+
+            <div class="mathkb">
+              <!-- 숫자 행 -->
+              <div class="kb-row">
+                <button class="kb-btn" onclick="kb('7')">7</button>
+                <button class="kb-btn" onclick="kb('8')">8</button>
+                <button class="kb-btn" onclick="kb('9')">9</button>
+                <button class="kb-btn op" onclick="kb('+')">＋</button>
+                <button class="kb-btn op" onclick="kb('-')">－</button>
+                <button class="kb-btn del" onclick="kbDel()">⌫</button>
+              </div>
+              <div class="kb-row">
+                <button class="kb-btn" onclick="kb('4')">4</button>
+                <button class="kb-btn" onclick="kb('5')">5</button>
+                <button class="kb-btn" onclick="kb('6')">6</button>
+                <button class="kb-btn op" onclick="kb('×')">×</button>
+                <button class="kb-btn op" onclick="kb('÷')">÷</button>
+                <button class="kb-btn op" onclick="kb('/')">／</button>
+              </div>
+              <div class="kb-row">
+                <button class="kb-btn" onclick="kb('1')">1</button>
+                <button class="kb-btn" onclick="kb('2')">2</button>
+                <button class="kb-btn" onclick="kb('3')">3</button>
+                <button class="kb-btn fn" onclick="kb('√')">√</button>
+                <button class="kb-btn fn" onclick="kb('²')">²</button>
+                <button class="kb-btn fn" onclick="kb('³')">³</button>
+              </div>
+              <div class="kb-row">
+                <button class="kb-btn" onclick="kb('0')">0</button>
+                <button class="kb-btn" onclick="kb('.')">·</button>
+                <button class="kb-btn op" onclick="kb('±')">±</button>
+                <button class="kb-btn fn" onclick="kb('π')">π</button>
+                <button class="kb-btn fn" onclick="kb('i')">i</button>
+                <button class="kb-btn del" onclick="kbClear()">C</button>
+              </div>
+              <!-- 문자/기호 행 -->
+              <div class="kb-row">
+                <button class="kb-btn fn" onclick="kb('x')">x</button>
+                <button class="kb-btn fn" onclick="kb('y')">y</button>
+                <button class="kb-btn fn" onclick="kb('a')">a</button>
+                <button class="kb-btn fn" onclick="kb('b')">b</button>
+                <button class="kb-btn fn" onclick="kb('(')"> ( </button>
+                <button class="kb-btn fn" onclick="kb(')')"> ) </button>
+              </div>
+              <div class="kb-row">
+                <button class="kb-btn fn" onclick="kb('α')">α</button>
+                <button class="kb-btn fn" onclick="kb('β')">β</button>
+                <button class="kb-btn fn" onclick="kb('≤')">≤</button>
+                <button class="kb-btn fn" onclick="kb('≥')">≥</button>
+                <button class="kb-btn fn" onclick="kb('≠')">≠</button>
+                <button class="kb-btn fn" onclick="kb('∞')">∞</button>
+              </div>
+              <!-- 채점 -->
+              <div class="kb-row">
+                <button class="kb-btn go" id="checkBtn" onclick="onCheck()">✓ 채점하기</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 결과 -->
           <div class="result" id="resultBox">
             <div class="r-icon" id="rIcon"></div>
             <div class="r-body">
@@ -499,69 +431,40 @@ canvas#cvs{display:block;width:100%;touch-action:none;background:#FFFDF0;cursor:
               <div class="r-ans" id="rAns"></div>
             </div>
           </div>
-          <a class="yt-btn" id="ytBtn" href="#" target="_blank" style="display:none">
-            ▶ 해설 영상 보기
-          </a>
+          <a class="yt-btn" id="ytBtn" href="#" target="_blank" style="display:none">▶ 해설 영상 보기</a>
         </div>
+
         <div class="qnav">
           <button class="qnav-btn qnav-prev" onclick="prevQ()">← 이전</button>
-          <button class="qnav-btn qnav-next" id="nextBtn" onclick="nextQ()">다음 →</button>
+          <button class="qnav-btn qnav-next" onclick="nextQ()" id="nextBtn">다음 →</button>
         </div>
-      </div>
-
-      <!-- 손글씨 -->
-      <div class="canvas-card">
-        <div class="canvas-bar">
-          <span class="canvas-bar-lbl">✏ 풀이</span>
-          <div style="display:flex;gap:5px;">
-            <button class="ctool on" id="tPen" onclick="setTool('pen')">✏️</button>
-            <button class="ctool" id="tErase" onclick="setTool('erase')">🧹</button>
-            <button class="ctool" onclick="clearCvs()">🗑️</button>
-          </div>
-          <div style="display:flex;gap:5px;" id="clrGroup">
-            <div class="cclr on" style="background:#222" data-c="#222222" onclick="setClr(this)"></div>
-            <div class="cclr" style="background:#FF3B5C" data-c="#FF3B5C" onclick="setClr(this)"></div>
-            <div class="cclr" style="background:#2980B9" data-c="#2980B9" onclick="setClr(this)"></div>
-            <div class="cclr" style="background:#26D07C" data-c="#26D07C" onclick="setClr(this)"></div>
-            <div class="cclr" style="background:#8E44AD" data-c="#8E44AD" onclick="setClr(this)"></div>
-          </div>
-          <select id="szSel" onchange="pSz=+this.value"
-            style="border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:11px;background:white;">
-            <option value="2">얇게</option>
-            <option value="4" selected>보통</option>
-            <option value="8">굵게</option>
-            <option value="14">매우굵게</option>
-          </select>
-        </div>
-        <canvas id="cvs" height="200"></canvas>
       </div>
     </div>
 
     <!-- WRONG -->
     <div class="screen" id="s-wrong">
       <div class="wrong-banner">
-        <h2>❌ 오답 노트</h2>
-        <p id="wrongSub">틀린 문제를 복습하세요</p>
+        <h2 style="font-size:15px;font-weight:700;">❌ 오답 노트</h2>
+        <p style="font-size:11px;opacity:.75;margin-top:2px;" id="wrongSub">틀린 문제를 복습하세요</p>
       </div>
       <div class="wrong-list" id="wrongList"></div>
     </div>
 
     <!-- STATS -->
     <div class="screen" id="s-stats">
-      <div style="font-size:18px;font-weight:900;margin-bottom:14px;">📊 학습 통계</div>
+      <div style="font-size:17px;font-weight:900;margin-bottom:11px;">📊 학습 통계</div>
       <div class="stats-grid">
         <div class="scard"><div class="sn" id="st-tot">0</div><div class="sl">총 풀이</div></div>
         <div class="scard"><div class="sn" id="st-rt" style="color:var(--primary)">0%</div><div class="sl">정답률</div></div>
         <div class="scard"><div class="sn" id="st-ok" style="color:var(--green)">0</div><div class="sl">정답</div></div>
         <div class="scard"><div class="sn" id="st-ng" style="color:var(--red)">0</div><div class="sl">오답</div></div>
       </div>
-      <div style="font-size:13px;font-weight:700;margin-bottom:9px;">단원별 성취도</div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:7px;">단원별 성취도</div>
       <div class="ustat-list" id="ustatList"></div>
     </div>
 
-  </div><!-- /scroll -->
+  </div>
 
-  <!-- ─ BOTTOM NAV ─ -->
   <div class="bnav">
     <button class="bn on" id="bn-home" onclick="navTo('home')"><span class="ico">🏠</span><span>단원</span></button>
     <button class="bn" id="bn-quiz" onclick="navTo('quiz')"><span class="ico">📖</span><span>문제</span></button>
@@ -570,10 +473,7 @@ canvas#cvs{display:block;width:100%;touch-action:none;background:#FFFDF0;cursor:
   </div>
 </div>
 
-<!-- FAB -->
 <button class="fab" id="fab" onclick="openSheet()">≡</button>
-
-<!-- 문제 목록 시트 -->
 <div class="overlay" id="overlay" onclick="if(event.target===this)closeSheet()">
   <div class="sheet">
     <div class="sheet-head">
@@ -585,36 +485,28 @@ canvas#cvs{display:block;width:100%;touch-action:none;background:#FFFDF0;cursor:
 </div>
 
 <script>
-// ════════════════════════════════════════════
-//  CONSTANTS
-// ════════════════════════════════════════════
 const UNITS=[
-  {id:1, name:'다항식의 연산',r:[1,110],c:'#FF5722'},
-  {id:2, name:'항등식과 나머지정리',r:[111,195],c:'#8E44AD'},
-  {id:3, name:'인수분해',r:[196,279],c:'#2980B9'},
-  {id:4, name:'복소수',r:[280,375],c:'#16A085'},
-  {id:5, name:'이차방정식',r:[376,480],c:'#E67E22'},
-  {id:6, name:'이차방정식과 이차함수',r:[481,566],c:'#C0392B'},
-  {id:7, name:'여러 가지 방정식',r:[567,628],c:'#1ABC9C'},
-  {id:8, name:'연립일차부등식',r:[629,774],c:'#F39C12'},
-  {id:9, name:'이차부등식과 연립이차부등식',r:[775,910],c:'#9B59B6'},
+  {id:1,name:'다항식의 연산',r:[1,110],c:'#FF5722'},
+  {id:2,name:'항등식과 나머지정리',r:[111,195],c:'#8E44AD'},
+  {id:3,name:'인수분해',r:[196,279],c:'#2980B9'},
+  {id:4,name:'복소수',r:[280,375],c:'#16A085'},
+  {id:5,name:'이차방정식',r:[376,480],c:'#E67E22'},
+  {id:6,name:'이차방정식과 이차함수',r:[481,566],c:'#C0392B'},
+  {id:7,name:'여러 가지 방정식',r:[567,628],c:'#1ABC9C'},
+  {id:8,name:'연립일차부등식',r:[629,774],c:'#F39C12'},
+  {id:9,name:'이차부등식과 연립이차부등식',r:[775,910],c:'#9B59B6'},
   {id:10,name:'경우의 수와 순열',r:[911,1000],c:'#27AE60'},
   {id:11,name:'조합',r:[1001,1092],c:'#E74C3C'},
   {id:12,name:'행렬',r:[1093,1184],c:'#3498DB'},
 ];
 
-// 유튜브 설정 – 관리자 페이지에서 설정한 채널 ID를 Firestore에서 읽어옴
-let YT_CHANNEL_ID = '';   // 예: UCxxxxxxxx
-let YT_CHANNEL_NAME = 'RPM 수학';
+let YT_CHANNEL_ID='';
 function ytUrl(n){
-  const q = encodeURIComponent(`RPM 공통수학1 ${String(n).padStart(4,'0')}번 풀이`);
-  if(YT_CHANNEL_ID)
-    return `https://www.youtube.com/results?search_query=${q}&sp=EgIQAQ%253D%253D` +
-           `&channel=${YT_CHANNEL_ID}`;
-  return `https://www.youtube.com/results?search_query=${q}`;
+  const q=encodeURIComponent(`RPM 공통수학1 ${String(n).padStart(4,'0')}번 풀이`);
+  return YT_CHANNEL_ID?`https://www.youtube.com/results?search_query=${q}&channel=${YT_CHANNEL_ID}`
+    :`https://www.youtube.com/results?search_query=${q}`;
 }
 
-// 정답 DB (빠른정답 PDF 전체 수록)
 const ANS={
   1:'(1)3x³y²+2x²y-5xy³+y-7 (2)-7+(2x²+1)y+3x³y²-5xy³',
   2:'3x²-xy+4y²',3:'2x²+7xy+3y²',4:'5x²+5xy+4y²',
@@ -775,131 +667,91 @@ const ANS={
   564:'4/9',565:'③',566:'2',
 };
 
-// PDF 이미지 경로 설정 (배포 시 실제 경로로 교체)
-// 예: /images/q_0038.png 형식
-const IMG_BASE = './images/';
-function qImgPath(n){ return `${IMG_BASE}q_${String(n).padStart(4,'0')}.png`; }
+// ── STATE ──
+let curUser=null,records={},curUnit=null,curList=[],curIdx=0,checked=false;
+let ansType='obj', mathValue='', selectedChoice=null;
 
-// ════════════════════════════════════════════
-//  STATE
-// ════════════════════════════════════════════
-let curUser = null;
-let records = {};   // { qNum: { correct, userAns, correctAns, ts } }
-let curUnit = null;
-let curList = [];
-let curIdx  = 0;
-let checked = false;
-
-// ════════════════════════════════════════════
-//  AUTH
-// ════════════════════════════════════════════
+// ── AUTH ──
 async function doLogin(){
-  const em = document.getElementById('lemail').value.trim();
-  const pw = document.getElementById('lpassword').value;
-  const err = document.getElementById('lerr');
-  err.textContent = '';
-  try {
-    const {auth, signInWithEmailAndPassword} = window._fb;
-    await signInWithEmailAndPassword(auth, em, pw);
-  } catch(e){
-    err.textContent = '이메일 또는 비밀번호가 올바르지 않습니다.';
-  }
+  const em=document.getElementById('lemail').value.trim();
+  const pw=document.getElementById('lpassword').value;
+  document.getElementById('lerr').textContent='';
+  try{
+    const {auth,signInWithEmailAndPassword}=window._fb;
+    await signInWithEmailAndPassword(auth,em,pw);
+  }catch(e){ document.getElementById('lerr').textContent='이메일 또는 비밀번호가 올바르지 않습니다.'; }
 }
-async function doLogout(){
-  const {auth, signOut} = window._fb;
-  await signOut(auth);
-  location.reload();
-}
+async function doLogout(){const {auth,signOut}=window._fb;await signOut(auth);location.reload();}
 
-// Auth 상태 감지
-window.addEventListener('load', ()=>{
-  const {auth, onAuthStateChanged, db, doc, getDoc} = window._fb;
-  onAuthStateChanged(auth, async user=>{
+window.addEventListener('load',()=>{
+  const {auth,onAuthStateChanged,db,doc,getDoc}=window._fb;
+  onAuthStateChanged(auth,async user=>{
     if(!user){
       document.getElementById('s-login').style.display='flex';
       document.getElementById('app').style.display='none';
       return;
     }
-    curUser = user;
+    curUser=user;
     document.getElementById('s-login').style.display='none';
     document.getElementById('app').style.display='flex';
-    document.getElementById('tbarName').textContent = user.displayName || user.email;
-    document.getElementById('hbName').textContent =
-      `${user.displayName || user.email.split('@')[0]}님, 안녕하세요!`;
-
-    // Firestore에서 학습 기록 로드
+    document.getElementById('tbarName').textContent=user.displayName||user.email.split('@')[0];
+    document.getElementById('hbName').textContent=`${user.displayName||user.email.split('@')[0]}님, 안녕하세요!`;
     await loadRecords();
-
-    // 유튜브 채널 설정 로드
     try{
-      const snap = await getDoc(doc(db,'settings','youtube'));
-      if(snap.exists()){
-        YT_CHANNEL_ID = snap.data().channelId || '';
-        YT_CHANNEL_NAME = snap.data().channelName || 'RPM 수학';
-      }
+      const snap=await getDoc(doc(db,'settings','youtube'));
+      if(snap.exists()) YT_CHANNEL_ID=snap.data().channelId||'';
     }catch(e){}
-
-    renderHome();
-    updateHeader();
+    renderHome(); updateHeader();
   });
 });
 
 async function loadRecords(){
-  const {db, doc, getDoc} = window._fb;
+  const {db,doc,getDoc}=window._fb;
   try{
-    const snap = await getDoc(doc(db,'students',curUser.uid,'data','records'));
-    records = snap.exists() ? (snap.data().records||{}) : {};
-  }catch(e){ records = {}; }
+    const snap=await getDoc(doc(db,'students',curUser.uid,'data','records'));
+    records=snap.exists()?(snap.data().records||{}):{};
+  }catch(e){records={};}
 }
-
-async function saveRecord(n, rec){
-  const {db, doc, setDoc, serverTimestamp} = window._fb;
-  records[n] = rec;
+async function saveRecord(n,rec){
+  const {db,doc,setDoc,serverTimestamp}=window._fb;
+  records[n]=rec;
   try{
     await setDoc(doc(db,'students',curUser.uid,'data','records'),
-      {records, updatedAt: serverTimestamp()}, {merge:true});
-  }catch(e){ console.warn('save failed', e); }
+      {records,updatedAt:serverTimestamp()},{merge:true});
+  }catch(e){}
 }
 
-// ════════════════════════════════════════════
-//  NAV
-// ════════════════════════════════════════════
+// ── NAV ──
 function navTo(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.bn').forEach(b=>b.classList.remove('on'));
   document.getElementById('s-'+name).classList.add('on');
   document.getElementById('bn-'+name).classList.add('on');
-  document.getElementById('fab').classList.toggle('show', name==='quiz');
+  document.getElementById('fab').classList.toggle('show',name==='quiz');
   document.getElementById('scrollEl').scrollTop=0;
   if(name==='wrong') renderWrong();
   if(name==='stats') renderStats();
   updateHeader();
 }
-function goHome(){ navTo('home'); renderHome(); }
+function goHome(){navTo('home');renderHome();}
 
-// ════════════════════════════════════════════
-//  HOME
-// ════════════════════════════════════════════
+// ── HOME ──
 function renderHome(){
-  const all = Object.keys(records).map(Number);
-  const tot = all.length;
-  const ok  = all.filter(n=>records[n]?.correct===true).length;
-  const ng  = tot-ok;
-  const rt  = tot>0 ? Math.round(ok/tot*100)+'%' : '-';
-  document.getElementById('hs-tot').textContent = tot;
-  document.getElementById('hs-ok').textContent  = ok;
-  document.getElementById('hs-ng').textContent  = ng;
-  document.getElementById('hs-rt').textContent  = rt;
-
-  const grid = document.getElementById('unitGrid');
+  const all=Object.keys(records).map(Number);
+  const tot=all.length,ok=all.filter(n=>records[n]?.correct===true).length;
+  const ng=tot-ok,rt=tot>0?Math.round(ok/tot*100)+'%':'-';
+  document.getElementById('hs-tot').textContent=tot;
+  document.getElementById('hs-ok').textContent=ok;
+  document.getElementById('hs-ng').textContent=ng;
+  document.getElementById('hs-rt').textContent=rt;
+  const grid=document.getElementById('unitGrid');
   grid.innerHTML='';
   UNITS.forEach(u=>{
-    const total= u.r[1]-u.r[0]+1;
-    const solved= all.filter(n=>n>=u.r[0]&&n<=u.r[1]).length;
-    const okCnt= all.filter(n=>n>=u.r[0]&&n<=u.r[1]&&records[n]?.correct===true).length;
-    const prog = Math.round(solved/total*100);
-    const rate = solved>0 ? Math.round(okCnt/solved*100)+'%' : '-';
-
+    const total=u.r[1]-u.r[0]+1;
+    const solved=all.filter(n=>n>=u.r[0]&&n<=u.r[1]).length;
+    const okCnt=all.filter(n=>n>=u.r[0]&&n<=u.r[1]&&records[n]?.correct===true).length;
+    const prog=Math.round(solved/total*100);
+    const rate=solved>0?Math.round(okCnt/solved*100)+'%':'-';
     const el=document.createElement('div');
     el.className='unit-card';
     el.style.setProperty('--unit-c',u.c);
@@ -910,113 +762,153 @@ function renderHome(){
         <div class="urange">${u.r[0]}~${u.r[1]}번 · ${total}문제</div>
         <div class="ubar"><div class="ubar-fill" style="width:${prog}%"></div></div>
       </div>
-      <div class="uright">
-        <div class="upct">${rate}</div>
-        <div class="ucnt">${solved}/${total}</div>
-      </div>`;
+      <div class="uright"><div class="upct">${rate}</div><div class="ucnt">${solved}/${total}</div></div>`;
     el.onclick=()=>startUnit(u);
     grid.appendChild(el);
   });
 }
 
-// ════════════════════════════════════════════
-//  QUIZ
-// ════════════════════════════════════════════
+// ── QUIZ ──
 function startUnit(u){
-  curUnit=u; curList=[]; curIdx=0;
+  curUnit=u;curList=[];curIdx=0;
   for(let n=u.r[0];n<=u.r[1];n++) curList.push(n);
-  // 첫 미풀이 문제로 이동
   const fi=curList.findIndex(n=>!records[n]);
   if(fi>=0) curIdx=fi;
   document.getElementById('qUnitTitle').textContent=`${String(u.id).padStart(2,'0')}. ${u.name}`;
-  navTo('quiz'); renderQ();
+  navTo('quiz');renderQ();
 }
 
 function renderQ(){
   const n=curList[curIdx];
   const tot=curList.length;
-  const pct=Math.round((curIdx+1)/tot*100);
-  document.getElementById('progFill').style.width=pct+'%';
+  document.getElementById('progFill').style.width=Math.round((curIdx+1)/tot*100)+'%';
   document.getElementById('qCounter').textContent=`${curIdx+1}/${tot}`;
   document.getElementById('qNumLbl').textContent=String(n).padStart(4,'0');
-
-  const u=UNITS.find(u=>n>=u.r[0]&&n<=u.r[1])||{name:'',id:0};
+  const u=UNITS.find(u=>n>=u.r[0]&&n<=u.r[1])||{name:''};
   document.getElementById('qUnitTag').textContent=u.name;
   const pos=curIdx/curList.length;
   document.getElementById('qTypeTag').textContent=pos<0.33?'기본':pos<0.66?'유형':'심화';
-
-  // 문제 본문: 이미지 우선, 없으면 안내
-  const body=document.getElementById('qBody');
-  const img=new Image();
-  img.onload=()=>{ body.innerHTML=''; body.appendChild(img); };
-  img.onerror=()=>{
-    body.innerHTML=`
-      <div class="qtext">
-        <div class="notice">
-          <div class="qnum-big">${String(n).padStart(4,'0')}</div>
-          <div style="margin-top:8px;font-size:13px;">교재 PDF의 해당 문제를 확인하세요</div>
-          <div style="margin-top:6px;font-size:11px;color:#BDC3C7;">
-            ${ANS[n]?'✅ 자동 채점 가능':'⚠ 정답 DB 없음 (교재 직접 확인)'}
-          </div>
-        </div>
-      </div>`;
-  };
-  img.src=qImgPath(n);
-  img.style.cssText='width:100%;border-radius:8px;';
-
-  // 입력 초기화
-  const inp=document.getElementById('ansInput');
-  inp.value=''; inp.className='ans-input'; inp.disabled=false;
-  document.getElementById('resultBox').className='result';
-  document.getElementById('ytBtn').style.display='none';
-  document.getElementById('checkBtn').textContent='채점';
-  checked=false;
-  clearCvs();
+  resetInput();
   renderQGrid();
-  setTimeout(()=>inp.focus(),100);
+  document.getElementById('scrollEl').scrollTop=0;
 }
 
-function onCheck(){
-  if(checked){ nextQ(); return; }
-  const n=curList[curIdx];
-  const user=document.getElementById('ansInput').value.trim();
-  if(!user) return;
-  const correct=ANS[n];
-  const isOk=correct ? matchAns(user,correct) : null;
+function resetInput(){
+  setType('obj');
+  document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');
+  selectedChoice=null;
+  mathValue='';
+  updateMathDisplay();
+  document.getElementById('resultBox').className='result';
+  document.getElementById('ytBtn').style.display='none';
+  document.getElementById('mathDisplay').className='math-display';
+  document.getElementById('checkBtn').textContent='✓ 채점하기';
+  checked=false;
+}
 
-  const inp=document.getElementById('ansInput');
-  inp.disabled=true; checked=true;
-  document.getElementById('checkBtn').textContent='다음 →';
+function setType(t){
+  ansType=t;
+  document.getElementById('tab-obj').classList.toggle('on',t==='obj');
+  document.getElementById('tab-sub').classList.toggle('on',t==='sub');
+  document.getElementById('obj-area').style.display=t==='obj'?'block':'none';
+  document.getElementById('sub-area').style.display=t==='sub'?'block':'none';
+}
+
+// 객관식: 선택 즉시 채점
+function selectChoice(btn){
+  if(checked) return;
+  document.querySelectorAll('.choice-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedChoice=btn.dataset.v;
+  onCheck();
+}
+
+// 수식 키보드
+function kb(v){
+  if(checked) return;
+  mathValue+=v;
+  updateMathDisplay();
+}
+function kbDel(){if(checked)return;mathValue=mathValue.slice(0,-1);updateMathDisplay();}
+function kbClear(){if(checked)return;mathValue='';updateMathDisplay();}
+
+function onHiddenKey(e){
+  if(checked)return;
+  if(e.key==='Backspace'){kbDel();e.preventDefault();}
+  else if(e.key==='Enter'){onCheck();e.preventDefault();}
+}
+function onHiddenInput(e){
+  if(checked)return;
+  const v=e.target.value;
+  if(v){mathValue+=v;e.target.value='';updateMathDisplay();}
+}
+
+function updateMathDisplay(){
+  const d=document.getElementById('mathDisplay');
+  if(mathValue){
+    d.innerHTML=`<span style="font-size:18px;letter-spacing:1px;">${esc(mathValue)}</span><span class="cursor"></span>`;
+  } else {
+    d.innerHTML='<span class="math-placeholder">수식 키보드로 답 입력</span>';
+  }
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── 채점 ──
+function onCheck(){
+  if(checked) return;
+  let userAns='';
+  if(ansType==='obj'){
+    if(!selectedChoice) return;
+    userAns=selectedChoice;
+  } else {
+    if(!mathValue.trim()) return;
+    userAns=mathValue.trim();
+  }
+  const n=curList[curIdx];
+  const correct=ANS[n];
+  const isOk=correct?matchAns(userAns,correct):null;
+  checked=true;
+  document.getElementById('checkBtn').textContent='다음으로 →';
+
+  if(ansType==='obj'){
+    document.querySelectorAll('.choice-btn').forEach(b=>{
+      const v=b.dataset.v;
+      if(correct&&matchAns(v,correct)) b.classList.add('correct');
+      else if(v===userAns&&!isOk) b.classList.add('wrong');
+    });
+  } else {
+    const d=document.getElementById('mathDisplay');
+    d.classList.remove('focus');
+    d.classList.add(isOk===null?'ok':isOk?'ok':'ng');
+  }
 
   const box=document.getElementById('resultBox');
   if(isOk===null){
     box.className='result show ok';
     document.getElementById('rIcon').textContent='📝';
-    document.getElementById('rTitle').textContent='입력이 저장되었습니다.';
-    document.getElementById('rAns').textContent='교재에서 직접 정답을 확인하세요.';
-    saveRecord(n,{correct:null,userAns:user,ts:Date.now()});
+    document.getElementById('rTitle').textContent='저장되었습니다';
+    document.getElementById('rAns').textContent='교재에서 정답을 확인하세요';
+    saveRecord(n,{correct:null,userAns,ts:Date.now()});
   } else if(isOk){
-    inp.className='ans-input ok';
     box.className='result show ok';
     document.getElementById('rIcon').textContent='🎉';
     document.getElementById('rTitle').textContent='정답입니다!';
     document.getElementById('rAns').textContent='';
-    saveRecord(n,{correct:true,userAns:user,ts:Date.now()});
+    saveRecord(n,{correct:true,userAns,ts:Date.now()});
   } else {
-    inp.className='ans-input ng';
     box.className='result show ng';
     document.getElementById('rIcon').textContent='😢';
-    document.getElementById('rTitle').textContent='틀렸습니다.';
+    document.getElementById('rTitle').textContent='틀렸습니다';
     document.getElementById('rAns').innerHTML=`정답: <b>${correct}</b>`;
-    saveRecord(n,{correct:false,userAns:user,correctAns:correct,ts:Date.now()});
+    saveRecord(n,{correct:false,userAns,correctAns:correct,ts:Date.now()});
     const yt=document.getElementById('ytBtn');
-    yt.href=ytUrl(n); yt.style.display='flex';
+    yt.href=ytUrl(n);yt.style.display='flex';
   }
-  updateHeader(); renderQGrid();
+  updateHeader();renderQGrid();
 }
 
 function matchAns(u,c){
-  const nm=s=>s.replace(/\s+/g,'').toLowerCase();
+  const nm=s=>s.replace(/\s+/g,'').toLowerCase().replace(/×/g,'*').replace(/÷/g,'/').replace(/－/g,'-').replace(/＋/g,'+');
   if(nm(u)===nm(c)) return true;
   const m={'①':'1','②':'2','③':'3','④':'4','⑤':'5'};
   const r={'1':'①','2':'②','3':'③','4':'④','5':'⑤'};
@@ -1026,7 +918,7 @@ function matchAns(u,c){
   return false;
 }
 
-function prevQ(){ if(curIdx>0){curIdx--;renderQ();} }
+function prevQ(){if(curIdx>0){curIdx--;renderQ();}}
 function nextQ(){
   if(curIdx<curList.length-1){curIdx++;renderQ();}
   else{
@@ -1036,10 +928,8 @@ function nextQ(){
   }
 }
 
-// 문제 목록 시트
 function renderQGrid(){
-  const g=document.getElementById('qgrid');
-  g.innerHTML='';
+  const g=document.getElementById('qgrid');g.innerHTML='';
   curList.forEach((n,i)=>{
     const rec=records[n];
     let cls='un';
@@ -1055,80 +945,53 @@ function renderQGrid(){
 function openSheet(){document.getElementById('overlay').classList.add('show');renderQGrid();}
 function closeSheet(){document.getElementById('overlay').classList.remove('show');}
 
-// ════════════════════════════════════════════
-//  WRONG NOTE
-// ════════════════════════════════════════════
+// ── WRONG ──
 function renderWrong(){
   const wrong=Object.keys(records).filter(k=>records[k]?.correct===false).map(Number).sort((a,b)=>a-b);
-  document.getElementById('wrongSub').textContent=
-    wrong.length>0?`틀린 문제 ${wrong.length}개 — 복습이 필요합니다`:'틀린 문제가 없어요 👍';
-  const list=document.getElementById('wrongList');
-  list.innerHTML='';
-  if(!wrong.length){
-    list.innerHTML='<div class="empty"><div class="ei">✅</div><p>오답 노트가 비어있어요!<br>모든 문제를 맞췄거나<br>아직 풀지 않았습니다.</p></div>';
-    return;
-  }
+  document.getElementById('wrongSub').textContent=wrong.length>0?`틀린 문제 ${wrong.length}개`:'틀린 문제 없음 👍';
+  const list=document.getElementById('wrongList');list.innerHTML='';
+  if(!wrong.length){list.innerHTML='<div class="empty"><div class="ei">✅</div><p>오답 노트가 비어있어요!</p></div>';return;}
   wrong.forEach(n=>{
     const rec=records[n];
     const u=UNITS.find(u=>n>=u.r[0]&&n<=u.r[1])||{name:'?'};
-    const el=document.createElement('div');
-    el.className='wi';
+    const el=document.createElement('div');el.className='wi';
     el.innerHTML=`
-      <div class="wi-top">
-        <span class="wi-num">문항 ${String(n).padStart(4,'0')}</span>
-        <span class="wi-unit">${u.name}</span>
-      </div>
-      <div class="wi-ans">
-        내 답: <span class="m">${rec.userAns||'?'}</span>
-        &nbsp;→&nbsp;
-        정답: <span class="c">${rec.correctAns||ANS[n]||'?'}</span>
-      </div>
+      <div class="wi-top"><span class="wi-num">문항 ${String(n).padStart(4,'0')}</span><span class="wi-unit">${u.name}</span></div>
+      <div class="wi-ans">내 답: <span class="m">${rec.userAns||'?'}</span> → 정답: <span class="c">${rec.correctAns||ANS[n]||'?'}</span></div>
       <div class="wi-btns">
-        <a class="wibtn wibtn-yt" href="${ytUrl(n)}" target="_blank">▶ 해설 영상</a>
+        <a class="wibtn wibtn-yt" href="${ytUrl(n)}" target="_blank">▶ 해설</a>
         <button class="wibtn wibtn-retry" onclick="retryQ(${n})">다시 풀기</button>
       </div>`;
     list.appendChild(el);
   });
 }
-
 function retryQ(n){
-  const u=UNITS.find(u=>n>=u.r[0]&&n<=u.r[1]);
-  if(!u) return;
-  curUnit=u; curList=[n]; curIdx=0;
-  document.getElementById('qUnitTitle').textContent=`복습: 문항 ${String(n).padStart(4,'0')}`;
-  navTo('quiz'); renderQ();
+  const u=UNITS.find(u=>n>=u.r[0]&&n<=u.r[1]);if(!u)return;
+  curUnit=u;curList=[n];curIdx=0;
+  document.getElementById('qUnitTitle').textContent=`복습: ${String(n).padStart(4,'0')}번`;
+  navTo('quiz');renderQ();
 }
 
-// ════════════════════════════════════════════
-//  STATS
-// ════════════════════════════════════════════
+// ── STATS ──
 function renderStats(){
   const all=Object.keys(records).map(Number);
-  const tot=all.length;
-  const ok=all.filter(n=>records[n]?.correct===true).length;
+  const tot=all.length,ok=all.filter(n=>records[n]?.correct===true).length;
   const ng=all.filter(n=>records[n]?.correct===false).length;
   const rt=tot>0?Math.round(ok/tot*100):0;
   document.getElementById('st-tot').textContent=tot;
   document.getElementById('st-ok').textContent=ok;
   document.getElementById('st-ng').textContent=ng;
   document.getElementById('st-rt').textContent=rt+'%';
-
-  const ul=document.getElementById('ustatList');
-  ul.innerHTML='';
+  const ul=document.getElementById('ustatList');ul.innerHTML='';
   UNITS.forEach(u=>{
     const nums=all.filter(n=>n>=u.r[0]&&n<=u.r[1]);
     const c=nums.filter(n=>records[n]?.correct===true).length;
-    const t=nums.length;
+    const t=nums.length,totalU=u.r[1]-u.r[0]+1;
     const pct=t>0?Math.round(c/t*100):0;
-    const totalU=u.r[1]-u.r[0]+1;
     const prog=Math.round(t/totalU*100);
-    const el=document.createElement('div');
-    el.className='ustat';
+    const el=document.createElement('div');el.className='ustat';
     el.innerHTML=`
-      <div class="ustat-top">
-        <span>${String(u.id).padStart(2,'0')} ${u.name}</span>
-        <span style="color:${u.c}">${t}/${totalU} · ${pct}%</span>
-      </div>
+      <div class="ustat-top"><span>${String(u.id).padStart(2,'0')} ${u.name}</span><span style="color:${u.c}">${t}/${totalU} · ${pct}%</span></div>
       <div class="ustat-bar"><div class="ustat-fill" style="width:${prog}%;background:${u.c}"></div></div>`;
     ul.appendChild(el);
   });
@@ -1136,54 +999,9 @@ function renderStats(){
 
 function updateHeader(){
   const all=Object.keys(records).map(Number);
-  const ok=all.filter(n=>records[n]?.correct===true).length;
-  const ng=all.filter(n=>records[n]?.correct===false).length;
-  document.getElementById('hc').textContent=ok;
-  document.getElementById('hw').textContent=ng;
+  document.getElementById('hc').textContent=all.filter(n=>records[n]?.correct===true).length;
+  document.getElementById('hw').textContent=all.filter(n=>records[n]?.correct===false).length;
 }
-
-// ════════════════════════════════════════════
-//  CANVAS
-// ════════════════════════════════════════════
-const cvs=document.getElementById('cvs');
-const ctx2=cvs.getContext('2d');
-let drawing=false, tool='pen', pColor='#222222', pSz=4;
-
-function resizeCvs(){cvs.width=cvs.parentElement.clientWidth; cvs.height=200;}
-window.addEventListener('resize',resizeCvs); resizeCvs();
-
-function setTool(t){
-  tool=t;
-  document.getElementById('tPen').classList.toggle('on',t==='pen');
-  document.getElementById('tErase').classList.toggle('on',t==='erase');
-}
-function setClr(el){
-  document.querySelectorAll('.cclr').forEach(c=>c.classList.remove('on'));
-  el.classList.add('on'); pColor=el.dataset.c; setTool('pen');
-}
-function clearCvs(){ctx2.clearRect(0,0,cvs.width,cvs.height);}
-
-function xy(e){
-  const r=cvs.getBoundingClientRect();
-  const sx=cvs.width/r.width, sy=cvs.height/r.height;
-  const s=e.touches?e.touches[0]:e;
-  return{x:(s.clientX-r.left)*sx, y:(s.clientY-r.top)*sy};
-}
-function dn(e){e.preventDefault();drawing=true;const p=xy(e);ctx2.beginPath();ctx2.moveTo(p.x,p.y);}
-function mv(e){
-  e.preventDefault();if(!drawing)return;
-  const p=xy(e);
-  ctx2.lineWidth=tool==='erase'?pSz*7:pSz;
-  ctx2.lineCap='round';ctx2.lineJoin='round';
-  ctx2.strokeStyle=tool==='erase'?'#FFFDF0':pColor;
-  ctx2.lineTo(p.x,p.y);ctx2.stroke();ctx2.beginPath();ctx2.moveTo(p.x,p.y);
-}
-function up(){drawing=false;}
-cvs.addEventListener('mousedown',dn);cvs.addEventListener('mousemove',mv);
-cvs.addEventListener('mouseup',up);cvs.addEventListener('mouseleave',up);
-cvs.addEventListener('touchstart',dn,{passive:false});
-cvs.addEventListener('touchmove',mv,{passive:false});
-cvs.addEventListener('touchend',up);
 </script>
 </body>
 </html>
