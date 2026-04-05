@@ -972,6 +972,32 @@ function openAiSol(n){
   curSolNum=n;
   var key=geminiKeyCache||localStorage.getItem('gemini_key')||'';
   if(!key){
+    // 캐시 없으면 Firebase에서 실시간으로 한번 더 시도
+    var numStr=String(n).padStart(4,'0');
+    document.getElementById('sol-popup-title').textContent=numStr+'번 AI 해설';
+    document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">AI 해설 준비 중...</div>';
+    document.getElementById('sol-popup').classList.remove('hide');
+    if(typeof DB!=='undefined'&&DB){
+      DB.collection('settings').doc('gemini').get().then(function(doc){
+        if(doc.exists&&doc.data().apiKey){
+          geminiKeyCache=doc.data().apiKey;
+          localStorage.setItem('gemini_key',geminiKeyCache);
+          openAiSol(n); // 키 받았으니 다시 실행
+        } else {
+          document.getElementById('sol-popup').classList.add('hide');
+          document.getElementById('api-key-input').value='';
+          document.getElementById('api-err').textContent='';
+          document.getElementById('api-popup').classList.remove('hide');
+        }
+      }).catch(function(){
+        document.getElementById('sol-popup').classList.add('hide');
+        document.getElementById('api-key-input').value='';
+        document.getElementById('api-err').textContent='';
+        document.getElementById('api-popup').classList.remove('hide');
+      });
+      return;
+    }
+    document.getElementById('sol-popup').classList.add('hide');
     document.getElementById('api-key-input').value='';
     document.getElementById('api-err').textContent='';
     document.getElementById('api-popup').classList.remove('hide');
