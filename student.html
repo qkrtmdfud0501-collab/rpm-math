@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>태산학원</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:sans-serif;background:#f0f3f8;color:#1a1d2e;height:100vh;overflow:hidden;display:flex;flex-direction:column}
@@ -521,35 +523,39 @@ function saveSess(u){localStorage.setItem('rpm_sess',JSON.stringify(u));}
 function clearSess(){localStorage.removeItem('rpm_sess');}
 
 // ── Firebase 백그라운드 동기화 ──
-var FB=null;
-function initFirebase(){
+
+// Firebase 즉시 초기화 (head에서 SDK 로드됨)
+(function(){
   try{
-    if(typeof firebase==='undefined') return;
     if(!firebase.apps||!firebase.apps.length){
       firebase.initializeApp({apiKey:"AIzaSyARHy35Dd2n0Fw1sUs-U4zY0BY9WVneMJ4",authDomain:"rpm-57f1a.firebaseapp.com",projectId:"rpm-57f1a",storageBucket:"rpm-57f1a.firebasestorage.app",messagingSenderId:"681087068656",appId:"1:681087068656:web:68c9d3ef6df32dceb89535"});
     }
-    FB=firebase.firestore();
-  }catch(e){}
-}
+    DB=firebase.firestore();
+    // Gemini 키 미리 로드
+    DB.collection('settings').doc('gemini').get().then(function(doc){
+      if(doc.exists&&doc.data().apiKey){
+        geminiKeyCache=doc.data().apiKey;
+        localStorage.setItem('gemini_key',geminiKeyCache);
+      }
+    }).catch(function(){});
+    // YT 링크 미리 로드
+    DB.collection('settings').doc('ytlinks').get().then(function(doc){
+      if(doc.exists&&doc.data().links){
+        ytLinksCache=doc.data().links;
+        ytLinksLoaded=true;
+        localStorage.setItem('rpm_yt',JSON.stringify(ytLinksCache));
+      }
+    }).catch(function(){});
+  }catch(e){console.log('Firebase init error:',e);}
+})();
+
 function syncToFirebase(){
-  if(!FB||!curUser) return;
+  if(!DB||!curUser) return;
   try{
     var uid=curUser.replace(/[^a-zA-Z0-9_]/g,'_');
-    FB.collection('students').doc(uid).set({email:curUser,name:document.getElementById('tname').textContent,records:records,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    DB.collection('students').doc(uid).set({email:curUser,name:document.getElementById('tname').textContent,records:records,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
   }catch(e){}
 }
-function loadFirebaseSDK(){
-  var s1=document.createElement('script');
-  s1.src='https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js';
-  s1.onload=function(){
-    var s2=document.createElement('script');
-    s2.src='https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js';
-    s2.onload=function(){initFirebase();if(curUser)syncToFirebase();loadYtLinksFromFirebase();loadGeminiKey();};
-    document.head.appendChild(s2);
-  };
-  document.head.appendChild(s1);
-}
-window.addEventListener('load',function(){setTimeout(loadFirebaseSDK,1500);});
 
 // ── 로그인 ──
 function doLogin(){
