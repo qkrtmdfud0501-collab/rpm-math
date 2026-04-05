@@ -1053,29 +1053,32 @@ function openAiSol(n){
     });
   }
 
-  // 페이지 이미지 있으면 base64로 fetch해서 Gemini Vision 사용
+  // 이미지를 canvas로 리사이즈 후 Gemini Vision 전송
   var fetchPromise;
   if(pageNum){
     var imgUrl=BASE_URL+'page-'+String(pageNum).padStart(3,'0')+'.jpg';
-    fetchPromise=fetch(imgUrl)
-      .then(function(r){return r.blob();})
-      .then(function(blob){
-        return new Promise(function(resolve){
-          var reader=new FileReader();
-          reader.onloadend=function(){
-            var b64=reader.result.split(',')[1];
-            resolve(callGemini([
-              {inline_data:{mime_type:'image/jpeg',data:b64}},
-              {text:promptText}
-            ]));
-          };
-          reader.readAsDataURL(blob);
-        });
-      })
-      .catch(function(){
-        // 이미지 실패하면 텍스트만으로 시도
-        return callGemini([{text:promptText}]);
-      });
+    fetchPromise=new Promise(function(resolve){
+      var img=new Image();
+      img.crossOrigin='anonymous';
+      img.onload=function(){
+        // canvas로 너비 600px로 리사이즈
+        var canvas=document.createElement('canvas');
+        var ratio=Math.min(600/img.width, 800/img.height);
+        canvas.width=Math.round(img.width*ratio);
+        canvas.height=Math.round(img.height*ratio);
+        var ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        var b64=canvas.toDataURL('image/jpeg',0.75).split(',')[1];
+        resolve(callGemini([
+          {inline_data:{mime_type:'image/jpeg',data:b64}},
+          {text:promptText}
+        ]));
+      };
+      img.onerror=function(){
+        resolve(callGemini([{text:promptText}]));
+      };
+      img.src=imgUrl;
+    });
   } else {
     fetchPromise=Promise.resolve(callGemini([{text:promptText}]));
   }
