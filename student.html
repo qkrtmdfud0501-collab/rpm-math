@@ -88,17 +88,20 @@ input:focus{border-color:#D42027}
 /* 퀴즈 */
 .pbar{height:4px;background:#e8ecf4;border-radius:2px;margin-bottom:10px;overflow:hidden}
 .pfill{height:100%;background:linear-gradient(90deg,#ff4d1c,#ffb800);border-radius:2px;transition:width .3s}
-.qi{background:#fff;border-radius:10px;border:2px solid #e8ecf4;margin-bottom:8px;overflow:hidden}
+.q-grid{display:grid;grid-template-columns:1fr;gap:8px}
+@media(min-width:600px){.q-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1000px){.q-grid{grid-template-columns:repeat(3,1fr)}}
+.qi{background:#fff;border-radius:10px;border:2px solid #e8ecf4;overflow:hidden;display:flex;flex-direction:column}
 .qi.ok{border-color:#26d07c}
 .qi.ng{border-color:#ff3b5c}
 .qhd{display:flex;align-items:center;justify-content:space-between;padding:9px 12px 8px;background:#fafbff;border-bottom:1px solid #e8ecf4}
-.qnum{font-size:24px;font-weight:900;color:#ff4d1c;line-height:1}
+.qnum{font-size:16px;font-weight:900;color:#ff4d1c;line-height:1}
 .qst{font-size:11px;color:#8b95a7}
 .qst.ok{color:#26d07c;font-weight:700}
 .qst.ng{color:#ff3b5c;font-weight:700}
 .qch{padding:8px 10px 10px}
 .crow{display:flex;flex-direction:column;gap:5px}
-.cb{display:flex;align-items:center;gap:8px;border:2px solid #e8ecf4;border-radius:8px;padding:8px 10px;background:#fff;cursor:pointer;font-family:sans-serif;width:100%;text-align:left}
+.cb{display:flex;align-items:center;gap:6px;border:2px solid #e8ecf4;border-radius:7px;padding:6px 8px;background:#fff;cursor:pointer;font-family:sans-serif;width:100%;text-align:left}
 .cb.sel{border-color:#ff4d1c;background:#fff3f0}
 .cb.ok{border-color:#26d07c;background:#edfff5}
 .cb.ng{border-color:#ff3b5c;background:#fff5f7}
@@ -126,7 +129,14 @@ input:focus{border-color:#D42027}
 
 /* 오답 */
 .wbanner{background:linear-gradient(135deg,#6b0f1a,#ff3b5c);border-radius:12px;padding:12px;margin-bottom:10px;color:#fff}
-.wi{background:#fff;border-radius:9px;border-left:4px solid #ff3b5c;padding:10px 12px;margin-bottom:6px}
+.retry-btn{background:#ff8c00;color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;margin-top:6px;width:100%}
+.retry-btn:disabled{background:#e8ecf4;color:#8b95a7;cursor:not-allowed}
+.retry-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px}
+.retry-badge.ok{background:#edfff5;color:#26d07c}
+.retry-badge.ng{background:#f0f3f8;color:#8b95a7}
+.retry-panel{background:#f8f9fc;border-radius:8px;padding:10px;margin-top:6px;display:none}
+.retry-panel.open{display:block}
+.wi{background:#fff;border-radius:9px;border-left:4px solid #ff3b5c;padding:10px 12px;display:flex;flex-direction:column}
 .witop{display:flex;justify-content:space-between;margin-bottom:4px}
 .winum{font-size:13px;font-weight:700;color:#ff3b5c}
 .wiunit{font-size:10px;color:#8b95a7}
@@ -187,8 +197,8 @@ input:focus{border-color:#D42027}
 .popup-body{flex:1;overflow-y:auto;padding:14px 16px;-webkit-overflow-scrolling:touch}
 
 /* 문제 이미지 */
-.qimg-wrap{padding:8px 10px 4px;background:#f8f9fc;border-radius:8px;margin:6px 10px}
-.qimg{width:100%;border-radius:6px;display:block}
+.qimg-wrap{padding:6px 8px 2px;background:#f8f9fc;border-radius:8px;margin:4px 8px}
+.qimg{width:100%;max-height:220px;object-fit:contain;border-radius:6px;display:block}
 /* 해설 버튼 그룹 */
 .sol-btns{display:flex;gap:7px;margin-top:8px}
 .sol-btn{flex:1;padding:8px 6px;border-radius:8px;border:none;font-family:sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
@@ -317,7 +327,7 @@ input:focus{border-color:#D42027}
         </div>
       </div>
     </div>
-    <div id="qwrap"></div>
+    <div class="q-grid" id="qwrap"></div>
     <div class="gbar">
       <div class="gi" id="gi">답을 선택하세요</div>
       <button class="gbtn" id="gbtn" disabled>채점하기</button>
@@ -330,7 +340,7 @@ input:focus{border-color:#D42027}
       <div style="font-size:15px;font-weight:700">오답 노트</div>
       <div style="font-size:11px;opacity:.75;margin-top:2px" id="wsub"></div>
     </div>
-    <div id="wlist"></div>
+    <div class="q-grid" id="wlist"></div>
   </div>
 
   <!-- 통계 -->
@@ -639,6 +649,9 @@ function startSession(user){
       } else if(bookNames.length>1){
         // 교재 여러 개면 선택 화면
         showBookSelectScreen(bookNames, books, studentData.grade||'');
+      } else if(studentData.records && Object.keys(studentData.records).length>0){
+        // 구버전 학생 - records만 있고 books 없음 → RPM 공통수학1로 폴백
+        selectBook('RPM 공통수학1', studentData.records);
       } else {
         // 교재 없음 (신규) - 관리자가 배정 필요 안내
         showNoBookScreen();
@@ -867,8 +880,8 @@ function renderQItems(){
         var b=document.createElement('button'); b.className='cb';
         b.setAttribute('data-n',n); b.setAttribute('data-i',ci);
         if(rec&&rec.correct!==undefined&&rec.correct!==null){
-          if(ci===cd.a) b.className='cb ok';
-          else if(rec.userAns===cd.c[ci]&&!rec.correct) b.className='cb ng';
+          if(rec.correct&&cd.c[ci]===rec.userAns) b.className='cb ok';       // 맞으면 내 선택만 초록
+          else if(!rec.correct&&cd.c[ci]===rec.userAns) b.className='cb ng'; // 틀리면 내 선택만 빨강
           b.disabled=true;
         }
         b.innerHTML='<div class="cn">'+NS[ci]+'</div><div class="ct">'+esc(cd.c[ci])+'</div>';
@@ -896,16 +909,25 @@ function updateGBar(){
   for(var i=0;i<curQs.length;i++){var n=curQs[i];if(!records[n]||records[n].correct===undefined||records[n].correct===null)nq.push(n);}
   var ans=0; for(var i=0;i<nq.length;i++){if(sel[nq[i]]!==undefined)ans++;}
   document.getElementById('gi').innerHTML='<b>'+ans+'</b>/'+nq.length+' 답 선택됨';
-  document.getElementById('gbtn').disabled=(ans===0);
+  var gbtn=document.getElementById('gbtn');
+  if(!graded){
+    var remaining=curQs.filter(function(n){return !records[n]||records[n].correct===undefined;});
+    gbtn.textContent = remaining.length<curQs.length && remaining.length>0
+      ? '선택 답안 채점 ('+remaining.length+'문제 남음)'
+      : '채점하기';
+  }
+  gbtn.disabled=(ans===0);
 }
 
 function gradeAll(){
   if(Object.keys(sel).length===0) return;
-  graded=true;
   var ok=0, ng=0, cnt=0;
+
+  // sel에서 선택된 문제만 채점 (이미 채점된 문제 제외)
   for(var qi=0;qi<curQs.length;qi++){
     var n=curQs[qi], cd=CHOICES[n]; if(!cd) continue;
     var s=sel[n]; if(s===undefined) continue;
+    if(records[n]&&records[n].correct!==undefined) continue; // 이미 채점된 문제 스킵
     cnt++;
     var isOk=(s===cd.a); if(isOk)ok++;else ng++;
     records[n]={correct:isOk,userAns:cd.c[s],correctAns:cd.c[cd.a],ts:Date.now()};
@@ -915,18 +937,42 @@ function gradeAll(){
     var bs=document.querySelectorAll('.cb[data-n="'+n+'"]');
     for(var j=0;j<bs.length;j++){
       bs[j].className='cb';
-      if(j===cd.a) bs[j].className='cb ok';
-      else if(j===s&&!isOk) bs[j].className='cb ng';
+      if(isOk&&j===s) bs[j].className='cb ok';
+      else if(!isOk&&j===s) bs[j].className='cb ng';
       bs[j].disabled=true;
     }
+    // sel에서 제거 (채점 완료)
+    delete sel[n];
   }
+
   saveRec(); updateHeader(); updateBookProgress();
-  document.getElementById('rs0').textContent=cnt;
-  document.getElementById('rs1').textContent=ok;
-  document.getElementById('rs2').textContent=ng;
+
+  // 전체 채점 현황 업데이트
+  var totalOk=0, totalNg=0, totalDone=0;
+  for(var qi=0;qi<curQs.length;qi++){
+    var n=curQs[qi];
+    if(records[n]&&records[n].correct!==undefined){
+      totalDone++;
+      if(records[n].correct) totalOk++; else totalNg++;
+    }
+  }
+  document.getElementById('rs0').textContent=totalDone;
+  document.getElementById('rs1').textContent=totalOk;
+  document.getElementById('rs2').textContent=totalNg;
   document.getElementById('rsbox').classList.remove('hide');
-  var gb=document.getElementById('gbtn'); gb.textContent='채점 완료'; gb.className='gbtn done'; gb.disabled=true;
-  document.getElementById('wrap').scrollTop=0;
+
+  // 미채점 문제가 남아있으면 채점버튼 다시 비활성 (선택해야 활성화)
+  var remaining = curQs.filter(function(n){return records[n]===undefined||records[n].correct===undefined;});
+  var gb=document.getElementById('gbtn');
+  if(remaining.length===0){
+    // 전부 채점 완료
+    graded=true;
+    gb.textContent='채점 완료'; gb.className='gbtn done'; gb.disabled=true;
+    document.getElementById('wrap').scrollTop=0;
+  } else {
+    gb.textContent='선택 답안 채점 ('+remaining.length+'문제 남음)';
+    gb.className='gbtn'; gb.disabled=true; // 새로 선택해야 활성화
+  }
 }
 
 function retryPage(){
@@ -954,9 +1000,30 @@ function renderWrong(){
     for(var j=0;j<UNITS.length;j++){if(n>=UNITS[j].r[0]&&n<=UNITS[j].r[1]){uname=UNITS[j].name;break;}}
     var el=document.createElement('div'); el.className='wi';
     var wNumStr=String(n).padStart(4,'0');
-    el.innerHTML='<div class="witop"><span class="winum">'+wNumStr+'번</span><span class="wiunit">'+uname+'</span></div>'+
+    var hasRetry=r.retry!==undefined;
+    var retryOk=hasRetry&&r.retry.correct===true;
+    var retryBadge=hasRetry?('<span class="retry-badge '+(retryOk?'ok':'ng')+'">재시도 '+(retryOk?'✓ 맞음':'✗ 틀림')+'</span>'):'';
+    var retrySection='';
+    if(!hasRetry){
+      // 아직 재시도 안한 경우 - 재시도 버튼
+      retrySection='<button class="retry-btn" data-retry="'+n+'">🔄 다시 풀어보기</button>';
+    } else if(!retryOk){
+      // 재시도도 틀린 경우
+      retrySection='<div style="font-size:11px;color:#8b95a7;margin-top:6px;text-align:center">재시도 답: <span style="color:#ff3b5c;font-weight:700">'+esc(r.retry.userAns||'?')+'</span> · 더 이상 재시도 불가</div>';
+    } else {
+      // 재시도 맞은 경우
+      retrySection='<div style="font-size:11px;color:#26d07c;margin-top:6px;text-align:center">🎉 재시도 성공!</div>';
+    }
+    el.innerHTML=
+      '<div class="witop"><span class="winum">'+wNumStr+'번</span><span class="wiunit">'+uname+retryBadge+'</span></div>'+
       '<div class="qimg-wrap"><img src="https://qkrtmdfud0501-collab.github.io/rpm-math/crops/'+wNumStr+'.jpg" class="qimg" onerror="this.style.display=\'none\'"></div>'+
       '<div class="wians">내 답: <span class="wm">'+esc(r.userAns||'?')+'</span> / 정답: <span class="wc">'+esc(r.correctAns||'?')+'</span></div>'+
+      retrySection+
+      '<div class="retry-panel" id="retry-panel-'+n+'">'+
+        '<div style="font-size:12px;font-weight:700;margin-bottom:6px;color:#ff8c00">다시 선택해보세요:</div>'+
+        '<div id="retry-choices-'+n+'"></div>'+
+        '<button class="retry-btn" style="background:#1a1d2e;margin-top:6px" data-submit-retry="'+n+'">채점하기</button>'+
+      '</div>'+
       solBtnsHTML(n);
     l.appendChild(el);
   }
@@ -1307,6 +1374,58 @@ function renderAiResponse(text){
 }
 
 // ── 해설 버튼 HTML 생성 함수 ──
+// ── 오답 재시도 ──
+function openRetryPanel(n){
+  var panel=document.getElementById('retry-panel-'+n);
+  if(!panel) return;
+  panel.classList.add('open');
+
+  // 보기 렌더링
+  var cd=CHOICES[n];
+  if(!cd){panel.innerHTML='<div style="font-size:12px;color:#8b95a7">보기 정보 없음</div>';return;}
+  var choicesEl=document.getElementById('retry-choices-'+n);
+  if(!choicesEl) return;
+  choicesEl.innerHTML='';
+  var selRetry={};
+  cd.c.forEach(function(c,i){
+    var b=document.createElement('button');
+    b.className='cb';
+    b.style.marginBottom='4px';
+    b.innerHTML='<span class="cn">'+NS[i]+'</span><span class="ct">'+esc(c)+'</span>';
+    b.addEventListener('click',function(){
+      selRetry.ans=i;
+      choicesEl.querySelectorAll('.cb').forEach(function(x){x.classList.remove('sel');});
+      b.classList.add('sel');
+    });
+    choicesEl.appendChild(b);
+  });
+  // 제출 버튼에 selRetry 연결
+  var submitBtn=panel.querySelector('[data-submit-retry]');
+  if(submitBtn) submitBtn._selRetry=selRetry;
+}
+
+function submitRetry(n){
+  var panel=document.getElementById('retry-panel-'+n);
+  var submitBtn=panel?panel.querySelector('[data-submit-retry]'):null;
+  var selRetry=submitBtn?submitBtn._selRetry:{};
+  if(selRetry.ans===undefined){alert('답을 선택해주세요');return;}
+
+  var cd=CHOICES[n];
+  if(!cd) return;
+  var isOk=(selRetry.ans===cd.a);
+  var r=records[n];
+  r.retry={
+    correct:isOk,
+    userAns:cd.c[selRetry.ans],
+    correctAns:cd.c[cd.a],
+    ts:Date.now()
+  };
+  records[n]=r;
+  saveRec();
+  // 오답노트 다시 렌더링
+  renderWrong();
+}
+
 function solBtnsHTML(n){
   return '<div class="sol-btns">'+
     '<button class="sol-btn yt" data-yt="'+n+'">&#9654; 해설영상</button>'+
@@ -1318,6 +1437,10 @@ function solBtnsHTML(n){
 document.addEventListener('click',function(e){
   var ytBtn=e.target.closest('[data-yt]');
   var aiBtn=e.target.closest('[data-ai]');
+  var retryBtn=e.target.closest('[data-retry]');
+  var submitRetryBtn=e.target.closest('[data-submit-retry]');
+  if(retryBtn) openRetryPanel(parseInt(retryBtn.getAttribute('data-retry')));
+  if(submitRetryBtn) submitRetry(parseInt(submitRetryBtn.getAttribute('data-submit-retry')));
   if(ytBtn) openYtSol(parseInt(ytBtn.getAttribute('data-yt')));
   if(aiBtn) openAiSol(parseInt(aiBtn.getAttribute('data-ai')));
 });
