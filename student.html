@@ -186,6 +186,9 @@ input:focus{border-color:#D42027}
 .popup-close{background:none;border:none;font-size:20px;cursor:pointer;color:#8b95a7;padding:0 4px;font-family:sans-serif}
 .popup-body{flex:1;overflow-y:auto;padding:14px 16px;-webkit-overflow-scrolling:touch}
 
+/* 문제 이미지 */
+.qimg-wrap{padding:8px 10px 4px;background:#f8f9fc;border-radius:8px;margin:6px 10px}
+.qimg{width:100%;border-radius:6px;display:block}
 /* 해설 버튼 그룹 */
 .sol-btns{display:flex;gap:7px;margin-top:8px}
 .sol-btn{flex:1;padding:8px 6px;border-radius:8px;border:none;font-family:sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
@@ -229,6 +232,28 @@ input:focus{border-color:#D42027}
     <input type="password" id="pw" placeholder="비밀번호" autocomplete="current-password">
     <button class="btn" id="lbtn">로그인</button>
     <div class="err" id="err"></div>
+  </div>
+</div>
+
+<!-- 교재 선택 화면 -->
+<div id="book-select-screen" style="display:none;min-height:100vh;background:linear-gradient(160deg,#1a1d2e 0%,#2c1f1f 50%,#1a1d2e 100%);padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center">
+  <div style="width:100%;max-width:400px">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:2px">TS <span style="color:#D42027">TAESAN</span></div>
+      <div id="bss-grade" style="font-size:13px;color:rgba(255,255,255,.5);margin-top:4px"></div>
+      <div style="font-size:14px;color:rgba(255,255,255,.7);margin-top:12px">학습할 교재를 선택하세요</div>
+    </div>
+    <div id="bss-list" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+
+<!-- 교재 없음 화면 -->
+<div id="no-book-screen" style="display:none;min-height:100vh;background:linear-gradient(160deg,#1a1d2e 0%,#2c1f1f 50%,#1a1d2e 100%);padding:20px;display:flex;align-items:center;justify-content:center">
+  <div style="text-align:center;color:#fff">
+    <div style="font-size:40px;margin-bottom:16px">📚</div>
+    <div style="font-size:18px;font-weight:900;margin-bottom:8px">교재가 배정되지 않았어요</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:24px">선생님께 교재 배정을 요청하세요</div>
+    <button onclick="doLogout()" style="background:#D42027;color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer">로그아웃</button>
   </div>
 </div>
 
@@ -430,6 +455,7 @@ input:focus{border-color:#D42027}
       <div class="popup-title" id="sol-popup-title">문제 해설</div>
       <button class="popup-close" id="sol-popup-close">&#10006;</button>
     </div>
+    <img id="sol-popup-qimg" src="" style="display:none;width:100%;max-width:100%;border-radius:8px;margin-bottom:10px;border:1px solid #e8ecf4" onerror="this.style.display='none'">
     <div class="popup-body" id="sol-popup-body"></div>
   </div>
 </div>
@@ -513,10 +539,10 @@ var UNITS=[
 ];
 
 var NS=['(1)','(2)','(3)','(4)','(5)'];
-var curUser=null, records={}, curUnit=null, curPages=[], curPageIdx=0, curQs=[], sel={}, graded=false;
+var curUser=null, curBook=null, records={}, curUnit=null, curPages=[], curPageIdx=0, curQs=[], sel={}, graded=false;
 
 // ── 저장소 ──
-function rkey(){return 'rpm_'+(curUser||'g');}
+function rkey(){return 'rpm_'+(curUser||'g')+'_'+(curBook||'default');}
 function loadRec(){try{return JSON.parse(localStorage.getItem(rkey())||'{}');}catch(e){return {};}}
 function saveRec(){try{localStorage.setItem(rkey(),JSON.stringify(records));}catch(e){} syncToFirebase();}
 
@@ -555,10 +581,20 @@ function clearSess(){localStorage.removeItem('rpm_sess');}
 })();
 
 function syncToFirebase(){
-  if(!DB||!curUser) return;
+  if(!DB||!curUser||!curBook) return;
   try{
     var uid=curUser.replace(/[^a-zA-Z0-9_]/g,'_');
-    DB.collection('students').doc(uid).set({email:curUser,name:document.getElementById('tname').textContent,records:records,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    var bookKey=curBook.replace(/[^a-zA-Z0-9_]/g,'_');
+    var update={updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+    update['books.'+bookKey+'.records']=records;
+    update['books.'+bookKey+'.name']=curBook;
+    DB.collection('students').doc(uid).update(update).catch(function(){
+      // doc 없으면 set으로
+      var setData={email:curUser,name:document.getElementById('tname').textContent,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+      setData['books']={};
+      setData['books'][bookKey]={name:curBook,records:records};
+      DB.collection('students').doc(uid).set(setData,{merge:true});
+    });
   }catch(e){}
 }
 
@@ -585,32 +621,38 @@ function doLogin(){
 function startSession(user){
   curUser=user.id;
   saveSess(user);
-  // localStorage에서 먼저 로드 (빠른 초기 렌더링)
-  records=loadRec();
   document.getElementById('login').style.display='none';
-  document.getElementById('topbar').classList.remove('hide');
-  document.getElementById('wrap').classList.remove('hide');
-  document.getElementById('nav').classList.remove('hide');
   document.getElementById('tname').textContent=user.name;
   document.getElementById('bname').textContent=user.name+'님, 안녕하세요';
-  renderHome();
-  updateHeader();
-  updateBookProgress();
-  // Firebase에서 최신 데이터 로드 (다른 기기 데이터 동기화)
+
+  // Firebase에서 학생 정보 및 교재 목록 로드
   if(typeof DB!=='undefined'&&DB){
     var uid=curUser.replace(/[^a-zA-Z0-9_]/g,'_');
     DB.collection('students').doc(uid).get().then(function(doc){
-      if(doc.exists&&doc.data().records){
-        var fbRec=doc.data().records;
-        // Firebase 데이터가 더 최신이면 병합 (Firebase 우선)
-        var merged=Object.assign({},records,fbRec);
-        records=merged;
-        localStorage.setItem(rkey(),JSON.stringify(records));
-        renderHome();
-        updateHeader();
-        updateBookProgress();
+      var studentData = doc.exists ? doc.data() : {};
+      var books = studentData.books || {};
+      var bookNames = Object.keys(books);
+
+      if(bookNames.length===1){
+        // 교재 1개면 바로 시작
+        selectBook(bookNames[0], books[bookNames[0]].records||{});
+      } else if(bookNames.length>1){
+        // 교재 여러 개면 선택 화면
+        showBookSelectScreen(bookNames, books, studentData.grade||'');
+      } else {
+        // 교재 없음 (신규) - 관리자가 배정 필요 안내
+        showNoBookScreen();
       }
-    }).catch(function(){});
+    }).catch(function(){
+      // Firebase 오류시 localStorage로 폴백
+      curBook='RPM 공통수학1';
+      records=loadRec();
+      showMainApp();
+    });
+  } else {
+    curBook='RPM 공통수학1';
+    records=loadRec();
+    showMainApp();
   }
   // 로그인 즉시 Firebase에서 Gemini 키 로드 시도
   if(typeof DB!=='undefined'&&DB){
@@ -623,9 +665,74 @@ function startSession(user){
   }
 }
 
+// ── 교재 선택 화면 ──
+function showBookSelectScreen(bookNames, booksData, grade){
+  document.getElementById('book-select-screen').style.display='flex';
+  document.getElementById('no-book-screen').style.display='none';
+  document.getElementById('bss-grade').textContent = grade ? grade+' 과정' : '';
+
+  var bookColors = {
+    'RPM 공통수학1':'#FF5722','RPM 공통수학2':'#8E44AD',
+    'RPM 수학1':'#2980B9','RPM 수학2':'#16A085',
+    'RPM 확률과통계':'#E67E22','RPM 미적분':'#C0392B','RPM 기하':'#27AE60'
+  };
+
+  var html = bookNames.map(function(bname){
+    var bdata = booksData[bname]||{};
+    var recs = bdata.records||{};
+    var keys = Object.keys(recs);
+    var tot = keys.length;
+    var ok = keys.filter(function(n){return recs[n]&&recs[n].correct===true;}).length;
+    var rate = tot>0?Math.round(ok/tot*100):0;
+    var color = bookColors[bname]||'#D42027';
+    return '<div onclick="selectBookFromScreen(\''+bname+'\','+JSON.stringify(recs)+')" style="background:#fff;border-radius:14px;padding:16px;cursor:pointer;display:flex;align-items:center;gap:14px;box-shadow:0 4px 20px rgba(0,0,0,.2);transition:transform .15s" onmouseover="this.style.transform=\'scale(1.02)\'" onmouseout="this.style.transform=\'\'">'+
+      '<div style="width:48px;height:48px;background:'+color+';border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff;flex-shrink:0">R</div>'+
+      '<div style="flex:1">'+
+        '<div style="font-size:15px;font-weight:900;color:#1a1d2e">'+bname+'</div>'+
+        '<div style="font-size:12px;color:#8b95a7;margin-top:2px">'+tot+'문제 풀이 · 정답률 '+rate+'%</div>'+
+      '</div>'+
+      '<div style="font-size:20px;color:#ccc">›</div>'+
+    '</div>';
+  }).join('');
+
+  document.getElementById('bss-list').innerHTML = html;
+}
+
+function showNoBookScreen(){
+  document.getElementById('book-select-screen').style.display='none';
+  document.getElementById('no-book-screen').style.display='flex';
+}
+
+function selectBookFromScreen(bookName, bookRecords){
+  document.getElementById('book-select-screen').style.display='none';
+  selectBook(bookName, bookRecords);
+}
+
+function selectBook(bookName, bookRecords){
+  curBook = bookName;
+  // localStorage에서 로컬 데이터 로드 후 Firebase 데이터와 병합
+  var local = loadRec();
+  records = Object.assign({}, local, bookRecords);
+  localStorage.setItem(rkey(), JSON.stringify(records));
+  showMainApp();
+}
+
+function showMainApp(){
+  document.getElementById('book-select-screen').style.display='none';
+  document.getElementById('no-book-screen').style.display='none';
+  document.getElementById('topbar').classList.remove('hide');
+  document.getElementById('wrap').classList.remove('hide');
+  document.getElementById('nav').classList.remove('hide');
+  renderHome();
+  updateHeader();
+  updateBookProgress();
+}
+
 function doLogout(){
-  clearSess();curUser=null;records={};
+  clearSess();curUser=null;curBook=null;records={};
   document.getElementById('login').style.display='flex';
+  document.getElementById('book-select-screen').style.display='none';
+  document.getElementById('no-book-screen').style.display='none';
   document.getElementById('topbar').classList.add('hide');
   document.getElementById('wrap').classList.add('hide');
   document.getElementById('nav').classList.add('hide');
@@ -746,8 +853,10 @@ function renderQItems(){
     var st=rec&&rec.correct===true?'정답 O':rec&&rec.correct===false?'오답 X':'미풀이';
     var stcls=rec&&rec.correct===true?' ok':rec&&rec.correct===false?' ng':'';
     var el=document.createElement('div'); el.className=cls; el.id='qi'+n;
-    el.innerHTML='<div class="qhd"><div class="qnum">'+String(n).padStart(4,'0')+'</div>'+
+    var numStr0=String(n).padStart(4,'0');
+    el.innerHTML='<div class="qhd"><div class="qnum">'+numStr0+'</div>'+
       '<div class="qst'+stcls+'" id="qs'+n+'">'+st+'</div></div>'+
+      '<div class="qimg-wrap"><img src="https://qkrtmdfud0501-collab.github.io/rpm-math/crops/'+numStr0+'.jpg" class="qimg" onerror="this.style.display=\'none\'"></div>'+
       '<div style="padding:6px 10px 0" id="qi-sol'+n+'">'+(rec&&rec.correct===false?solBtnsHTML(n):'')+'</div>'+
       '<div class="qch" id="qc'+n+'"></div>';
     w.appendChild(el);
@@ -844,7 +953,9 @@ function renderWrong(){
     var n=wrong[i], r=records[n], uname='?';
     for(var j=0;j<UNITS.length;j++){if(n>=UNITS[j].r[0]&&n<=UNITS[j].r[1]){uname=UNITS[j].name;break;}}
     var el=document.createElement('div'); el.className='wi';
-    el.innerHTML='<div class="witop"><span class="winum">'+String(n).padStart(4,'0')+'번</span><span class="wiunit">'+uname+'</span></div>'+
+    var wNumStr=String(n).padStart(4,'0');
+    el.innerHTML='<div class="witop"><span class="winum">'+wNumStr+'번</span><span class="wiunit">'+uname+'</span></div>'+
+      '<div class="qimg-wrap"><img src="https://qkrtmdfud0501-collab.github.io/rpm-math/crops/'+wNumStr+'.jpg" class="qimg" onerror="this.style.display=\'none\'"></div>'+
       '<div class="wians">내 답: <span class="wm">'+esc(r.userAns||'?')+'</span> / 정답: <span class="wc">'+esc(r.correctAns||'?')+'</span></div>'+
       solBtnsHTML(n);
     l.appendChild(el);
@@ -930,11 +1041,15 @@ function loadYtLinksFromFirebase(){
 
 // ── 팝업 공통 ──
 var curSolNum=0;
-document.getElementById('sol-popup-close').addEventListener('click',function(){
+function closesolPopup(){
   document.getElementById('sol-popup').classList.add('hide');
-});
+  // 유튜브 iframe src 초기화 (음성 정지)
+  var iframes = document.getElementById('sol-popup-body').querySelectorAll('iframe');
+  iframes.forEach(function(f){ f.src=''; });
+}
+document.getElementById('sol-popup-close').addEventListener('click', closesolPopup);
 document.getElementById('sol-popup').addEventListener('click',function(e){
-  if(e.target===this) this.classList.add('hide');
+  if(e.target===this) closesolPopup();
 });
 document.getElementById('api-popup-close').addEventListener('click',function(){
   document.getElementById('api-popup').classList.add('hide');
@@ -957,6 +1072,8 @@ function openYtSol(n){
   var url=links[n]||'';
   var numStr=String(n).padStart(4,'0');
   document.getElementById('sol-popup-title').textContent=numStr+'번 해설영상';
+  document.getElementById('sol-popup-qimg').src='https://qkrtmdfud0501-collab.github.io/rpm-math/crops/'+numStr+'.jpg';
+  document.getElementById('sol-popup-qimg').style.display='block';
   
   var ytId='';
   if(url){
@@ -982,10 +1099,10 @@ function openYtSol(n){
 
 function removeGeminiKey(){
   localStorage.removeItem('gemini_key');
-  document.getElementById('sol-popup').classList.add('hide');
+  closesolPopup();
 }
 function apiReinput(){
-  document.getElementById('sol-popup').classList.add('hide');
+  closesolPopup();
   document.getElementById('api-key-input').value='';
   document.getElementById('api-popup').classList.remove('hide');
 }
@@ -1031,7 +1148,7 @@ function openAiSol(n){
       if(k){
         openAiSol(n);
       } else {
-        document.getElementById('sol-popup').classList.add('hide');
+        closesolPopup();
         document.getElementById('api-key-input').value='';
         document.getElementById('api-err').textContent='선생님이 아직 API 키를 등록하지 않았습니다';
         document.getElementById('api-popup').classList.remove('hide');
@@ -1042,6 +1159,8 @@ function openAiSol(n){
   
   var numStr=String(n).padStart(4,'0');
   document.getElementById('sol-popup-title').textContent=numStr+'번 AI 해설';
+  document.getElementById('sol-popup-qimg').src='https://qkrtmdfud0501-collab.github.io/rpm-math/crops/'+numStr+'.jpg';
+  document.getElementById('sol-popup-qimg').style.display='block';
   document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">AI가 풀이를 생성하는 중...</div>';
   document.getElementById('sol-popup').classList.remove('hide');
   
