@@ -585,6 +585,7 @@ function doLogin(){
 function startSession(user){
   curUser=user.id;
   saveSess(user);
+  // localStorage에서 먼저 로드 (빠른 초기 렌더링)
   records=loadRec();
   document.getElementById('login').style.display='none';
   document.getElementById('topbar').classList.remove('hide');
@@ -595,6 +596,22 @@ function startSession(user){
   renderHome();
   updateHeader();
   updateBookProgress();
+  // Firebase에서 최신 데이터 로드 (다른 기기 데이터 동기화)
+  if(typeof DB!=='undefined'&&DB){
+    var uid=curUser.replace(/[^a-zA-Z0-9_]/g,'_');
+    DB.collection('students').doc(uid).get().then(function(doc){
+      if(doc.exists&&doc.data().records){
+        var fbRec=doc.data().records;
+        // Firebase 데이터가 더 최신이면 병합 (Firebase 우선)
+        var merged=Object.assign({},records,fbRec);
+        records=merged;
+        localStorage.setItem(rkey(),JSON.stringify(records));
+        renderHome();
+        updateHeader();
+        updateBookProgress();
+      }
+    }).catch(function(){});
+  }
   // 로그인 즉시 Firebase에서 Gemini 키 로드 시도
   if(typeof DB!=='undefined'&&DB){
     DB.collection('settings').doc('gemini').get().then(function(doc){
@@ -1044,80 +1061,110 @@ function openAiSol(n){
   // 이미지 URL 구성 (GitHub Pages)
   var CROP_BASE='https://qkrtmdfud0501-collab.github.io/rpm-math/crops/';
 
-  function callGemini(parts){
-    return fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',{
+  // 스트리밍 방식으로 Gemini 호출
+  function streamGemini(parts){
+    return fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:streamGenerateContent?alt=sse',{
       method:'POST',
       headers:{'Content-Type':'application/json','X-goog-api-key':key},
       body:JSON.stringify({contents:[{parts:parts}]})
     });
   }
 
-  // 문제별 크롭 이미지를 Gemini Vision으로 전송
-  var fetchPromise;
-  var cropUrl=CROP_BASE+numStr+'.jpg';
-  if(true){
-    var imgUrl=cropUrl;
-    fetchPromise=new Promise(function(resolve){
-      var img=new Image();
-      img.crossOrigin='anonymous';
-      img.onload=function(){
-        var canvas=document.createElement('canvas');
-        var ratio=Math.min(800/img.width, 1000/img.height, 1);
-        canvas.width=Math.round(img.width*ratio);
-        canvas.height=Math.round(img.height*ratio);
-        canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-        var b64=canvas.toDataURL('image/jpeg',0.8).split(',')[1];
-        resolve(callGemini([
-          {inline_data:{mime_type:'image/jpeg',data:b64}},
-          {text:promptText}
-        ]));
-      };
-      img.onerror=function(){
-        resolve(callGemini([{text:promptText}]));
-      };
-      img.src=imgUrl+'?t='+Date.now();
-    });
-  } else {
-    fetchPromise=Promise.resolve(callGemini([{text:promptText}]));
-  }
-
-  fetchPromise.then(function(r){
-    if(r.status===400||r.status===403){
+  function handleStream(response){
+    if(response.status===400||response.status===403){
       localStorage.removeItem('gemini_key');
       geminiKeyCache='';
       throw new Error('API_KEY_INVALID');
     }
-    if(r.status===429){
-      throw new Error('RATE_LIMIT');
+    if(response.status===429) throw new Error('RATE_LIMIT');
+    if(!response.ok) throw new Error('응답 없음');
+
+    var reader=response.body.getReader();
+    var decoder=new TextDecoder();
+    var fullText='';
+    var bodyEl=document.getElementById('sol-popup-body');
+    bodyEl.innerHTML='<div class="ai-body" id="ai-stream-body"><p></p></div>'+
+      '<div style="margin-top:14px;padding-top:10px;border-top:1px solid #e8ecf4;display:flex;gap:8px">'+
+      '<button onclick="removeGeminiKey()" style="flex:1;padding:8px;background:#f0f3f8;border:none;border-radius:7px;font-family:sans-serif;font-size:11px;cursor:pointer;color:#8b95a7">API 키 변경</button>'+
+      '</div>';
+
+    function read(){
+      reader.read().then(function(result){
+        if(result.done){
+          // 완료 - MathJax 렌더링
+          renderAiResponse(fullText);
+          return;
+        }
+        var chunk=decoder.decode(result.value,{stream:true});
+        // SSE 파싱: "data: {...}" 형태
+        var lines=chunk.split('\n');
+        for(var i=0;i<lines.length;i++){
+          var line=lines[i].trim();
+          if(!line.startsWith('data:')) continue;
+          var jsonStr=line.slice(5).trim();
+          if(jsonStr==='[DONE]') continue;
+          try{
+            var parsed=JSON.parse(jsonStr);
+            var part=parsed.candidates&&parsed.candidates[0]&&
+                     parsed.candidates[0].content&&parsed.candidates[0].content.parts&&
+                     parsed.candidates[0].content.parts[0];
+            if(part&&part.text){
+              fullText+=part.text;
+              // 실시간으로 텍스트 표시 (마크다운 bold/헤더만 간단히 변환)
+              var preview=fullText
+                .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+                .replace(/^#{1,3}\s(.+)$/gm,'<strong>$1</strong>')
+                .replace(/\n/g,'<br>');
+              var streamEl=document.getElementById('ai-stream-body');
+              if(streamEl) streamEl.innerHTML='<p>'+preview+'</p>';
+            }
+          }catch(e){}
+        }
+        read();
+      }).catch(function(){
+        renderAiResponse(fullText||'');
+      });
     }
-    return r.json();
-  })
-  .then(function(data){
-    var text='';
-    if(data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts){
-      text=data.candidates[0].content.parts[0].text||'';
-    }
-    if(!text) throw new Error('응답 없음');
-    renderAiResponse(text);
-  })
-  .catch(function(e){
+    read();
+  }
+
+  // 이미지 로드 후 스트리밍 시작
+  var cropUrl=CROP_BASE+numStr+'.jpg';
+  var img=new Image();
+  img.crossOrigin='anonymous';
+  img.onload=function(){
+    var canvas=document.createElement('canvas');
+    var ratio=Math.min(800/img.width,1000/img.height,1);
+    canvas.width=Math.round(img.width*ratio);
+    canvas.height=Math.round(img.height*ratio);
+    canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+    var b64=canvas.toDataURL('image/jpeg',0.8).split(',')[1];
+    streamGemini([{inline_data:{mime_type:'image/jpeg',data:b64}},{text:promptText}])
+      .then(handleStream)
+      .catch(showAiError);
+  };
+  img.onerror=function(){
+    streamGemini([{text:promptText}]).then(handleStream).catch(showAiError);
+  };
+  img.src=cropUrl+'?t='+Date.now();
+
+  function showAiError(e){
     var msg='';
     if(e.message==='API_KEY_INVALID'){
       msg='<div style="font-size:22px;margin-bottom:8px">&#10006;</div>'+
           '<div style="font-size:13px;font-weight:700;color:#ff3b5c;margin-bottom:12px">API 키가 올바르지 않습니다</div>'+
-          '<div style="font-size:11px;color:#8b95a7;margin-bottom:12px">관리자 페이지 설정 탭에서 키를 다시 확인해주세요</div>';
+          '<div style="font-size:11px;color:#8b95a7">관리자 페이지 설정 탭에서 키를 확인해주세요</div>';
     } else if(e.message==='RATE_LIMIT'){
       msg='<div style="font-size:22px;margin-bottom:8px">&#8987;</div>'+
           '<div style="font-size:13px;font-weight:700;color:#ff9500;margin-bottom:8px">요청이 너무 많습니다</div>'+
-          '<div style="font-size:11px;color:#8b95a7">1~2분 후 다시 시도해주세요<br>(무료 플랜: 분당 15회 제한)</div>';
+          '<div style="font-size:11px;color:#8b95a7">잠시 후 다시 시도해주세요</div>';
     } else {
       msg='<div style="font-size:22px;margin-bottom:8px">&#9888;</div>'+
           '<div style="font-size:13px;font-weight:700;color:#8b95a7;margin-bottom:8px">해설을 불러오지 못했습니다</div>'+
           '<div style="font-size:11px;color:#8b95a7">잠시 후 다시 시도해주세요</div>';
     }
-    document.getElementById('sol-popup-body').innerHTML=
-      '<div style="text-align:center;padding:24px">'+msg+'</div>';
-  });
+    document.getElementById('sol-popup-body').innerHTML='<div style="text-align:center;padding:24px">'+msg+'</div>';
+  }
 }
 
 function renderAiResponse(text){
