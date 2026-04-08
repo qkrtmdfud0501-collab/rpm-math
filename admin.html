@@ -248,6 +248,7 @@ input:focus{border-color:#D42027}
     <label>교재</label>
     <select id="add-book" style="width:100%;border:2px solid #e8ecf4;border-radius:10px;padding:11px 13px;font-size:14px;font-family:sans-serif;outline:none;margin-bottom:10px;color:#1a1d2e">
       <option value="RPM 공통수학1">RPM 공통수학1</option>
+      <option value="RPM 대수">RPM 대수</option>
       <option value="RPM 공통수학2">RPM 공통수학2</option>
       <option value="RPM 수학1">RPM 수학1</option>
       <option value="RPM 수학2">RPM 수학2</option>
@@ -299,6 +300,7 @@ input:focus{border-color:#D42027}
     <label>배정 교재 (복수 선택 가능)</label>
     <div id="edit-books-wrap" style="margin-bottom:10px;display:flex;flex-direction:column;gap:6px">
       <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="RPM 공통수학1"> RPM 공통수학1</label>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="RPM 대수"> RPM 대수</label>
       <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="RPM 공통수학2"> RPM 공통수학2</label>
       <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="RPM 수학1"> RPM 수학1</label>
       <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="RPM 수학2"> RPM 수학2</label>
@@ -385,7 +387,7 @@ input:focus{border-color:#D42027}
 </div>
 
 <script>
-var UNITS=[
+var UNITS_RPM1=[
   {id:1,name:'다항식의 연산',r:[1,110],c:'#FF5722'},
   {id:2,name:'항등식과 나머지정리',r:[111,195],c:'#8E44AD'},
   {id:3,name:'인수분해',r:[196,279],c:'#2980B9'},
@@ -399,6 +401,23 @@ var UNITS=[
   {id:11,name:'조합',r:[1001,1092],c:'#E74C3C'},
   {id:12,name:'행렬',r:[1093,1184],c:'#3498DB'}
 ];
+var UNITS_DAESOO=[
+  {id:1,name:'지수',r:[33,109],c:'#FF5722'},
+  {id:2,name:'로그',r:[110,221],c:'#8E44AD'},
+  {id:3,name:'지수함수',r:[222,336],c:'#2980B9'},
+  {id:4,name:'로그함수',r:[337,456],c:'#16A085'},
+  {id:5,name:'삼각함수',r:[457,552],c:'#E67E22'},
+  {id:6,name:'삼각함수의 그래프',r:[553,696],c:'#C0392B'},
+  {id:7,name:'삼각함수의 활용',r:[697,801],c:'#1ABC9C'},
+  {id:8,name:'등차수열과 등비수열',r:[802,946],c:'#F39C12'},
+  {id:9,name:'수열의 합',r:[947,1050],c:'#9B59B6'},
+  {id:10,name:'수학적 귀납법',r:[1051,1126],c:'#27AE60'}
+];
+var ADMIN_BOOKS_CONFIG={
+  'RPM 공통수학1':{units:UNITS_RPM1,cropBase:'https://qkrtmdfud0501-collab.github.io/rpm-math/crops/'},
+  'RPM 대수':{units:UNITS_DAESOO,cropBase:'https://qkrtmdfud0501-collab.github.io/rpm-math/crops_daesoo/'}
+};
+var UNITS=UNITS_RPM1;
 
 var DB, AUTH;
 var students = [];
@@ -481,6 +500,15 @@ function loadStudents() {
         tot = keys2.length;
         ok = keys2.filter(function(n){return recs[n]&&recs[n].correct===true;}).length;
       }
+      // Build per-book records map
+      var bookRecordsMap = {};
+      if(bookNames.length>0){
+        bookNames.forEach(function(bk){
+          bookRecordsMap[bk] = booksData[bk].records||{};
+        });
+      } else {
+        bookRecordsMap['RPM 공통수학1'] = d.records||{};
+      }
       students.push({
         id: doc.id,
         email: d.email || doc.id,
@@ -488,6 +516,7 @@ function loadStudents() {
         grade: d.grade || '',
         books: bookNames.length>0 ? bookNames : (d.book ? [d.book] : []),
         records: recs,
+        bookRecords: bookRecordsMap,
         tot: tot,
         ok: ok,
         rate: tot > 0 ? Math.round(ok/tot*100) : 0,
@@ -555,7 +584,14 @@ function renderList() {
       var label = s.tot>0 ? s.rate+'%' : '미학습';
       var progPct = Math.round(s.tot/1134*100);
 
-    var unitHtml = UNITS.map(function(u) {
+    // Use units from student's books (merged across all books)
+    var studentUnits = [];
+    (s.books||['RPM 공통수학1']).forEach(function(bk){
+      var cfg=ADMIN_BOOKS_CONFIG[bk];
+      if(cfg) cfg.units.forEach(function(u){ studentUnits.push(u); });
+    });
+    if(!studentUnits.length) studentUnits = UNITS_RPM1;
+    var unitHtml = studentUnits.map(function(u) {
       var total = u.r[1]-u.r[0]+1;
       var ks = Object.keys(s.records).map(Number).filter(function(n){return n>=u.r[0]&&n<=u.r[1];});
       var sv = ks.length;
@@ -611,7 +647,11 @@ document.getElementById('pw').addEventListener('keydown', function(e){if(e.key==
 // ── 단원 세부 모달 ──
 function openUnitDetail(studentId, unitId){
   var s = students.find(function(x){return x.id===studentId;});
-  var u = UNITS.find(function(x){return x.id===unitId;});
+  var u = null;
+  Object.values(ADMIN_BOOKS_CONFIG).forEach(function(cfg){
+    if(!u) u=cfg.units.find(function(x){return x.id===unitId;});
+  });
+  if(!u) u = UNITS_RPM1.find(function(x){return x.id===unitId;});
   if(!s||!u) return;
 
   document.getElementById('unit-modal-title').textContent = s.name+' - '+u.id+'. '+u.name;
@@ -775,54 +815,75 @@ function renderBookAnalysis(){
     return;
   }
 
-  var html = '<div class="book-section"><div class="book-title">📖 RPM 공통수학1</div>';
-
-  UNITS.forEach(function(u){
-    var errMap = {};
-    for(var n=u.r[0]; n<=u.r[1]; n++){
-      var tried=0, wrong=0;
-      students.forEach(function(st){
-        if(st.records[n]!==undefined){
-          tried++;
-          if(st.records[n]&&st.records[n].correct===false) wrong++;
-        }
+  var html = '';
+  var booksToShow = Object.keys(ADMIN_BOOKS_CONFIG);
+  booksToShow.forEach(function(bookName){
+    var bookCfg = ADMIN_BOOKS_CONFIG[bookName];
+    var bookUnits = bookCfg.units;
+    // Only show books where at least one student has data
+    var hasData = students.some(function(st){
+      var recs = (st.bookRecords&&st.bookRecords[bookName])||{};
+      return bookUnits.some(function(u){
+        for(var n=u.r[0];n<=u.r[1];n++) if(recs[n]!==undefined) return true;
+        return false;
       });
-      if(tried>0) errMap[n]={tried:tried,wrong:wrong,rate:Math.round(wrong/tried*100)};
-    }
+    });
+    if(!hasData) return;
 
-    var errList=Object.keys(errMap).map(Number);
-    errList.sort(function(a,b){return errMap[b].rate-errMap[a].rate;});
-    var top3=errList.slice(0,3);
+    html += '<div class="book-section"><div class="book-title">📖 '+bookName+'</div>';
 
-    var totalTried=0,totalWrong=0;
-    errList.forEach(function(n){totalTried+=errMap[n].tried;totalWrong+=errMap[n].wrong;});
-    var unitRate=totalTried>0?Math.round(totalWrong/totalTried*100):0;
+    bookUnits.forEach(function(u){
+      var errMap = {};
+      for(var n=u.r[0]; n<=u.r[1]; n++){
+        var tried=0, wrong=0;
+        students.forEach(function(st){
+          var stRecs = (st.bookRecords&&st.bookRecords[bookName])||st.records||{};
+          if(stRecs[n]!==undefined){
+            tried++;
+            if(stRecs[n]&&stRecs[n].correct===false) wrong++;
+          }
+        });
+        if(tried>0) errMap[n]={tried:tried,wrong:wrong,rate:Math.round(wrong/tried*100)};
+      }
 
-    var top3Html=top3.map(function(n,i){
-      var e=errMap[n];
-      return '<div class="top3-row">'+
-        '<div class="top3-rank">'+(i+1)+'</div>'+
-        '<div class="top3-num">'+String(n).padStart(4,'0')+'번</div>'+
-        '<div class="top3-bar-wrap"><div class="top3-bar-fill" style="width:'+e.rate+'%"></div></div>'+
-        '<div class="top3-rate">'+e.rate+'%</div>'+
+      var errList=Object.keys(errMap).map(Number);
+      errList.sort(function(a,b){return errMap[b].rate-errMap[a].rate;});
+      var top3=errList.slice(0,3);
+
+      var totalTried=0,totalWrong=0;
+      errList.forEach(function(n){totalTried+=errMap[n].tried;totalWrong+=errMap[n].wrong;});
+      var unitRate=totalTried>0?Math.round(totalWrong/totalTried*100):0;
+
+      var top3Html=top3.map(function(n,i){
+        var e=errMap[n];
+        return '<div class="top3-row">'+
+          '<div class="top3-rank">'+(i+1)+'</div>'+
+          '<div class="top3-num">'+String(n).padStart(4,'0')+'번</div>'+
+          '<div class="top3-bar-wrap"><div class="top3-bar-fill" style="width:'+e.rate+'%"></div></div>'+
+          '<div class="top3-rate">'+e.rate+'%</div>'+
+          '</div>';
+      }).join('');
+
+      html+='<div class="unit-err-card" onclick="openUnitDetailFromBook('+u.id+')">'+
+        '<div class="unit-err-top">'+
+          '<div class="unit-err-name">'+u.id+'. '+u.name+'</div>'+
+          '<div class="unit-err-stat">평균 오답률 '+unitRate+'% · 클릭시 상세</div>'+
+        '</div>'+
+        (top3Html?'<div class="top3-wrap">'+top3Html+'</div>':'<div style="font-size:11px;color:#ccc">데이터 없음</div>')+
         '</div>';
-    }).join('');
+    }); // end bookUnits.forEach
 
-    html+='<div class="unit-err-card" onclick="openUnitDetailFromBook('+u.id+')">'+
-      '<div class="unit-err-top">'+
-        '<div class="unit-err-name">'+u.id+'. '+u.name+'</div>'+
-        '<div class="unit-err-stat">평균 오답률 '+unitRate+'% · 클릭시 상세</div>'+
-      '</div>'+
-      (top3Html?'<div class="top3-wrap">'+top3Html+'</div>':'<div style="font-size:11px;color:#ccc">데이터 없음</div>')+
-      '</div>';
-  });
-
-  html+='</div>';
+    html+='</div>'; // end book-section
+  }); // end booksToShow.forEach
   cont.innerHTML=html;
 }
-
 function openUnitDetailFromBook(unitId){
-  var u=UNITS.find(function(x){return x.id===unitId;});
+  // Find in currently displayed book units
+  var u=null;
+  Object.values(ADMIN_BOOKS_CONFIG).forEach(function(cfg){
+    if(!u) u=cfg.units.find(function(x){return x.id===unitId;});
+  });
+  if(!u) u=UNITS_RPM1.find(function(x){return x.id===unitId;});
   if(!u) return;
 
   document.getElementById('unit-modal-title').textContent='📊 '+u.id+'. '+u.name+' 전체 오답 분석';
@@ -898,8 +959,12 @@ function updateYtSummary(){
 }
 
 function getUnitForNum(n){
-  for(var i=0;i<UNITS.length;i++){
-    if(n>=UNITS[i].r[0]&&n<=UNITS[i].r[1]) return UNITS[i];
+  var allUnits = [];
+  Object.values(ADMIN_BOOKS_CONFIG).forEach(function(cfg){
+    cfg.units.forEach(function(u){ allUnits.push(u); });
+  });
+  for(var i=0;i<allUnits.length;i++){
+    if(n>=allUnits[i].r[0]&&n<=allUnits[i].r[1]) return allUnits[i];
   }
   return null;
 }
