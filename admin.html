@@ -196,6 +196,7 @@ input:focus{border-color:#D42027}
 <div id="dashboard">
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('students')">학생 현황</button>
+    <button class="tab-btn" onclick="switchTab('questions')">질문함 <span id="q-badge" style="display:none;background:#ff3b5c;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:2px">0</span></button>
     <button class="tab-btn" onclick="switchTab('youtube')">해설영상 관리</button>
     <button class="tab-btn" onclick="switchTab('settings')">설정</button>
   </div>
@@ -386,6 +387,18 @@ input:focus{border-color:#D42027}
   </div>
 </div>
 
+<div id="questions-panel" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:900">💬 학생 질문함</div>
+    <div style="display:flex;gap:8px">
+      <button onclick="filterQuestions('all')" id="qf-all" class="sub-tab-btn active" style="font-size:11px;padding:5px 12px">전체</button>
+      <button onclick="filterQuestions('unanswered')" id="qf-unanswered" class="sub-tab-btn" style="font-size:11px;padding:5px 12px">미답변만</button>
+    </div>
+  </div>
+  <div id="questions-list"></div>
+</div>
+
+
 <script>
 var UNITS_RPM1=[
   {id:1,name:'다항식의 연산',r:[1,110],c:'#FF5722'},
@@ -442,7 +455,7 @@ AUTH.onAuthStateChanged(function(user) {
     document.getElementById('dashboard').style.display = 'block';
     document.getElementById('tname').textContent = user.email;
     document.getElementById('loutbtn').style.display = 'block';
-    loadStudents();
+    loadStudents(); checkUnreadQuestions();
   } else {
     document.getElementById('login').style.display = 'flex';
     document.getElementById('dashboard').style.display = 'none';
@@ -786,6 +799,7 @@ function switchTab(tab){
   document.getElementById('students-panel').style.display='none';
   document.getElementById('yt-panel').style.display='none';
   document.getElementById('settings-panel').style.display='none';
+  document.getElementById('questions-panel').style.display='none';
   if(tab==='students'){
     document.getElementById('students-panel').style.display='block';
     document.querySelectorAll('.tab-btn')[0].classList.add('active');
@@ -1263,6 +1277,111 @@ function doDeleteStudent(){
       btn.disabled=false;
       err.textContent='삭제 실패: '+e.message;
     });
+}
+
+// ── 질문함 기능 ──
+var allQuestions=[], qFilter='all';
+
+function loadAdminQuestions(){
+  var listEl=document.getElementById('questions-list');
+  listEl.innerHTML='<div style="text-align:center;padding:20px;color:#8b95a7">불러오는 중...</div>';
+  DB.collection('questions').orderBy('createdAt','desc').limit(100).get()
+    .then(function(snap){
+      allQuestions=[];
+      snap.forEach(function(doc){ allQuestions.push({id:doc.id, ...doc.data()}); });
+      // 미답변 뱃지 업데이트
+      var unanswered=allQuestions.filter(function(q){return !q.answered;}).length;
+      var badge=document.getElementById('q-badge');
+      if(badge){
+        if(unanswered>0){badge.style.display='inline';badge.textContent=unanswered;}
+        else{badge.style.display='none';}
+      }
+      renderAdminQuestions();
+    }).catch(function(e){
+      listEl.innerHTML='<div style="text-align:center;padding:20px;color:#ff3b5c">불러오기 실패: '+e.message+'</div>';
+    });
+}
+
+function filterQuestions(f){
+  qFilter=f;
+  document.getElementById('qf-all').className='sub-tab-btn'+(f==='all'?' active':'');
+  document.getElementById('qf-unanswered').className='sub-tab-btn'+(f==='unanswered'?' active':'');
+  renderAdminQuestions();
+}
+
+function renderAdminQuestions(){
+  var listEl=document.getElementById('questions-list');
+  var filtered=qFilter==='unanswered'
+    ?allQuestions.filter(function(q){return !q.answered;})
+    :allQuestions;
+
+  if(!filtered.length){
+    listEl.innerHTML='<div style="text-align:center;padding:30px;color:#8b95a7">'+(qFilter==='unanswered'?'미답변 질문이 없습니다 🎉':'질문이 없습니다')+'</div>';
+    return;
+  }
+
+  listEl.innerHTML=filtered.map(function(q){
+    var qTime=q.createdAt?new Date(q.createdAt.seconds*1000).toLocaleString('ko-KR'):'';
+    var numStr=q.numStr||String(q.num).padStart(4,'0');
+    return '<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid '+(q.answered?'#26d07c':'#ff9500')+'">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'+
+        '<div>'+
+          '<span style="font-size:11px;font-weight:700;background:#fff3e0;color:#ff9500;padding:2px 8px;border-radius:10px;margin-right:6px">'+numStr+'번</span>'+
+          '<span style="font-size:11px;color:#8b95a7">'+q.book+'</span>'+
+        '</div>'+
+        '<span style="font-size:10px;color:#c0c6d4">'+qTime+'</span>'+
+      '</div>'+
+      '<div style="font-size:12px;font-weight:700;color:#8b95a7;margin-bottom:3px">👤 '+esc(q.studentName||q.studentEmail)+'</div>'+
+      '<div style="font-size:14px;color:#1a1d2e;margin-bottom:10px;line-height:1.5">'+esc(q.question)+'</div>'+
+      (q.answered&&q.answer
+        ?'<div style="background:#edfff5;border-radius:8px;padding:10px;border-left:3px solid #26d07c;margin-bottom:8px">'+
+            '<div style="font-size:10px;font-weight:700;color:#26d07c;margin-bottom:4px">👨‍🏫 내 답변</div>'+
+            '<div style="font-size:13px;color:#1a1d2e;line-height:1.5">'+esc(q.answer)+'</div>'+
+          '</div>'
+        :'')+
+      (!q.answered
+        ?'<div style="display:flex;gap:6px">'+
+            '<input type="text" id="ans-'+q.id+'" placeholder="답변을 입력하세요..." '+
+              'style="flex:1;border:1.5px solid #e0e4ee;border-radius:8px;padding:8px 10px;font-size:13px;outline:none;font-family:sans-serif">'+
+            '<button onclick="submitAnswer(''+q.id+'')" '+
+              'style="background:#26d07c;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">답변</button>'+
+          '</div>'
+        :'<div style="font-size:11px;color:#26d07c;font-weight:700">✅ 답변 완료</div>')+
+    '</div>';
+  }).join('');
+}
+
+function submitAnswer(qId){
+  var input=document.getElementById('ans-'+qId);
+  if(!input||!input.value.trim()){alert('답변을 입력해주세요');return;}
+  var ansText=input.value.trim();
+  var btn=input.nextElementSibling;
+  btn.disabled=true; btn.textContent='전송 중...';
+
+  DB.collection('questions').doc(qId).update({
+    answer:ansText,
+    answered:true,
+    answeredAt:firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function(){
+    loadAdminQuestions();
+  }).catch(function(e){
+    btn.disabled=false; btn.textContent='답변';
+    alert('전송 실패: '+e.message);
+  });
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// 로드 시 미답변 뱃지 표시
+function checkUnreadQuestions(){
+  if(typeof DB==='undefined'||!DB) return;
+  DB.collection('questions').where('answered','==',false).get()
+    .then(function(snap){
+      var badge=document.getElementById('q-badge');
+      if(!badge) return;
+      if(snap.size>0){badge.style.display='inline';badge.textContent=snap.size;}
+      else{badge.style.display='none';}
+    }).catch(function(){});
 }
 </script>
 </body>

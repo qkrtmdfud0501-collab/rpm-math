@@ -189,13 +189,22 @@ input:focus{border-color:#D42027}
 .nbi{font-size:18px;line-height:1}
 
 /* ── 해설 팝업 ── */
-.popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:12px}
 .popup-overlay.hide{display:none}
-.popup-box{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:640px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
-.popup-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid #e8ecf4;flex-shrink:0}
+.popup-box{background:#fff;border-radius:16px;width:100%;max-width:960px;height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.popup-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;border-bottom:1px solid #e8ecf4;flex-shrink:0}
 .popup-title{font-size:14px;font-weight:700}
 .popup-close{background:none;border:none;font-size:20px;cursor:pointer;color:#8b95a7;padding:0 4px;font-family:sans-serif}
 .popup-body{flex:1;overflow-y:auto;padding:14px 16px;-webkit-overflow-scrolling:touch}
+/* AI 해설 팝업 - 가로 레이아웃 */
+.sol-split{display:flex;flex:1;overflow:hidden;min-height:0}
+.sol-left{width:42%;min-width:280px;border-right:1px solid #e8ecf4;overflow-y:auto;padding:14px;-webkit-overflow-scrolling:touch;flex-shrink:0}
+.sol-right{flex:1;overflow-y:auto;padding:14px 16px;-webkit-overflow-scrolling:touch}
+@media(max-width:600px){
+  .sol-split{flex-direction:column}
+  .sol-left{width:100%;min-width:unset;border-right:none;border-bottom:1px solid #e8ecf4;max-height:45%}
+  .sol-right{flex:1}
+}
 
 /* 문제 이미지 */
 .qimg-wrap{padding:6px 8px 2px;background:#f8f9fc;border-radius:8px;margin:4px 8px}
@@ -374,14 +383,18 @@ input:focus{border-color:#D42027}
       <div class="popup-title" id="sol-popup-title">문제 해설</div>
       <button class="popup-close" id="sol-popup-close">&#10006;</button>
     </div>
-    <img id="sol-popup-qimg" src="" style="display:none;width:100%;max-width:100%;border-radius:8px;margin-bottom:10px;border:1px solid #e8ecf4" onerror="this.style.display='none'">
-    <div class="popup-body" id="sol-popup-body"></div>
+    <div class="sol-split">
+      <div class="sol-left">
+        <img id="sol-popup-qimg" src="" style="display:none;width:100%;border-radius:8px;border:1px solid #e8ecf4" onerror="this.style.display='none'">
+      </div>
+      <div class="sol-right" id="sol-popup-body"></div>
+    </div>
   </div>
 </div>
 
 <!-- AI API 키 설정 팝업 -->
 <div class="popup-overlay hide" id="api-popup">
-  <div class="popup-box" style="border-radius:20px;margin:20px;max-height:auto">
+  <div class="popup-box" style="border-radius:20px;max-width:480px;height:auto;max-height:90vh">
     <div class="popup-header">
       <div class="popup-title">Gemini API 키 설정</div>
       <button class="popup-close" id="api-popup-close">&#10006;</button>
@@ -1222,7 +1235,7 @@ function renderWrong(){
     el.innerHTML=
       '<div class="witop"><span class="winum">'+wNumStr+'번</span><span class="wiunit">'+uname+retryBadge+'</span></div>'+
       '<div class="qimg-wrap"><img src="'+getCropBase()+wNumStr+'.jpg" class="qimg" onerror="this.style.display=\'none\'"></div>'+
-      '<div class="wians">내 답: <span class="wm">'+esc(r.userAns||'?')+'</span> / 정답: <span class="wc">'+esc(r.correctAns||'?')+'</span></div>'+
+      '<div class="wians">내 답: <span class="wm">'+esc(r.userAns||'?')+'</span></div>'+
       retrySection+
       '<div class="retry-panel" id="retry-panel-'+n+'">'+
         '<div style="font-size:12px;font-weight:700;margin-bottom:6px;color:#ff8c00">다시 선택해보세요:</div>'+
@@ -1484,29 +1497,32 @@ function loadGeminiKey(){
 function openAiSol(n){
   curSolNum=n;
   var key=geminiKeyCache||localStorage.getItem('gemini_key')||'';
+  var numStr=String(n).padStart(4,'0');
+
+  // 팝업 열기
+  document.getElementById('sol-popup-title').textContent=numStr+'번 AI 해설';
+  document.getElementById('sol-popup-qimg').src=getCropBase()+numStr+'.jpg';
+  document.getElementById('sol-popup-qimg').style.display='block';
+  document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">불러오는 중...</div>';
+  document.getElementById('sol-popup').classList.remove('hide');
+
+  // API 키 없으면 키 요청
   if(!key){
-    // 로딩 팝업 먼저 띄우고 Firebase에서 키 재시도
-    var numStr2=String(n).padStart(4,'0');
-    document.getElementById('sol-popup-title').textContent=numStr2+'번 AI 해설';
     document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">키 확인 중...</div>';
-    document.getElementById('sol-popup').classList.remove('hide');
     var dbReady=typeof DB!=='undefined'&&DB;
-    console.log('[AI] DB ready:', dbReady, 'cache:', geminiKeyCache?'있음':'없음');
     var p=dbReady
-      ? DB.collection('settings').doc('gemini').get().then(function(doc){
-          console.log('[AI] Firebase 응답 - exists:', doc.exists, 'data:', doc.exists?JSON.stringify(doc.data()):'없음');
+      ?DB.collection('settings').doc('gemini').get().then(function(doc){
           if(doc.exists&&doc.data().apiKey){
             geminiKeyCache=doc.data().apiKey;
             localStorage.setItem('gemini_key',geminiKeyCache);
             return geminiKeyCache;
           }
           return null;
-        }).catch(function(e){console.log('[AI] Firebase 오류:', e.message);return null;})
-      : Promise.resolve(null);
+        }).catch(function(){return null;})
+      :Promise.resolve(null);
     p.then(function(k){
-      if(k){
-        openAiSol(n);
-      } else {
+      if(k){openAiSol(n);}
+      else{
         closesolPopup();
         document.getElementById('api-key-input').value='';
         document.getElementById('api-err').textContent='선생님이 아직 API 키를 등록하지 않았습니다';
@@ -1515,162 +1531,152 @@ function openAiSol(n){
     });
     return;
   }
-  
-  var numStr=String(n).padStart(4,'0');
-  document.getElementById('sol-popup-title').textContent=numStr+'번 AI 해설';
-  document.getElementById('sol-popup-qimg').src=getCropBase()+numStr+'.jpg';
-  document.getElementById('sol-popup-qimg').style.display='block';
-  document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">AI가 풀이를 생성하는 중...</div>';
-  document.getElementById('sol-popup').classList.remove('hide');
-  
-  // 문제번호 → PDF 페이지 직접 매핑
-  var pageNum=PROB_PAGE[n]||null;
 
-  // CHOICES에서 문제 정보 가져오기
+  // ── Firestore 캐시 확인 ──
+  var cacheKey=(curBook||'RPM_공통수학1').replace(/[^a-zA-Z0-9_]/g,'_')+'_'+numStr;
+  var dbOk=typeof DB!=='undefined'&&DB;
+
+  if(dbOk){
+    DB.collection('solutions').doc(cacheKey).get()
+      .then(function(doc){
+        if(doc.exists && doc.data() && doc.data().text){
+          // 캐시 히트 - 즉시 표시
+          document.getElementById('sol-popup-body').innerHTML='';
+          renderAiResponse(doc.data().text, true);
+        } else {
+          // 캐시 없음 - Gemini 호출
+          startGeminiStream(n, numStr, key, cacheKey);
+        }
+      })
+      .catch(function(e){
+        console.log('[AI캐시] 읽기 실패:', e.message);
+        // 읽기 실패해도 Gemini는 호출
+        startGeminiStream(n, numStr, key, cacheKey);
+      });
+  } else {
+    startGeminiStream(n, numStr, key, null);
+  }
+}
+
+function startGeminiStream(n, numStr, key, cacheKey){
+  document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">AI가 풀이를 생성하는 중...</div>';
+
   var cd=getChoices()[n];
   var promptText=(curBook||'RPM 공통수학1')+' '+numStr+'번 문제입니다.\n';
-  if(cd){
+  if(cd&&cd.c&&cd.c.length){
     var choicesText=cd.c.map(function(c,i){return '('+(i+1)+') '+c;}).join('\n');
     var answerText=cd.c[cd.a];
     promptText+='\n보기:\n'+choicesText+'\n\n정답: '+answerText+'\n';
   }
-  promptText+='\n\n[필수 지시사항]\n1. 이미지에서 문제 번호 '+numStr+'번(표기: '+numStr+')을 찾아서 그 문제만 해설할 것\n2. 수식은 $...$ 로 감싸서 LaTeX로 표현 (예: $\\sqrt{5}$, $\\frac{a}{b}$, $x^2$)\n3. 고등학생이 이해할 수 있는 쉬운 언어로\n4. 각 단계를 번호로 구분\n5. 마지막에 정답 명시';
+  promptText+='\n\n[필수 지시사항]\n1. 이미지에서 문제 번호 '+numStr+'번을 찾아서 그 문제만 해설할 것\n2. 수식은 $...$ 로 감싸서 LaTeX로 표현 (예: $\\sqrt{5}$, $\\frac{a}{b}$)\n3. 고등학생이 이해할 수 있는 쉬운 언어로\n4. 각 단계를 번호로 구분\n5. 마지막에 정답 명시';
 
-  // 이미지 URL 구성 (GitHub Pages)
   var CROP_BASE=getCropBase();
 
-  // 스트리밍 방식으로 Gemini 호출
-  function streamGemini(parts){
-    return fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:streamGenerateContent?alt=sse',{
+  function doStream(parts){
+    fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:streamGenerateContent?alt=sse',{
       method:'POST',
       headers:{'Content-Type':'application/json','X-goog-api-key':key},
       body:JSON.stringify({contents:[{parts:parts}]})
+    }).then(function(response){
+      if(response.status===400||response.status===403){
+        localStorage.removeItem('gemini_key'); geminiKeyCache='';
+        throw new Error('API_KEY_INVALID');
+      }
+      if(response.status===429) throw new Error('RATE_LIMIT');
+      if(!response.ok) throw new Error('응답 없음');
+
+      var reader=response.body.getReader();
+      var decoder=new TextDecoder();
+      var fullText='';
+      var bodyEl=document.getElementById('sol-popup-body');
+      bodyEl.innerHTML='<div class="ai-body" id="ai-stream-body"><p></p></div>'+
+        '<div style="margin-top:14px;padding-top:10px;border-top:1px solid #e8ecf4;display:flex;gap:8px">'+
+        '<button onclick="removeGeminiKey()" style="flex:1;padding:8px;background:#f0f3f8;border:none;border-radius:7px;font-family:sans-serif;font-size:11px;cursor:pointer;color:#8b95a7">API 키 변경</button>'+
+        '</div>';
+
+      function read(){
+        reader.read().then(function(result){
+          if(result.done){
+            renderAiResponse(fullText, false);
+            // Firestore에 저장
+            if(cacheKey && typeof DB!=='undefined' && DB && fullText){
+              DB.collection('solutions').doc(cacheKey).set({
+                text:fullText,
+                num:n,
+                book:curBook||'RPM 공통수학1',
+                createdAt:firebase.firestore.FieldValue.serverTimestamp()
+              }).then(function(){
+                console.log('[AI캐시] 저장 완료:', cacheKey);
+              }).catch(function(e){
+                console.log('[AI캐시] 저장 실패:', e.message);
+              });
+            }
+            return;
+          }
+          var chunk=decoder.decode(result.value,{stream:true});
+          var lines=chunk.split('\n');
+          for(var i=0;i<lines.length;i++){
+            var line=lines[i].trim();
+            if(!line.startsWith('data:')) continue;
+            var jsonStr=line.slice(5).trim();
+            if(jsonStr==='[DONE]') continue;
+            try{
+              var parsed=JSON.parse(jsonStr);
+              var part=parsed.candidates&&parsed.candidates[0]&&
+                       parsed.candidates[0].content&&parsed.candidates[0].content.parts&&
+                       parsed.candidates[0].content.parts[0];
+              if(part&&part.text){
+                fullText+=part.text;
+                var preview=fullText
+                  .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+                  .replace(/^#{1,3}\s(.+)$/gm,'<strong>$1</strong>')
+                  .replace(/\n/g,'<br>');
+                var streamEl=document.getElementById('ai-stream-body');
+                if(streamEl) streamEl.innerHTML='<p>'+preview+'</p>';
+              }
+            }catch(e){}
+          }
+          read();
+        }).catch(function(){renderAiResponse(fullText||'');});
+      }
+      read();
+    }).catch(function(e){
+      var msg='';
+      if(e.message==='API_KEY_INVALID'){
+        msg='<div style="font-size:22px;margin-bottom:8px">&#10006;</div>'+
+            '<div style="font-size:13px;font-weight:700;color:#ff3b5c;margin-bottom:12px">API 키가 올바르지 않습니다</div>'+
+            '<div style="font-size:11px;color:#8b95a7">관리자 페이지 설정 탭에서 키를 확인해주세요</div>';
+      } else if(e.message==='RATE_LIMIT'){
+        msg='<div style="font-size:22px;margin-bottom:8px">&#8987;</div>'+
+            '<div style="font-size:13px;font-weight:700;color:#ff9500;margin-bottom:8px">요청이 너무 많습니다</div>'+
+            '<div style="font-size:11px;color:#8b95a7">잠시 후 다시 시도해주세요</div>';
+      } else {
+        msg='<div style="font-size:22px;margin-bottom:8px">&#9888;</div>'+
+            '<div style="font-size:13px;font-weight:700;margin-bottom:8px">해설을 불러오지 못했습니다</div>'+
+            '<div style="font-size:11px;color:#8b95a7">'+e.message+'</div>';
+      }
+      var bodyEl=document.getElementById('sol-popup-body');
+      if(bodyEl) bodyEl.innerHTML='<div class="ai-loading">'+msg+'</div>';
     });
   }
 
-  function handleStream(response){
-    if(response.status===400||response.status===403){
-      localStorage.removeItem('gemini_key');
-      geminiKeyCache='';
-      throw new Error('API_KEY_INVALID');
-    }
-    if(response.status===429) throw new Error('RATE_LIMIT');
-    if(!response.ok) throw new Error('응답 없음');
-
-    var reader=response.body.getReader();
-    var decoder=new TextDecoder();
-    var fullText='';
-    var bodyEl=document.getElementById('sol-popup-body');
-    bodyEl.innerHTML='<div class="ai-body" id="ai-stream-body"><p></p></div>'+
-      '<div style="margin-top:14px;padding-top:10px;border-top:1px solid #e8ecf4;display:flex;gap:8px">'+
-      '<button onclick="removeGeminiKey()" style="flex:1;padding:8px;background:#f0f3f8;border:none;border-radius:7px;font-family:sans-serif;font-size:11px;cursor:pointer;color:#8b95a7">API 키 변경</button>'+
-      '</div>';
-
-    function read(){
-      reader.read().then(function(result){
-        if(result.done){
-          // 완료 - MathJax 렌더링 + Firestore 저장
-          renderAiResponse(fullText);
-          // 해설을 Firestore에 캐시 저장 (다음 학생부터 빠르게 로드)
-          if(solRef && fullText){
-            solRef.set({
-              text: fullText,
-              num: n,
-              book: curBook||'RPM 공통수학1',
-              createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            }).catch(function(){});
-          }
-          return;
-        }
-        var chunk=decoder.decode(result.value,{stream:true});
-        // SSE 파싱: "data: {...}" 형태
-        var lines=chunk.split('\n');
-        for(var i=0;i<lines.length;i++){
-          var line=lines[i].trim();
-          if(!line.startsWith('data:')) continue;
-          var jsonStr=line.slice(5).trim();
-          if(jsonStr==='[DONE]') continue;
-          try{
-            var parsed=JSON.parse(jsonStr);
-            var part=parsed.candidates&&parsed.candidates[0]&&
-                     parsed.candidates[0].content&&parsed.candidates[0].content.parts&&
-                     parsed.candidates[0].content.parts[0];
-            if(part&&part.text){
-              fullText+=part.text;
-              // 실시간으로 텍스트 표시 (마크다운 bold/헤더만 간단히 변환)
-              var preview=fullText
-                .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
-                .replace(/^#{1,3}\s(.+)$/gm,'<strong>$1</strong>')
-                .replace(/\n/g,'<br>');
-              var streamEl=document.getElementById('ai-stream-body');
-              if(streamEl) streamEl.innerHTML='<p>'+preview+'</p>';
-            }
-          }catch(e){}
-        }
-        read();
-      }).catch(function(){
-        renderAiResponse(fullText||'');
-      });
-    }
-    read();
-  }
-
-  // ── Firestore 해설 캐시 확인 ──
-  var cacheKey=(curBook||'RPM_공통수학1').replace(/[^a-zA-Z0-9_]/g,'_')+'_'+numStr;
-  var solRef=typeof DB!=='undefined'&&DB?DB.collection('solutions').doc(cacheKey):null;
-
-  function callGemini(){
-    var cropUrl=CROP_BASE+numStr+'.jpg';
-    var img=new Image();
-    img.crossOrigin='anonymous';
-    img.onload=function(){
-      var canvas=document.createElement('canvas');
-      var ratio=Math.min(800/img.width,1000/img.height,1);
-      canvas.width=Math.round(img.width*ratio);
-      canvas.height=Math.round(img.height*ratio);
-      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-      var b64=canvas.toDataURL('image/jpeg',0.8).split(',')[1];
-      streamGemini([{inline_data:{mime_type:'image/jpeg',data:b64}},{text:promptText}])
-        .then(handleStream).catch(showAiError);
-    };
-    img.onerror=function(){
-      streamGemini([{text:promptText}]).then(handleStream).catch(showAiError);
-    };
-    img.src=cropUrl+'?t='+Date.now();
-  }
-
-  if(solRef){
-    solRef.get().then(function(doc){
-      if(doc.exists&&doc.data().text){
-        // 캐시 히트
-        var bodyEl=document.getElementById('sol-popup-body');
-        bodyEl.innerHTML='<div style="font-size:10px;color:#26d07c;padding:4px 0 8px;font-weight:700">📦 저장된 해설</div>';
-        renderAiResponse(doc.data().text, true);
-      } else {
-        callGemini();
-      }
-    }).catch(function(){ callGemini(); });
-  } else {
-    callGemini();
-  }
-
-  function showAiError(e){
-    var msg='';
-    if(e.message==='API_KEY_INVALID'){
-      msg='<div style="font-size:22px;margin-bottom:8px">&#10006;</div>'+
-          '<div style="font-size:13px;font-weight:700;color:#ff3b5c;margin-bottom:12px">API 키가 올바르지 않습니다</div>'+
-          '<div style="font-size:11px;color:#8b95a7">관리자 페이지 설정 탭에서 키를 확인해주세요</div>';
-    } else if(e.message==='RATE_LIMIT'){
-      msg='<div style="font-size:22px;margin-bottom:8px">&#8987;</div>'+
-          '<div style="font-size:13px;font-weight:700;color:#ff9500;margin-bottom:8px">요청이 너무 많습니다</div>'+
-          '<div style="font-size:11px;color:#8b95a7">잠시 후 다시 시도해주세요</div>';
-    } else {
-      msg='<div style="font-size:22px;margin-bottom:8px">&#9888;</div>'+
-          '<div style="font-size:13px;font-weight:700;color:#8b95a7;margin-bottom:8px">해설을 불러오지 못했습니다</div>'+
-          '<div style="font-size:11px;color:#8b95a7">잠시 후 다시 시도해주세요</div>';
-    }
-    document.getElementById('sol-popup-body').innerHTML='<div style="text-align:center;padding:24px">'+msg+'</div>';
-  }
+  // 이미지 포함해서 전송
+  var cropUrl=CROP_BASE+numStr+'.jpg';
+  var img=new Image();
+  img.crossOrigin='anonymous';
+  img.onload=function(){
+    var canvas=document.createElement('canvas');
+    var ratio=Math.min(800/img.width,1000/img.height,1);
+    canvas.width=Math.round(img.width*ratio);
+    canvas.height=Math.round(img.height*ratio);
+    canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+    var b64=canvas.toDataURL('image/jpeg',0.8).split(',')[1];
+    doStream([{inline_data:{mime_type:'image/jpeg',data:b64}},{text:promptText}]);
+  };
+  img.onerror=function(){
+    doStream([{text:promptText}]);
+  };
+  img.src=cropUrl+'?t='+Date.now();
 }
 
 function renderAiResponse(text, fromCache){
@@ -1695,11 +1701,24 @@ function renderAiResponse(text, fromCache){
       cacheBadge+
       '<button onclick="removeGeminiKey()" style="flex:1;padding:8px;background:#f0f3f8;border:none;border-radius:7px;font-family:sans-serif;font-size:11px;cursor:pointer;color:#8b95a7">API 키 변경</button>'+
       regenBtn+
+    '</div>'+
+    // 질문 섹션
+    '<div style="margin-top:16px;border-top:1px solid #e8ecf4;padding-top:12px">'+
+      '<div style="font-size:12px;font-weight:700;color:#1a1d2e;margin-bottom:8px">💬 이해가 안 되는 부분이 있나요?</div>'+
+      '<div id="q-list-'+curSolNum+'" style="margin-bottom:8px"></div>'+
+      '<div style="display:flex;gap:6px">'+
+        '<input type="text" id="q-input-'+curSolNum+'" placeholder="질문을 입력하세요..." '+
+          'style="flex:1;border:1.5px solid #e0e4ee;border-radius:8px;padding:8px 10px;font-size:13px;outline:none;font-family:sans-serif">'+
+        '<button onclick="submitQuestion('+curSolNum+')" '+
+          'style="background:#D42027;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">질문</button>'+
+      '</div>'+
     '</div>';
   // MathJax 렌더링
   if(window.MathJax&&MathJax.typesetPromise){
     MathJax.typesetPromise([document.getElementById('sol-popup-body')]).catch(function(){});
   }
+  // 기존 질문/답변 로드
+  loadQuestions(curSolNum);
 }
 
 function regenAiSol(){
@@ -1723,25 +1742,36 @@ function openRetryPanel(n){
   if(!panel) return;
   panel.classList.add('open');
 
-  // 보기 렌더링
   var cd=getChoices()[n];
-  if(!cd){panel.innerHTML='<div style="font-size:12px;color:#8b95a7">보기 정보 없음</div>';return;}
   var choicesEl=document.getElementById('retry-choices-'+n);
   if(!choicesEl) return;
   choicesEl.innerHTML='';
   var selRetry={};
-  cd.c.forEach(function(c,i){
-    var b=document.createElement('button');
-    b.className='cb';
-    b.style.marginBottom='4px';
-    b.innerHTML='<span class="cn">'+NS[i]+'</span><span class="ct">'+esc(c)+'</span>';
-    b.addEventListener('click',function(){
-      selRetry.ans=i;
-      choicesEl.querySelectorAll('.cb').forEach(function(x){x.classList.remove('sel');});
-      b.classList.add('sel');
+
+  if(cd && cd.c && cd.c.length>0){
+    // 5지선다
+    cd.c.forEach(function(c,i){
+      var b=document.createElement('button');
+      b.className='cb';
+      b.style.marginBottom='4px';
+      b.innerHTML='<span class="cn">'+NS[i]+'</span><span class="ct">'+esc(c)+'</span>';
+      b.addEventListener('click',function(){
+        selRetry.ans=i;
+        choicesEl.querySelectorAll('.cb').forEach(function(x){x.classList.remove('sel');});
+        b.classList.add('sel');
+      });
+      choicesEl.appendChild(b);
     });
-    choicesEl.appendChild(b);
-  });
+  } else {
+    // 주관식 - 텍스트 입력
+    choicesEl.innerHTML=
+      '<div style="display:flex;gap:6px;align-items:center">'+
+        '<input type="text" id="retry-input-'+n+'" placeholder="답 입력" '+
+        'style="flex:1;border:1.5px solid #e0e4ee;border-radius:8px;padding:8px 10px;font-size:14px;outline:none">'+
+      '</div>';
+    selRetry.isText=true;
+  }
+
   // 제출 버튼에 selRetry 연결
   var submitBtn=panel.querySelector('[data-submit-retry]');
   if(submitBtn) submitBtn._selRetry=selRetry;
@@ -1751,21 +1781,32 @@ function submitRetry(n){
   var panel=document.getElementById('retry-panel-'+n);
   var submitBtn=panel?panel.querySelector('[data-submit-retry]'):null;
   var selRetry=submitBtn?submitBtn._selRetry:{};
-  if(selRetry.ans===undefined){alert('답을 선택해주세요');return;}
 
   var cd=getChoices()[n];
   if(!cd) return;
-  var isOk=(selRetry.ans===cd.a);
+
+  var isOk, userAns, correctAns;
+
+  if(selRetry.isText){
+    // 주관식
+    var input=document.getElementById('retry-input-'+n);
+    if(!input||!input.value.trim()){alert('답을 입력해주세요');return;}
+    userAns=input.value.trim();
+    correctAns=cd.a;
+    var norm=function(s){return String(s).replace(/\s+/g,'').toLowerCase();};
+    isOk=norm(userAns)===norm(correctAns);
+  } else {
+    // 객관식
+    if(selRetry.ans===undefined){alert('답을 선택해주세요');return;}
+    isOk=(selRetry.ans===cd.a);
+    userAns=cd.c[selRetry.ans];
+    correctAns=cd.c[cd.a];
+  }
+
   var r=records[n];
-  r.retry={
-    correct:isOk,
-    userAns:cd.c[selRetry.ans],
-    correctAns:cd.c[cd.a],
-    ts:Date.now()
-  };
+  r.retry={correct:isOk,userAns:userAns,correctAns:correctAns,ts:Date.now()};
   records[n]=r;
   saveRec();
-  // 오답노트 다시 렌더링
   renderWrong();
 }
 
@@ -1774,6 +1815,72 @@ function solBtnsHTML(n){
     '<button class="sol-btn yt" data-yt="'+n+'">&#9654; 해설영상</button>'+
     '<button class="sol-btn ai" data-ai="'+n+'">AI 해설</button>'+
   '</div>';
+}
+
+
+// ── 질문 기능 ──
+function submitQuestion(n){
+  var input=document.getElementById('q-input-'+n);
+  if(!input||!input.value.trim()) return;
+  var qText=input.value.trim();
+  if(!curUser){alert('로그인이 필요합니다');return;}
+  if(typeof DB==='undefined'||!DB){alert('서버 연결 오류');return;}
+
+  var btn=input.nextElementSibling;
+  btn.disabled=true; btn.textContent='전송 중...';
+
+  var numStr=String(n).padStart(4,'0');
+  DB.collection('questions').add({
+    num:n,
+    numStr:numStr,
+    book:curBook||'RPM 공통수학1',
+    question:qText,
+    studentEmail:curUser,
+    studentName:document.getElementById('tname').textContent||curUser,
+    answered:false,
+    answer:'',
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function(){
+    input.value='';
+    btn.disabled=false; btn.textContent='질문';
+    loadQuestions(n);
+  }).catch(function(e){
+    btn.disabled=false; btn.textContent='질문';
+    alert('전송 실패: '+e.message);
+  });
+}
+
+function loadQuestions(n){
+  var listEl=document.getElementById('q-list-'+n);
+  if(!listEl||typeof DB==='undefined'||!DB) return;
+
+  DB.collection('questions')
+    .where('num','==',n)
+    .where('studentEmail','==',curUser||'')
+    .orderBy('createdAt','asc')
+    .get().then(function(snap){
+      if(snap.empty){listEl.innerHTML='';return;}
+      var html2='';
+      snap.forEach(function(doc){
+        var d=doc.data();
+        var qTime=d.createdAt?new Date(d.createdAt.seconds*1000).toLocaleDateString('ko-KR'):'';
+        html2+=
+          '<div style="background:#f8f9fc;border-radius:8px;padding:10px;margin-bottom:6px;font-size:12px">'+
+            '<div style="display:flex;justify-content:space-between;margin-bottom:4px">'+
+              '<span style="font-weight:700;color:#1a1d2e">📝 내 질문</span>'+
+              '<span style="color:#c0c6d4;font-size:10px">'+qTime+'</span>'+
+            '</div>'+
+            '<div style="color:#333;line-height:1.5;margin-bottom:'+(d.answer?'8px':'0')+'px">'+esc(d.question)+'</div>'+
+            (d.answer
+              ? '<div style="background:#edfff5;border-radius:6px;padding:8px;border-left:3px solid #26d07c">'+
+                  '<div style="font-size:10px;font-weight:700;color:#26d07c;margin-bottom:3px">👨‍🏫 선생님 답변</div>'+
+                  '<div style="color:#1a1d2e;line-height:1.5">'+esc(d.answer)+'</div>'+
+                '</div>'
+              : '<div style="font-size:10px;color:#ff9500;font-weight:700">⏳ 답변 대기 중</div>')+
+          '</div>';
+      });
+      listEl.innerHTML=html2;
+    }).catch(function(){});
 }
 
 // 이벤트 위임으로 동적 버튼 처리
