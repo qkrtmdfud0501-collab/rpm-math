@@ -795,23 +795,26 @@ function toggleShowKey(){
 }
 
 function switchTab(tab){
+  // 모든 탭 버튼 비활성화, 모든 패널 숨김
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
-  document.getElementById('students-panel').style.display='none';
-  document.getElementById('yt-panel').style.display='none';
-  document.getElementById('settings-panel').style.display='none';
-  document.getElementById('questions-panel').style.display='none';
-  if(tab==='students'){
-    document.getElementById('students-panel').style.display='block';
-    document.querySelectorAll('.tab-btn')[0].classList.add('active');
-  } else if(tab==='youtube'){
-    document.getElementById('yt-panel').style.display='block';
-    document.querySelectorAll('.tab-btn')[1].classList.add('active');
-    if(!ytLoaded) loadYtLinks();
-  } else {
-    document.getElementById('settings-panel').style.display='block';
-    document.querySelectorAll('.tab-btn')[2].classList.add('active');
-    loadGeminiKeyAdmin();
-  }
+  ['students-panel','questions-panel','yt-panel','settings-panel'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.style.display='none';
+  });
+  // 탭 순서: [0]학생현황 [1]질문함 [2]해설영상 [3]설정
+  var tabs={students:0, questions:1, youtube:2, settings:3};
+  var panels={students:'students-panel', questions:'questions-panel', youtube:'yt-panel', settings:'settings-panel'};
+  var idx=tabs[tab];
+  var panelId=panels[tab];
+  if(idx===undefined||!panelId) return;
+  var panelEl=document.getElementById(panelId);
+  if(panelEl) panelEl.style.display='block';
+  var btns=document.querySelectorAll('.tab-btn');
+  if(btns[idx]) btns[idx].classList.add('active');
+  // 탭별 초기화
+  if(tab==='youtube'&&!ytLoaded) loadYtLinks();
+  if(tab==='settings') loadGeminiKeyAdmin();
+  if(tab==='questions') loadAdminQuestions();
 }
 
 function switchSubTab(t){
@@ -1343,7 +1346,7 @@ function renderAdminQuestions(){
         ?'<div style="display:flex;gap:6px">'+
             '<input type="text" id="ans-'+q.id+'" placeholder="답변을 입력하세요..." '+
               'style="flex:1;border:1.5px solid #e0e4ee;border-radius:8px;padding:8px 10px;font-size:13px;outline:none;font-family:sans-serif">'+
-            '<button onclick="submitAnswer(''+q.id+'')" '+
+            '<button data-qid="'+q.id+'" onclick="submitAnswer(this.getAttribute(\'data-qid\'))" '+
               'style="background:#26d07c;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">답변</button>'+
           '</div>'
         :'<div style="font-size:11px;color:#26d07c;font-weight:700">✅ 답변 완료</div>')+
@@ -1352,6 +1355,7 @@ function renderAdminQuestions(){
 }
 
 function submitAnswer(qId){
+  qId = String(qId);
   var input=document.getElementById('ans-'+qId);
   if(!input||!input.value.trim()){alert('답변을 입력해주세요');return;}
   var ansText=input.value.trim();
@@ -1361,6 +1365,7 @@ function submitAnswer(qId){
   DB.collection('questions').doc(qId).update({
     answer:ansText,
     answered:true,
+    readByStudent:false,
     answeredAt:firebase.firestore.FieldValue.serverTimestamp()
   }).then(function(){
     loadAdminQuestions();

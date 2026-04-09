@@ -375,6 +375,14 @@ input:focus{border-color:#D42027}
     <div id="books-list-wrap"></div>
     <div style="height:8px"></div>
   </div>
+
+  <!-- 내 질문함 화면 -->
+  <div class="screen" id="s-myq">
+    <div style="font-size:16px;font-weight:900;margin-bottom:4px">💬 내 질문함</div>
+    <div style="font-size:12px;color:#8b95a7;margin-bottom:14px">선생님의 답변을 확인하세요</div>
+    <div id="myq-list"><div class="empty">질문 내역이 없어요</div></div>
+  </div>
+
 </div>
 <!-- 해설 팝업 -->
 <div class="popup-overlay hide" id="sol-popup">
@@ -872,6 +880,8 @@ function selectBook(bookName, bookRecords){
 }
 
 function showMainApp(){
+  // 미확인 답변 뱃지 체크
+  setTimeout(checkMyQBadge, 1500);
   document.getElementById('book-select-screen').style.display='none';
   document.getElementById('no-book-screen').style.display='none';
   document.getElementById('topbar').classList.remove('hide');
@@ -938,6 +948,7 @@ document.getElementById('nb-home').addEventListener('click',function(){renderHom
 document.getElementById('nb-wrong').addEventListener('click',function(){renderWrong();go('wrong');});
 document.getElementById('nb-stats').addEventListener('click',function(){renderStats();go('stats');});
 document.getElementById('nb-books').addEventListener('click',function(){renderBooks();go('books');});
+document.getElementById('nb-myq').addEventListener('click',function(){renderMyQuestions();go('myq');});
 // 교재 카드 클릭 (현재 RPM만 활성)
 // 교재 탭은 동적 렌더링으로 교체됨
 
@@ -1496,18 +1507,61 @@ function loadGeminiKey(){
 // ── AI 해설 팝업 ──
 function openAiSol(n){
   curSolNum=n;
-  var key=geminiKeyCache||localStorage.getItem('gemini_key')||'';
   var numStr=String(n).padStart(4,'0');
 
-  // 팝업 열기
+  // 팝업 먼저 열기
   document.getElementById('sol-popup-title').textContent=numStr+'번 AI 해설';
   document.getElementById('sol-popup-qimg').src=getCropBase()+numStr+'.jpg';
   document.getElementById('sol-popup-qimg').style.display='block';
   document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">불러오는 중...</div>';
   document.getElementById('sol-popup').classList.remove('hide');
 
-  // API 키 없으면 키 요청
-  if(!key){
+  // 키 확보 후 진행 (이미 있으면 즉시, 없으면 Firebase에서 로드)
+  function getKeyAndProceed(cb){
+    var key=geminiKeyCache||localStorage.getItem('gemini_key')||'';
+    if(key){ cb(key); return; }
+    // Firebase에서 로드 시도
+    var dbReady=typeof DB!=='undefined'&&DB;
+    if(!dbReady){ cb(null); return; }
+    DB.collection('settings').doc('gemini').get()
+      .then(function(doc){
+        if(doc.exists&&doc.data()&&doc.data().apiKey){
+          geminiKeyCache=doc.data().apiKey;
+          localStorage.setItem('gemini_key',geminiKeyCache);
+          cb(geminiKeyCache);
+        } else { cb(null); }
+      }).catch(function(){ cb(null); });
+  }
+
+  getKeyAndProceed(function(key){
+    if(!key){
+      // 진짜로 키가 없을 때만 설정 팝업
+      closesolPopup();
+      document.getElementById('api-key-input').value='';
+      document.getElementById('api-err').textContent='선생님이 아직 API 키를 등록하지 않았습니다';
+      document.getElementById('api-popup').classList.remove('hide');
+      return;
+    }
+    // 캐시 확인 후 Gemini 호출
+    var cacheKey=(curBook||'RPM_공통수학1').replace(/[^a-zA-Z0-9_]/g,'_')+'_'+numStr;
+    var dbOk=typeof DB!=='undefined'&&DB;
+    if(dbOk){
+      DB.collection('solutions').doc(cacheKey).get()
+        .then(function(doc){
+          if(doc.exists&&doc.data()&&doc.data().text){
+            document.getElementById('sol-popup-body').innerHTML='';
+            renderAiResponse(doc.data().text,true);
+          } else {
+            startGeminiStream(n,numStr,key,cacheKey);
+          }
+        }).catch(function(){ startGeminiStream(n,numStr,key,cacheKey); });
+    } else {
+      startGeminiStream(n,numStr,key,null);
+    }
+  });
+
+  // (구 no-key 분기 제거됨)
+  if(!key){ // dummy - never reached, kept for structure
     document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">키 확인 중...</div>';
     var dbReady=typeof DB!=='undefined'&&DB;
     var p=dbReady
@@ -1521,8 +1575,24 @@ function openAiSol(n){
         }).catch(function(){return null;})
       :Promise.resolve(null);
     p.then(function(k){
-      if(k){openAiSol(n);}
-      else{
+      if(k){
+        // 키 로드 성공 → 재귀 없이 바로 캐시 확인 + 스트리밍 진행
+        var cacheKey2=(curBook||'RPM_공통수학1').replace(/[^a-zA-Z0-9_]/g,'_')+'_'+numStr;
+        if(dbReady){
+          DB.collection('solutions').doc(cacheKey2).get()
+            .then(function(doc){
+              if(doc.exists&&doc.data()&&doc.data().text){
+                document.getElementById('sol-popup-body').innerHTML='';
+                renderAiResponse(doc.data().text,true);
+              } else {
+                startGeminiStream(n,numStr,k,cacheKey2);
+              }
+            }).catch(function(){ startGeminiStream(n,numStr,k,cacheKey2); });
+        } else {
+          startGeminiStream(n,numStr,k,null);
+        }
+      } else {
+        // 진짜로 키가 없을 때만 설정 팝업
         closesolPopup();
         document.getElementById('api-key-input').value='';
         document.getElementById('api-err').textContent='선생님이 아직 API 키를 등록하지 않았습니다';
@@ -1881,6 +1951,76 @@ function loadQuestions(n){
       });
       listEl.innerHTML=html2;
     }).catch(function(){});
+}
+
+
+// ── 내 질문함 ──
+function renderMyQuestions(){
+  var listEl=document.getElementById('myq-list');
+  if(!listEl) return;
+  listEl.innerHTML='<div class="empty">불러오는 중...</div>';
+  if(typeof DB==='undefined'||!DB||!curUser){
+    listEl.innerHTML='<div class="empty">로그인이 필요합니다</div>';
+    return;
+  }
+  DB.collection('questions')
+    .where('studentEmail','==',curUser)
+    .orderBy('createdAt','desc')
+    .get().then(function(snap){
+      if(snap.empty){listEl.innerHTML='<div class="empty">아직 질문이 없어요</div>';return;}
+      var html2='';
+      snap.forEach(function(doc){
+        var d=doc.data();
+        var qTime=d.createdAt?new Date(d.createdAt.seconds*1000).toLocaleDateString('ko-KR'):'';
+        var numStr=d.numStr||String(d.num).padStart(4,'0');
+        var isNew=d.answered&&!d.readByStudent;
+        html2+=
+          '<div style="background:#fff;border-radius:10px;padding:12px;margin-bottom:10px;box-shadow:0 2px 6px rgba(0,0,0,.06);border-left:4px solid '+(d.answered?'#26d07c':'#ff9500')+'">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
+              '<div style="display:flex;align-items:center;gap:6px">'+
+                '<span style="font-size:11px;font-weight:700;background:#fff3e0;color:#ff9500;padding:2px 8px;border-radius:10px">'+numStr+'번</span>'+
+                '<span style="font-size:10px;color:#8b95a7">'+d.book+'</span>'+
+                (isNew?'<span style="font-size:10px;font-weight:700;color:#ff3b5c;background:#fff0f0;padding:1px 6px;border-radius:8px">NEW</span>':'') +
+              '</div>'+
+              '<span style="font-size:10px;color:#c0c6d4">'+qTime+'</span>'+
+            '</div>'+
+            '<div style="font-size:13px;color:#1a1d2e;margin-bottom:8px;line-height:1.5">'+esc(d.question)+'</div>'+
+            (d.answered&&d.answer
+              ?'<div style="background:#edfff5;border-radius:8px;padding:10px;border-left:3px solid #26d07c">'+
+                  '<div style="font-size:10px;font-weight:700;color:#26d07c;margin-bottom:4px">👨‍🏫 선생님 답변</div>'+
+                  '<div style="font-size:13px;color:#1a1d2e;line-height:1.5">'+esc(d.answer)+'</div>'+
+                '</div>'
+              :'<div style="font-size:11px;color:#ff9500;font-weight:700">⏳ 답변 대기 중...</div>')+
+          '</div>';
+        // 읽음 처리
+        if(isNew){
+          DB.collection('questions').doc(doc.id).update({readByStudent:true}).catch(function(){});
+        }
+      });
+      listEl.innerHTML=html2;
+      // 뱃지 업데이트
+      updateMyQBadge(0);
+    }).catch(function(e){
+      listEl.innerHTML='<div class="empty">불러오기 실패: '+e.message+'</div>';
+    });
+}
+
+function checkMyQBadge(){
+  if(typeof DB==='undefined'||!DB||!curUser) return;
+  DB.collection('questions')
+    .where('studentEmail','==',curUser)
+    .where('answered','==',true)
+    .where('readByStudent','==',false)
+    .get().then(function(snap){
+      updateMyQBadge(snap.size);
+    }).catch(function(){});
+}
+
+function updateMyQBadge(count){
+  var badge=document.getElementById('myq-badge');
+  if(!badge) return;
+  if(count>0){badge.style.display='block';}
+  else{badge.style.display='none';}
 }
 
 // 이벤트 위임으로 동적 버튼 처리
