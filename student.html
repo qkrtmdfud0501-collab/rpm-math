@@ -237,6 +237,27 @@ input:focus{border-color:#D42027}
 .yt-frame-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
 .yt-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:160px;background:#f8f9fc;border-radius:10px;color:#8b95a7;font-size:13px;gap:8px}
 .yt-ph-icon{font-size:36px}
+
+/* ── 분수 표현 ── */
+.frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  margin: 0 1px;
+  line-height: 1.1;
+}
+.fnum {
+  border-bottom: 1.2px solid currentColor;
+  padding: 0 2px 1px;
+  font-size: 0.82em;
+  text-align: center;
+}
+.fden {
+  padding: 1px 2px 0;
+  font-size: 0.82em;
+  text-align: center;
+}
 </style>
 </head>
 <body>
@@ -380,7 +401,9 @@ input:focus{border-color:#D42027}
   <!-- 내 질문함 화면 -->
   <div class="screen" id="s-myq">
     <div style="font-size:16px;font-weight:900;margin-bottom:4px">💬 내 질문함</div>
-    <div style="font-size:12px;color:#8b95a7;margin-bottom:14px">선생님의 답변을 확인하세요</div>
+    <div style="font-size:12px;color:#8b95a7;margin-bottom:10px">선생님의 답변을 확인하세요</div>
+    <!-- 교재별 탭 (질문 있는 교재만 자동 생성) -->
+    <div id="myq-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div>
     <div id="myq-list"><div class="empty">질문 내역이 없어요</div></div>
   </div>
 
@@ -445,18 +468,18 @@ const CHOICES_DAESOO={1:{c:[],a:"-2"},2:{c:[],a:"-3, 3"},3:{c:[],a:"0.3"},4:{c:[
 var BOOKS_CONFIG = {
   'RPM 공통수학1': {
     units: [
-  {id:1,name:'다항식의 연산',r:[1,110],c:'#FF5722'},
-  {id:2,name:'항등식과 나머지정리',r:[111,195],c:'#8E44AD'},
-  {id:3,name:'인수분해',r:[196,279],c:'#2980B9'},
-  {id:4,name:'복소수',r:[280,375],c:'#16A085'},
-  {id:5,name:'이차방정식',r:[376,480],c:'#E67E22'},
-  {id:6,name:'이차방정식과 이차함수',r:[481,566],c:'#C0392B'},
-  {id:7,name:'여러 가지 방정식',r:[567,628],c:'#1ABC9C'},
-  {id:8,name:'연립일차부등식',r:[629,774],c:'#F39C12'},
-  {id:9,name:'이차부등식',r:[775,910],c:'#9B59B6'},
-  {id:10,name:'경우의 수와 순열',r:[911,1000],c:'#27AE60'},
-  {id:11,name:'조합',r:[1001,1092],c:'#E74C3C'},
-  {id:12,name:'행렬',r:[1093,1184],c:'#3498DB'}
+  {id:1,name:'다항식의 연산',r:[38,110],c:'#FF5722'},
+  {id:2,name:'항등식과 나머지정리',r:[124,195],c:'#8E44AD'},
+  {id:3,name:'인수분해',r:[215,279],c:'#2980B9'},
+  {id:4,name:'복소수',r:[300,375],c:'#16A085'},
+  {id:5,name:'이차방정식',r:[394,480],c:'#E67E22'},
+  {id:6,name:'이차방정식과 이차함수',r:[500,566],c:'#C0392B'},
+  {id:7,name:'여러 가지 방정식',r:[599,628],c:'#1ABC9C'},
+  {id:8,name:'연립일차부등식',r:[714,774],c:'#F39C12'},
+  {id:9,name:'이차부등식',r:[812,910],c:'#9B59B6'},
+  {id:10,name:'경우의 수와 순열',r:[930,1000],c:'#27AE60'},
+  {id:11,name:'조합',r:[1023,1092],c:'#E74C3C'},
+  {id:12,name:'행렬',r:[1114,1184],c:'#3498DB'}
 ],
     choices: CHOICES,
     cropBase: 'https://qkrtmdfud0501-collab.github.io/rpm-math/crops/',
@@ -465,14 +488,14 @@ var BOOKS_CONFIG = {
   'RPM 대수': {
     units: [
   {id:1,name:'지수',r:[33,109],c:'#FF5722'},
-  {id:2,name:'로그',r:[110,221],c:'#8E44AD'},
-  {id:3,name:'지수함수',r:[222,336],c:'#2980B9'},
-  {id:4,name:'로그함수',r:[337,456],c:'#16A085'},
-  {id:5,name:'삼각함수',r:[457,552],c:'#E67E22'},
-  {id:6,name:'삼각함수의 그래프',r:[553,696],c:'#C0392B'},
-  {id:7,name:'삼각함수의 활용',r:[697,801],c:'#1ABC9C'},
-  {id:8,name:'등차수열과 등비수열',r:[802,946],c:'#F39C12'},
-  {id:9,name:'수열의 합',r:[947,1050],c:'#9B59B6'},
+  {id:2,name:'로그',r:[146,221],c:'#8E44AD'},
+  {id:3,name:'지수함수',r:[240,336],c:'#2980B9'},
+  {id:4,name:'로그함수',r:[356,456],c:'#16A085'},
+  {id:5,name:'삼각함수',r:[482,552],c:'#E67E22'},
+  {id:6,name:'삼각함수의 그래프',r:[581,696],c:'#C0392B'},
+  {id:7,name:'삼각함수의 활용',r:[727,801],c:'#1ABC9C'},
+  {id:8,name:'등차수열과 등비수열',r:[824,946],c:'#F39C12'},
+  {id:9,name:'수열의 합',r:[972,1050],c:'#9B59B6'},
   {id:10,name:'수학적 귀납법',r:[1051,1126],c:'#27AE60'}
 ],
     choices: CHOICES_DAESOO,
@@ -481,18 +504,18 @@ var BOOKS_CONFIG = {
   }
 };
 var UNITS=[
-  {id:1,name:'다항식의 연산',r:[1,110],c:'#FF5722'},
-  {id:2,name:'항등식과 나머지정리',r:[111,195],c:'#8E44AD'},
-  {id:3,name:'인수분해',r:[196,279],c:'#2980B9'},
-  {id:4,name:'복소수',r:[280,375],c:'#16A085'},
-  {id:5,name:'이차방정식',r:[376,480],c:'#E67E22'},
-  {id:6,name:'이차방정식과 이차함수',r:[481,566],c:'#C0392B'},
-  {id:7,name:'여러 가지 방정식',r:[567,628],c:'#1ABC9C'},
-  {id:8,name:'연립일차부등식',r:[629,774],c:'#F39C12'},
-  {id:9,name:'이차부등식',r:[775,910],c:'#9B59B6'},
-  {id:10,name:'경우의 수와 순열',r:[911,1000],c:'#27AE60'},
-  {id:11,name:'조합',r:[1001,1092],c:'#E74C3C'},
-  {id:12,name:'행렬',r:[1093,1184],c:'#3498DB'}
+  {id:1,name:'다항식의 연산',r:[38,110],c:'#FF5722'},
+  {id:2,name:'항등식과 나머지정리',r:[124,195],c:'#8E44AD'},
+  {id:3,name:'인수분해',r:[215,279],c:'#2980B9'},
+  {id:4,name:'복소수',r:[300,375],c:'#16A085'},
+  {id:5,name:'이차방정식',r:[394,480],c:'#E67E22'},
+  {id:6,name:'이차방정식과 이차함수',r:[500,566],c:'#C0392B'},
+  {id:7,name:'여러 가지 방정식',r:[599,628],c:'#1ABC9C'},
+  {id:8,name:'연립일차부등식',r:[714,774],c:'#F39C12'},
+  {id:9,name:'이차부등식',r:[812,910],c:'#9B59B6'},
+  {id:10,name:'경우의 수와 순열',r:[930,1000],c:'#27AE60'},
+  {id:11,name:'조합',r:[1023,1092],c:'#E74C3C'},
+  {id:12,name:'행렬',r:[1114,1184],c:'#3498DB'}
 ];
 var curCropBase='https://qkrtmdfud0501-collab.github.io/rpm-math/crops/';
 function getCropBase(){return curCropBase;}
@@ -646,12 +669,12 @@ var PAGE_MAP_DAESOO=[
 ];
 
 var UNITS=[
-  {id:1,name:'다항식의 연산',r:[1,110],c:'#FF5722'},
-  {id:2,name:'항등식과 나머지정리',r:[111,195],c:'#8E44AD'},
-  {id:3,name:'인수분해',r:[196,279],c:'#2980B9'},
-  {id:4,name:'복소수',r:[280,375],c:'#16A085'},
-  {id:5,name:'이차방정식',r:[376,480],c:'#E67E22'},
-  {id:6,name:'이차방정식과 이차함수',r:[481,566],c:'#C0392B'},
+  {id:1,name:'다항식의 연산',r:[38,110],c:'#FF5722'},
+  {id:2,name:'항등식과 나머지정리',r:[124,195],c:'#8E44AD'},
+  {id:3,name:'인수분해',r:[215,279],c:'#2980B9'},
+  {id:4,name:'복소수',r:[300,375],c:'#16A085'},
+  {id:5,name:'이차방정식',r:[394,480],c:'#E67E22'},
+  {id:6,name:'이차방정식과 이차함수',r:[500,566],c:'#C0392B'},
   {id:7,name:'여러 가지 방정식',r:[567,628],c:'#1ABC9C'},
   {id:8,name:'연립일차부등식',r:[629,774],c:'#F39C12'},
   {id:9,name:'이차부등식',r:[775,910],c:'#9B59B6'},
@@ -794,8 +817,8 @@ function startSession(user){
         // 구버전 학생 폴백
         selectBook('RPM 공통수학1', studentData.records);
       } else {
-        // 교재 없음 - 관리자가 배정 필요 안내
-        showNoBookScreen();
+        // 교재 미배정시 기본 교재(RPM 공통수학1)로 바로 진입
+        selectBook('RPM 공통수학1', {});
       }
     }).catch(function(){
       // Firebase 오류시 localStorage로 폴백
@@ -977,6 +1000,20 @@ function go(name){
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
+// 선택지 텍스트에서 분수(a/b)를 HTML 세로 분수로 변환
+function formatChoice(s){
+  s = String(s);
+  // √숫자/숫자, -√숫자/숫자 형태: √3/2 → frac(√3, 2)
+  s = s.replace(/([-−]?√\d+)\s*\/\s*(\d+)/g, function(_,num,den){
+    return '<span class="frac"><span class="fnum">'+num+'</span><span class="fden">'+den+'</span></span>';
+  });
+  // -숫자/숫자, 숫자/숫자 형태 (부등호/문자 없는 순수 분수 부분)
+  s = s.replace(/([-−]?\d+)\s*\/\s*(\d+)/g, function(_,num,den){
+    return '<span class="frac"><span class="fnum">'+num+'</span><span class="fden">'+den+'</span></span>';
+  });
+  return s;
+}
+
 // ── HOME ──
 function renderHome(){
   go('home');
@@ -1091,7 +1128,7 @@ function renderQItems(){
           else if(!rec.correct&&cd.c[ci]===rec.userAns) b.className='cb ng'; // 틀리면 내 선택만 빨강
           b.disabled=true;
         }
-        b.innerHTML='<div class="cn">'+NS[ci]+'</div><div class="ct">'+esc(cd.c[ci])+'</div>';
+        b.innerHTML='<div class="cn">'+NS[ci]+'</div><div class="ct">'+formatChoice(cd.c[ci])+'</div>';
         (function(qn,qi2){b.addEventListener('click',function(){pick(qn,qi2);});})(n,ci);
         row.appendChild(b);
       }
@@ -1321,6 +1358,8 @@ function renderBooks(){
     var isAssigned=assignedBooks.some(function(bk){return normalizeKey(bk)===normalizeKey(m.key);});
     var isCurrent=normalizeKey(curBook)===normalizeKey(m.key);
     var cfg=BOOKS_CONFIG[m.key];
+    // BOOKS_CONFIG에 등록된 교재는 배정 여부와 무관하게 활성화
+    if(cfg) isAssigned=true;
 
     if(isAssigned){
       // 배정된 교재 - 활성
@@ -1437,6 +1476,9 @@ function loadYtLinksFromFirebase(){
 var curSolNum=0;
 function closesolPopup(){
   document.getElementById('sol-popup').classList.add('hide');
+  // 필기 오버레이도 같이 닫기
+  var ov=document.getElementById('draw-overlay');
+  if(ov) ov.style.display='none';
   // 캔버스 초기화
   clearDrawCanvas();
   setDrawMode('scroll');
@@ -1785,7 +1827,7 @@ function openRetryPanel(n){
       var b=document.createElement('button');
       b.className='cb';
       b.style.marginBottom='4px';
-      b.innerHTML='<span class="cn">'+NS[i]+'</span><span class="ct">'+esc(c)+'</span>';
+      b.innerHTML='<span class="cn">'+NS[i]+'</span><span class="ct">'+formatChoice(c)+'</span>';
       b.addEventListener('click',function(){
         selRetry.ans=i;
         choicesEl.querySelectorAll('.cb').forEach(function(x){x.classList.remove('sel');});
@@ -1978,10 +2020,12 @@ function loadQuestions(n){
 
 
 // ── 내 질문함 ──
-function renderMyQuestions(){
+function renderMyQuestions(filterBook){
   var listEl=document.getElementById('myq-list');
+  var tabsEl=document.getElementById('myq-tabs');
   if(!listEl) return;
   listEl.innerHTML='<div class="empty">불러오는 중...</div>';
+  if(tabsEl) tabsEl.innerHTML='';
   if(typeof DB==='undefined'||!DB||!curUser){
     listEl.innerHTML='<div class="empty">로그인이 필요합니다</div>';
     return;
@@ -1998,8 +2042,53 @@ function renderMyQuestions(){
       });
       if(!docs.length){listEl.innerHTML='<div class="empty">아직 질문이 없어요</div>';return;}
 
-      // 각 문제의 AI 해설 캐시를 한꺼번에 가져오기
-      var cacheKeys=docs.map(function(item){
+      // 교재 목록 추출 (중복 제거)
+      var books=[];
+      docs.forEach(function(item){
+        var b=item.data.book||'기타';
+        if(books.indexOf(b)===-1) books.push(b);
+      });
+
+      // 탭 렌더링
+      if(tabsEl){
+        // 전체 탭
+        var allBtn=document.createElement('button');
+        var isAll=!filterBook||filterBook==='__all__';
+        allBtn.textContent='전체 ('+docs.length+')';
+        allBtn.style.cssText='padding:6px 14px;border:2px solid '+(isAll?'#D42027':'#e0e4ee')+
+          ';border-radius:20px;background:'+(isAll?'#D42027':'#fff')+
+          ';color:'+(isAll?'#fff':'#8b95a7')+
+          ';font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif';
+        allBtn.onclick=function(){ renderMyQuestions('__all__'); };
+        tabsEl.appendChild(allBtn);
+
+        // 교재별 탭
+        books.forEach(function(b){
+          var cnt=docs.filter(function(d){ return (d.data.book||'기타')===b; }).length;
+          var isActive=filterBook===b;
+          var btn=document.createElement('button');
+          btn.textContent=b+' ('+cnt+')';
+          btn.style.cssText='padding:6px 14px;border:2px solid '+(isActive?'#D42027':'#e0e4ee')+
+            ';border-radius:20px;background:'+(isActive?'#D42027':'#fff')+
+            ';color:'+(isActive?'#fff':'#8b95a7')+
+            ';font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif';
+          btn.onclick=function(){ renderMyQuestions(b); };
+          tabsEl.appendChild(btn);
+        });
+      }
+
+      // 필터링
+      var filtered=(!filterBook||filterBook==='__all__')
+        ?docs
+        :docs.filter(function(d){ return (d.data.book||'기타')===filterBook; });
+
+      if(!filtered.length){
+        listEl.innerHTML='<div class="empty">이 교재의 질문이 없어요</div>';
+        return;
+      }
+
+      // AI 해설 캐시 로드
+      var cacheKeys=filtered.map(function(item){
         var d=item.data;
         var numStr=d.numStr||String(d.num).padStart(4,'0');
         var bk=(d.book||'RPM_공통수학1').replace(/[^a-zA-Z0-9_]/g,'_');
@@ -2014,7 +2103,7 @@ function renderMyQuestions(){
 
       Promise.all(promises).then(function(){
         var html2='';
-        docs.forEach(function(item){
+        filtered.forEach(function(item){
           var d=item.data;
           var qTime=d.createdAt?new Date(d.createdAt.seconds*1000).toLocaleDateString('ko-KR'):'';
           var numStr=d.numStr||String(d.num).padStart(4,'0');
@@ -2022,13 +2111,10 @@ function renderMyQuestions(){
           var ck=bk+'_'+numStr;
           var isNew=d.answered&&!d.readByStudent;
           var solText=solCache[ck]||'';
-
-          // AI 해설 마크다운 변환
           var solHtml=solText?solText.replace(/[*][*](.*?)[*][*]/g,'<strong>$1</strong>').replace(/[*](.*?)[*]/g,'<em>$1</em>').replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>'):'';
 
           html2+=
             '<div style="background:#fff;border-radius:12px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.07);border-left:4px solid '+(d.answered?'#26d07c':'#ff9500')+'">'+
-              // 헤더
               '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px 8px">'+
                 '<div style="display:flex;align-items:center;gap:6px">'+
                   '<span style="font-size:11px;font-weight:700;background:#fff3e0;color:#ff9500;padding:2px 8px;border-radius:10px">'+numStr+'번</span>'+
@@ -2037,26 +2123,19 @@ function renderMyQuestions(){
                 '</div>'+
                 '<span style="font-size:10px;color:#c0c6d4">'+qTime+'</span>'+
               '</div>'+
-              // 문제 이미지 + AI 해설 가로 배치
               '<div style="display:flex;gap:0;border-top:1px solid #f0f3f8">'+
-                // 왼쪽: 문제 이미지
                 '<div style="width:42%;min-width:120px;padding:10px;border-right:1px solid #f0f3f8;flex-shrink:0">'+
                   '<div style="font-size:10px;font-weight:700;color:#8b95a7;margin-bottom:6px">📄 문제</div>'+
                   '<img src="'+getCropBase()+numStr+'.jpg" style="width:100%;border-radius:6px;border:1px solid #e8ecf4" onerror="this.remove()">'+
                 '</div>'+
-                // 오른쪽: AI 해설 + 질문/답변
                 '<div style="flex:1;padding:10px;overflow:hidden">'+
-                  (solHtml
-                    ?'<div style="font-size:10px;font-weight:700;color:#8b95a7;margin-bottom:6px">🤖 AI 해설 요약</div>'+
-                      '<div style="font-size:12px;color:#333;line-height:1.6;max-height:120px;overflow-y:auto;margin-bottom:10px"><p>'+solHtml+'</p></div>'
-                    :'')+
-                  // 내 질문
+                  (solHtml?'<div style="font-size:10px;font-weight:700;color:#8b95a7;margin-bottom:6px">🤖 AI 해설 요약</div>'+
+                    '<div style="font-size:12px;color:#333;line-height:1.6;max-height:120px;overflow-y:auto;margin-bottom:10px"><p>'+solHtml+'</p></div>':'')+
                   '<div style="background:#f8f9fc;border-radius:8px;padding:8px;margin-bottom:6px">'+
                     '<div style="font-size:10px;font-weight:700;color:#8b95a7;margin-bottom:3px">💬 내 질문</div>'+
                     (d.question?'<div style="font-size:12px;color:#1a1d2e;line-height:1.5;margin-bottom:'+(d.questionImg?'6':'0')+'px">'+esc(d.question)+'</div>':'')+
                     (d.questionImg?'<img src="'+d.questionImg+'" style="max-width:100%;border-radius:6px;border:1px solid #e8ecf4">':'')+
                   '</div>'+
-                  // 답변
                   (d.answered&&(d.answer||d.answerImg)
                     ?'<div style="background:#edfff5;border-radius:8px;padding:8px;border-left:3px solid #26d07c">'+
                         '<div style="font-size:10px;font-weight:700;color:#26d07c;margin-bottom:3px">👨‍🏫 선생님 답변</div>'+
@@ -2073,7 +2152,6 @@ function renderMyQuestions(){
           }
         });
         listEl.innerHTML=html2;
-        // MathJax 렌더링
         if(window.MathJax&&MathJax.typesetPromise){
           MathJax.typesetPromise([listEl]).catch(function(){});
         }
@@ -2083,6 +2161,7 @@ function renderMyQuestions(){
       listEl.innerHTML='<div class="empty">불러오기 실패: '+e.message+'</div>';
     });
 }
+
 
 function checkMyQBadge(){
   if(typeof DB==='undefined'||!DB||!curUser) return;
@@ -2118,78 +2197,50 @@ function clearDrawCanvas(){ ovClear(); }
 
 function openDrawOverlay(){
   var body = document.getElementById('sol-popup-body');
-  if(!body){ alert('해설을 먼저 불러오세요'); return; }
+  if(!body || !body.textContent.trim()){ alert('해설을 먼저 불러오세요'); return; }
 
   var overlay = document.getElementById('draw-overlay');
-  overlay.style.display = 'flex';
-  document.getElementById('ov-canvas').width=0; // 초기화 표시
+  var container = document.getElementById('ov-content');
+  var cv = document.getElementById('ov-canvas');
 
-  // MathJax SVG를 img로 변환 (html2canvas가 SVG를 못 잡는 문제 해결)
-  function convertSvgToImg(cb){
-    var svgs = body.querySelectorAll('svg');
-    if(!svgs.length){ cb(); return; }
-    var done=0;
-    svgs.forEach(function(svg){
-      try {
-        var s = new XMLSerializer().serializeToString(svg);
-        var blob = new Blob([s], {type:'image/svg+xml'});
-        var url = URL.createObjectURL(blob);
-        var img = new Image();
-        img.onload = function(){
-          var c = document.createElement('canvas');
-          c.width=svg.width.baseVal.value||svg.offsetWidth||200;
-          c.height=svg.height.baseVal.value||svg.offsetHeight||50;
-          c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-          URL.revokeObjectURL(url);
-          var wrapper = document.createElement('span');
-          wrapper.innerHTML='<img src="'+c.toDataURL()+'" style="display:inline-block;vertical-align:middle">';
-          wrapper.setAttribute('data-svg-replaced','1');
-          svg.parentNode.replaceChild(wrapper, svg);
-          done++;
-          if(done>=svgs.length) cb();
-        };
-        img.onerror=function(){ URL.revokeObjectURL(url); done++; if(done>=svgs.length) cb(); };
-        img.src=url;
-      } catch(e){ done++; if(done>=svgs.length) cb(); }
-    });
+  // 해설 내용 복사 (HTML 그대로)
+  container.innerHTML = body.innerHTML;
+
+  // MathJax 재렌더링
+  if(window.MathJax && MathJax.typesetPromise){
+    MathJax.typesetPromise([container]).catch(function(){});
   }
 
-  convertSvgToImg(function(){
-    html2canvas(body, {
-      useCORS: true, allowTaint: true, scale: 2,
-      backgroundColor: '#ffffff', logging: false,
-      foreignObjectRendering: false
-    }).then(function(captured){
-    var ov = document.getElementById('ov-canvas');
-    ov.width = captured.width;
-    ov.height = captured.height;
-    ov.style.width = (captured.width / 2) + 'px';
-    ov.style.height = (captured.height / 2) + 'px';
+  overlay.style.display = 'flex';
 
-    var ctx = ov.getContext('2d');
-    ctx.drawImage(captured, 0, 0);
+  // 캔버스를 content 크기에 맞춤 (내용이 렌더링된 후)
+  setTimeout(function(){
+    cv.width = container.scrollWidth || container.offsetWidth || 600;
+    cv.height = container.scrollHeight || container.offsetHeight || 800;
+    cv.style.width = cv.width + 'px';
+    cv.style.height = cv.height + 'px';
 
-    // 이전 이벤트 제거
-    var newOv = ov.cloneNode(false);
-    newOv.width = ov.width;
-    newOv.height = ov.height;
-    newOv.style.width = ov.style.width;
-    newOv.style.height = ov.style.height;
-    ov.parentNode.replaceChild(newOv, ov);
-    ov = document.getElementById('ov-canvas');
-    ctx = ov.getContext('2d');
-    ctx.drawImage(captured, 0, 0);
+    var ctx = cv.getContext('2d');
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-
     var dn = false;
+
+    // 이전 이벤트 제거
+    var newCv = cv.cloneNode(false);
+    newCv.width = cv.width; newCv.height = cv.height;
+    newCv.style.width = cv.style.width; newCv.style.height = cv.style.height;
+    cv.parentNode.replaceChild(newCv, cv);
+    cv = document.getElementById('ov-canvas');
+    ctx = cv.getContext('2d');
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
     function gp(e){
-      var r = ov.getBoundingClientRect();
-      var sc = ov.width / r.width;
+      var r = cv.getBoundingClientRect();
+      var sc = cv.width / r.width;
       var t = e.touches ? e.touches[0] : e;
-      return { x:(t.clientX-r.left)*sc, y:(t.clientY-r.top)*sc };
+      return {x:(t.clientX-r.left)*sc, y:(t.clientY-r.top)*sc};
     }
-    function start(e){
+    function down(e){
       e.preventDefault(); dn=true;
       var p=gp(e); ctx.beginPath(); ctx.moveTo(p.x,p.y);
     }
@@ -2201,7 +2252,7 @@ function openDrawOverlay(){
       if(ovMode_cur==='erase'){
         ctx.globalCompositeOperation='destination-out';
         ctx.strokeStyle='rgba(0,0,0,1)';
-        ctx.lineWidth=sz*4;
+        ctx.lineWidth=sz*5;
       } else {
         ctx.globalCompositeOperation='source-over';
         ctx.strokeStyle=col;
@@ -2210,23 +2261,20 @@ function openDrawOverlay(){
       ctx.lineTo(p.x,p.y); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(p.x,p.y);
     }
-    function end(){ dn=false; ctx.beginPath(); }
+    function up(){ dn=false; ctx.beginPath(); }
 
-    ov.addEventListener('mousedown', start);
-    ov.addEventListener('mousemove', move);
-    ov.addEventListener('mouseup', end);
-    ov.addEventListener('mouseleave', end);
-    ov.addEventListener('touchstart', start, {passive:false});
-    ov.addEventListener('touchmove', move, {passive:false});
-    ov.addEventListener('touchend', end, {passive:false});
-    }).catch(function(e){
-      alert('해설 캡처 실패: '+e.message);
-      document.getElementById('draw-overlay').style.display='none';
-    });
-  }); // end convertSvgToImg
+    cv.addEventListener('mousedown',down);
+    cv.addEventListener('mousemove',move);
+    cv.addEventListener('mouseup',up);
+    cv.addEventListener('mouseleave',up);
+    cv.addEventListener('touchstart',down,{passive:false});
+    cv.addEventListener('touchmove',move,{passive:false});
+    cv.addEventListener('touchend',up,{passive:false});
+  }, 400);
 
   ovMode('pen');
 }
+
 
 function ovMode(m){
   ovMode_cur = m;
@@ -2237,14 +2285,9 @@ function ovMode(m){
 }
 
 function ovClear(){
-  // 다시 캡처해서 초기화는 복잡하니, 흰색으로 채우기만
   var ov=document.getElementById('ov-canvas');
   if(!ov) return;
-  // 필기만 지우고 배경은 유지 - 전체 지우기는 불가하므로 안내
-  if(!confirm('모든 필기를 지우시겠습니까?')) return;
-  // 재오픈
-  document.getElementById('draw-overlay').style.display='none';
-  setTimeout(openDrawOverlay, 100);
+  ov.getContext('2d').clearRect(0,0,ov.width,ov.height);
 }
 
 function ovCancel(){
@@ -2253,8 +2296,27 @@ function ovCancel(){
 
 function ovDone(){
   var ov=document.getElementById('ov-canvas');
-  if(!ov) return;
-  var b64=ov.toDataURL('image/jpeg',0.85);
+  var content=document.getElementById('ov-content');
+  if(!ov||!content) return;
+  // ov-content를 html2canvas로 캡처 후 필기 캔버스 합성
+  html2canvas(content,{
+    useCORS:true, allowTaint:true, scale:1.5,
+    backgroundColor:'#ffffff', logging:false,
+    foreignObjectRendering:true
+  }).then(function(cap){
+    var m=document.createElement('canvas');
+    m.width=cap.width; m.height=cap.height;
+    var mc=m.getContext('2d');
+    mc.drawImage(cap,0,0);
+    // 캔버스 필기를 cap 크기 비율로 맞춰 합성
+    mc.drawImage(ov,0,0,m.width,m.height);
+    finishOvDone(m.toDataURL('image/jpeg',0.85));
+  }).catch(function(){
+    // html2canvas 실패 시 캔버스만 첨부
+    finishOvDone(ov.toDataURL('image/jpeg',0.85));
+  });
+}
+function finishOvDone(b64){
   var n=curSolNum;
   var preview=document.getElementById('q-img-preview-'+n);
   var fi=document.querySelector('#sol-popup-body input[type=file]');
@@ -2292,7 +2354,7 @@ document.addEventListener('click',function(e){
 <!-- 전체화면 필기 오버레이 -->
 <div id="draw-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:#1a1d2e;flex-direction:column">
   <!-- 도구바 -->
-  <div style="background:#1a1d2e;padding:8px 12px;display:flex;gap:8px;align-items:center;flex-shrink:0">
+  <div style="background:#1a1d2e;padding:8px 12px;display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap">
     <button id="ov-pen" onclick="ovMode('pen')" style="padding:6px 12px;background:#D42027;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer;font-weight:700">✏️ 펜</button>
     <button id="ov-erase" onclick="ovMode('erase')" style="padding:6px 12px;background:#555;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer">🧹 지우개</button>
     <button onclick="ovClear()" style="padding:6px 12px;background:#555;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer">🗑</button>
@@ -2302,11 +2364,15 @@ document.addEventListener('click',function(e){
     <button onclick="ovCancel()" style="padding:6px 12px;background:#555;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer">취소</button>
     <button onclick="ovDone()" style="padding:6px 14px;background:#26d07c;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer">✓ 첨부</button>
   </div>
-  <!-- 캔버스 -->
-  <div style="flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;background:#2a2d3e">
-    <canvas id="ov-canvas" style="display:block;touch-action:none;cursor:crosshair"></canvas>
+  <!-- 해설+캔버스 영역 -->
+  <div style="flex:1;overflow:auto;background:#fff;position:relative" id="ov-wrap">
+    <!-- 해설 내용 (복사됨) -->
+    <div id="ov-content" style="padding:16px;font-family:sans-serif;font-size:13px;line-height:1.8;color:#1a1d2e;position:relative;min-height:100%"></div>
+    <!-- 필기 캔버스: 해설 위에 absolute -->
+    <canvas id="ov-canvas" style="position:absolute;top:0;left:0;touch-action:none;cursor:crosshair;pointer-events:auto;z-index:10"></canvas>
   </div>
 </div>
 </body>
 </html><script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
+}
