@@ -1288,7 +1288,7 @@ function loadAdminQuestions(){
   DB.collection('questions').orderBy('createdAt','desc').limit(100).get()
     .then(function(snap){
       allQuestions=[];
-      snap.forEach(function(doc){ allQuestions.push({id:doc.id, ...doc.data()}); });
+      snap.forEach(function(doc){ allQuestions.push(Object.assign({id:doc.id}, doc.data())); });
       // 미답변 뱃지 업데이트
       var unanswered=allQuestions.filter(function(q){return !q.answered;}).length;
       var badge=document.getElementById('q-badge');
