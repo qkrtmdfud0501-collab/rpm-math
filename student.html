@@ -393,25 +393,19 @@ input:focus{border-color:#D42027}
       <button class="popup-close" id="sol-popup-close">&#10006;</button>
     </div>
     <div class="sol-split">
-      <div class="sol-left" style="position:relative">
-        <!-- 문제 이미지 + 필기 캔버스 -->
-        <div id="sol-draw-wrap" style="position:relative;display:none">
-          <img id="sol-popup-qimg" src="" style="width:100%;border-radius:8px;border:1px solid #e8ecf4;display:block" onerror="this.closest('#sol-draw-wrap').style.display='none'">
-          <canvas id="sol-draw-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px;cursor:crosshair;touch-action:none"></canvas>
+      <div class="sol-left">
+        <img id="sol-popup-qimg" src="" style="display:none;width:100%;border-radius:8px;border:1px solid #e8ecf4" onerror="this.style.display='none'">
+      </div>
+      <div class="sol-right" style="display:flex;flex-direction:column">
+        <!-- 필기 도구바 (상단 고정) -->
+        <div style="flex-shrink:0;padding:6px 10px;border-bottom:1px solid #f0f3f8;background:#fafbfc;display:flex;justify-content:flex-end">
+          <button onclick="openDrawOverlay()" style="padding:5px 12px;background:#ff9500;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer">✏️ 필기 후 질문 첨부</button>
         </div>
-        <!-- 필기 도구 -->
-        <div id="sol-draw-tools" style="display:none;margin-top:8px">
-          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-            <button id="draw-pen-btn" onclick="setDrawMode('pen')" style="padding:6px 10px;background:#D42027;color:#fff;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-weight:700">✏️ 펜</button>
-            <button id="draw-erase-btn" onclick="setDrawMode('erase')" style="padding:6px 10px;background:#f0f3f8;color:#555;border:none;border-radius:7px;font-size:12px;cursor:pointer">🧹 지우개</button>
-            <button onclick="clearDrawCanvas()" style="padding:6px 10px;background:#f0f3f8;color:#555;border:none;border-radius:7px;font-size:12px;cursor:pointer">🗑 전체 지우기</button>
-            <input type="color" id="draw-color" value="#ff0000" style="width:28px;height:28px;border:none;border-radius:6px;cursor:pointer;padding:0">
-            <input type="range" id="draw-size" min="2" max="20" value="4" style="width:60px">
-          </div>
-          <button onclick="attachDrawingToQuestion()" style="margin-top:8px;width:100%;padding:8px;background:#ff9500;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">📎 이 표시 상태로 질문에 첨부</button>
+        <!-- 해설 내용: 스크롤 영역 안에 SVG 필기 레이어 포함 -->
+        <div id="sol-right-wrap" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
+          <div id="sol-popup-body" style="padding:14px"></div>
         </div>
       </div>
-      <div class="sol-right" id="sol-popup-body"></div>
     </div>
   </div>
 </div>
@@ -1444,11 +1438,8 @@ var curSolNum=0;
 function closesolPopup(){
   document.getElementById('sol-popup').classList.add('hide');
   // 캔버스 초기화
-  var drawWrap=document.getElementById('sol-draw-wrap');
-  var drawTools=document.getElementById('sol-draw-tools');
-  if(drawWrap) drawWrap.style.display='none';
-  if(drawTools) drawTools.style.display='none';
   clearDrawCanvas();
+  setDrawMode('scroll');
   // 유튜브 iframe src 초기화 (음성 정지)
   var iframes = document.getElementById('sol-popup-body').querySelectorAll('iframe');
   iframes.forEach(function(f){ f.src=''; });
@@ -1478,17 +1469,9 @@ function openYtSol(n){
   var url=links[n]||'';
   var numStr=String(n).padStart(4,'0');
   document.getElementById('sol-popup-title').textContent=numStr+'번 해설영상';
-  // 이미지 + 캔버스 세팅
   var qimg=document.getElementById('sol-popup-qimg');
-  var drawWrap=document.getElementById('sol-draw-wrap');
-  var drawTools=document.getElementById('sol-draw-tools');
-  qimg.onload=function(){
-    drawWrap.style.display='block';
-    drawTools.style.display='block';
-    initDrawCanvas();
-  };
-  qimg.onerror=function(){ drawWrap.style.display='none'; drawTools.style.display='none'; };
   qimg.src=getCropBase()+numStr+'.jpg';
+  qimg.style.display='block';
   
   var ytId='';
   if(url){
@@ -1541,29 +1524,21 @@ function openAiSol(n){
   curSolNum=n;
   var numStr=String(n).padStart(4,'0');
 
-  // 팝업 먼저 열기
+  // 팝업 열기
   document.getElementById('sol-popup-title').textContent=numStr+'번 AI 해설';
-  // 이미지 + 캔버스 세팅
   var qimg=document.getElementById('sol-popup-qimg');
-  var drawWrap=document.getElementById('sol-draw-wrap');
-  var drawTools=document.getElementById('sol-draw-tools');
-  qimg.onload=function(){
-    drawWrap.style.display='block';
-    drawTools.style.display='block';
-    initDrawCanvas();
-  };
-  qimg.onerror=function(){ drawWrap.style.display='none'; drawTools.style.display='none'; };
   qimg.src=getCropBase()+numStr+'.jpg';
+  qimg.style.display='block';
   document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">불러오는 중...</div>';
   document.getElementById('sol-popup').classList.remove('hide');
 
-  // 키 확보 후 진행 (이미 있으면 즉시, 없으면 Firebase에서 로드)
-  function getKeyAndProceed(cb){
-    var key=geminiKeyCache||localStorage.getItem('gemini_key')||'';
-    if(key){ cb(key); return; }
-    // Firebase에서 로드 시도
-    var dbReady=typeof DB!=='undefined'&&DB;
-    if(!dbReady){ cb(null); return; }
+  // 1. 키 확보
+  function getKey(cb){
+    var k=geminiKeyCache||localStorage.getItem('gemini_key')||'';
+    if(k){ cb(k); return; }
+    var db=typeof DB!=='undefined'&&DB;
+    if(!db){ cb(null); return; }
+    document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">키 확인 중...</div>';
     DB.collection('settings').doc('gemini').get()
       .then(function(doc){
         if(doc.exists&&doc.data()&&doc.data().apiKey){
@@ -1574,19 +1549,19 @@ function openAiSol(n){
       }).catch(function(){ cb(null); });
   }
 
-  getKeyAndProceed(function(key){
+  getKey(function(key){
     if(!key){
-      // 진짜로 키가 없을 때만 설정 팝업
       closesolPopup();
       document.getElementById('api-key-input').value='';
       document.getElementById('api-err').textContent='선생님이 아직 API 키를 등록하지 않았습니다';
       document.getElementById('api-popup').classList.remove('hide');
       return;
     }
-    // 캐시 확인 후 Gemini 호출
+
+    // 2. Firestore 캐시 확인
     var cacheKey=(curBook||'RPM_공통수학1').replace(/[^a-zA-Z0-9_]/g,'_')+'_'+numStr;
-    var dbOk=typeof DB!=='undefined'&&DB;
-    if(dbOk){
+    var db=typeof DB!=='undefined'&&DB;
+    if(db){
       DB.collection('solutions').doc(cacheKey).get()
         .then(function(doc){
           if(doc.exists&&doc.data()&&doc.data().text){
@@ -1600,74 +1575,8 @@ function openAiSol(n){
       startGeminiStream(n,numStr,key,null);
     }
   });
-
-  // (구 no-key 분기 제거됨)
-  if(!key){ // dummy - never reached, kept for structure
-    document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">키 확인 중...</div>';
-    var dbReady=typeof DB!=='undefined'&&DB;
-    var p=dbReady
-      ?DB.collection('settings').doc('gemini').get().then(function(doc){
-          if(doc.exists&&doc.data().apiKey){
-            geminiKeyCache=doc.data().apiKey;
-            localStorage.setItem('gemini_key',geminiKeyCache);
-            return geminiKeyCache;
-          }
-          return null;
-        }).catch(function(){return null;})
-      :Promise.resolve(null);
-    p.then(function(k){
-      if(k){
-        // 키 로드 성공 → 재귀 없이 바로 캐시 확인 + 스트리밍 진행
-        var cacheKey2=(curBook||'RPM_공통수학1').replace(/[^a-zA-Z0-9_]/g,'_')+'_'+numStr;
-        if(dbReady){
-          DB.collection('solutions').doc(cacheKey2).get()
-            .then(function(doc){
-              if(doc.exists&&doc.data()&&doc.data().text){
-                document.getElementById('sol-popup-body').innerHTML='';
-                renderAiResponse(doc.data().text,true);
-              } else {
-                startGeminiStream(n,numStr,k,cacheKey2);
-              }
-            }).catch(function(){ startGeminiStream(n,numStr,k,cacheKey2); });
-        } else {
-          startGeminiStream(n,numStr,k,null);
-        }
-      } else {
-        // 진짜로 키가 없을 때만 설정 팝업
-        closesolPopup();
-        document.getElementById('api-key-input').value='';
-        document.getElementById('api-err').textContent='선생님이 아직 API 키를 등록하지 않았습니다';
-        document.getElementById('api-popup').classList.remove('hide');
-      }
-    });
-    return;
-  }
-
-  // ── Firestore 캐시 확인 ──
-  var cacheKey=(curBook||'RPM_공통수학1').replace(/[^a-zA-Z0-9_]/g,'_')+'_'+numStr;
-  var dbOk=typeof DB!=='undefined'&&DB;
-
-  if(dbOk){
-    DB.collection('solutions').doc(cacheKey).get()
-      .then(function(doc){
-        if(doc.exists && doc.data() && doc.data().text){
-          // 캐시 히트 - 즉시 표시
-          document.getElementById('sol-popup-body').innerHTML='';
-          renderAiResponse(doc.data().text, true);
-        } else {
-          // 캐시 없음 - Gemini 호출
-          startGeminiStream(n, numStr, key, cacheKey);
-        }
-      })
-      .catch(function(e){
-        console.log('[AI캐시] 읽기 실패:', e.message);
-        // 읽기 실패해도 Gemini는 호출
-        startGeminiStream(n, numStr, key, cacheKey);
-      });
-  } else {
-    startGeminiStream(n, numStr, key, null);
-  }
 }
+
 
 function startGeminiStream(n, numStr, key, cacheKey){
   document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">AI가 풀이를 생성하는 중...</div>';
@@ -1806,7 +1715,8 @@ function renderAiResponse(text, fromCache){
     ? '<button onclick="regenAiSol()" style="padding:8px 12px;background:#fff3e0;border:none;border-radius:7px;font-family:sans-serif;font-size:11px;cursor:pointer;color:#ff9500;font-weight:700">🔄 다시 생성</button>'
     : '';
 
-  document.getElementById('sol-popup-body').innerHTML=
+  var solBody=document.getElementById('sol-popup-body');
+  solBody.innerHTML=
     '<div class="ai-body"><p>'+html2+'</p></div>'+
     '<div style="margin-top:14px;padding-top:10px;border-top:1px solid #e8ecf4;display:flex;align-items:center;gap:8px">'+
       cacheBadge+
@@ -1831,10 +1741,13 @@ function renderAiResponse(text, fromCache){
         '</div>'+
       '</div>'+
     '</div>';
+
   // MathJax 렌더링
   if(window.MathJax&&MathJax.typesetPromise){
     MathJax.typesetPromise([document.getElementById('sol-popup-body')]).catch(function(){});
   }
+  // 캔버스 초기화 (해설 렌더링 완료 후)
+  setTimeout(function(){ initDrawCanvas(); }, 300);
   // 기존 질문/답변 로드
   loadQuestions(curSolNum);
 }
@@ -2194,126 +2107,173 @@ function updateMyQBadge(count){
 }
 
 
-// ── 필기 기능 ──
-var drawMode='pen', drawCanvas=null, drawCtx=null, isDrawing=false, lastX=0, lastY=0;
+// ── 필기 기능 (전체화면 오버레이 방식) ──
+var drawMode = 'scroll';
+var ovDrawing = false;
+var ovMode_cur = 'pen';
 
-function initDrawCanvas(){
-  var wrap=document.getElementById('sol-draw-wrap');
-  var img=document.getElementById('sol-popup-qimg');
-  var canvas=document.getElementById('sol-draw-canvas');
-  if(!canvas||!img) return;
-  // 캔버스 크기를 이미지 실제 픽셀 크기로 맞춤
-  canvas.width=img.naturalWidth||img.offsetWidth;
-  canvas.height=img.naturalHeight||img.offsetHeight;
-  drawCanvas=canvas;
-  drawCtx=canvas.getContext('2d');
-  drawCtx.lineCap='round';
-  drawCtx.lineJoin='round';
+function initDrawCanvas(){ /* 오버레이 방식으로 변경 - 별도 초기화 없음 */ }
+function setDrawMode(m){ drawMode=m; }
+function clearDrawCanvas(){ ovClear(); }
 
-  // 기존 이벤트 제거 후 재등록
-  var newCanvas=canvas.cloneNode(true);
-  canvas.parentNode.replaceChild(newCanvas,canvas);
-  drawCanvas=newCanvas;
-  drawCtx=newCanvas.getContext('2d');
-  drawCtx.lineCap='round';
-  drawCtx.lineJoin='round';
+function openDrawOverlay(){
+  var body = document.getElementById('sol-popup-body');
+  if(!body){ alert('해설을 먼저 불러오세요'); return; }
 
-  function getPos(e){
-    var rect=drawCanvas.getBoundingClientRect();
-    var scaleX=drawCanvas.width/rect.width;
-    var scaleY=drawCanvas.height/rect.height;
-    var clientX=e.touches?e.touches[0].clientX:e.clientX;
-    var clientY=e.touches?e.touches[0].clientY:e.clientY;
-    return {x:(clientX-rect.left)*scaleX, y:(clientY-rect.top)*scaleY};
+  var overlay = document.getElementById('draw-overlay');
+  overlay.style.display = 'flex';
+  document.getElementById('ov-canvas').width=0; // 초기화 표시
+
+  // MathJax SVG를 img로 변환 (html2canvas가 SVG를 못 잡는 문제 해결)
+  function convertSvgToImg(cb){
+    var svgs = body.querySelectorAll('svg');
+    if(!svgs.length){ cb(); return; }
+    var done=0;
+    svgs.forEach(function(svg){
+      try {
+        var s = new XMLSerializer().serializeToString(svg);
+        var blob = new Blob([s], {type:'image/svg+xml'});
+        var url = URL.createObjectURL(blob);
+        var img = new Image();
+        img.onload = function(){
+          var c = document.createElement('canvas');
+          c.width=svg.width.baseVal.value||svg.offsetWidth||200;
+          c.height=svg.height.baseVal.value||svg.offsetHeight||50;
+          c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+          URL.revokeObjectURL(url);
+          var wrapper = document.createElement('span');
+          wrapper.innerHTML='<img src="'+c.toDataURL()+'" style="display:inline-block;vertical-align:middle">';
+          wrapper.setAttribute('data-svg-replaced','1');
+          svg.parentNode.replaceChild(wrapper, svg);
+          done++;
+          if(done>=svgs.length) cb();
+        };
+        img.onerror=function(){ URL.revokeObjectURL(url); done++; if(done>=svgs.length) cb(); };
+        img.src=url;
+      } catch(e){ done++; if(done>=svgs.length) cb(); }
+    });
   }
 
-  function startDraw(e){
-    e.preventDefault();
-    isDrawing=true;
-    var pos=getPos(e);
-    lastX=pos.x; lastY=pos.y;
-    drawCtx.beginPath();
-    drawCtx.moveTo(lastX,lastY);
-  }
-  function moveDraw(e){
-    e.preventDefault();
-    if(!isDrawing) return;
-    var pos=getPos(e);
-    var color=document.getElementById('draw-color').value;
-    var size=parseInt(document.getElementById('draw-size').value);
-    drawCtx.globalCompositeOperation=drawMode==='erase'?'destination-out':'source-over';
-    drawCtx.strokeStyle=color;
-    drawCtx.lineWidth=size;
-    drawCtx.lineTo(pos.x,pos.y);
-    drawCtx.stroke();
-    drawCtx.beginPath();
-    drawCtx.moveTo(pos.x,pos.y);
-    lastX=pos.x; lastY=pos.y;
-  }
-  function endDraw(e){
-    e.preventDefault();
-    isDrawing=false;
-  }
+  convertSvgToImg(function(){
+    html2canvas(body, {
+      useCORS: true, allowTaint: true, scale: 2,
+      backgroundColor: '#ffffff', logging: false,
+      foreignObjectRendering: false
+    }).then(function(captured){
+    var ov = document.getElementById('ov-canvas');
+    ov.width = captured.width;
+    ov.height = captured.height;
+    ov.style.width = (captured.width / 2) + 'px';
+    ov.style.height = (captured.height / 2) + 'px';
 
-  drawCanvas.addEventListener('mousedown',startDraw);
-  drawCanvas.addEventListener('mousemove',moveDraw);
-  drawCanvas.addEventListener('mouseup',endDraw);
-  drawCanvas.addEventListener('mouseleave',endDraw);
-  drawCanvas.addEventListener('touchstart',startDraw,{passive:false});
-  drawCanvas.addEventListener('touchmove',moveDraw,{passive:false});
-  drawCanvas.addEventListener('touchend',endDraw,{passive:false});
+    var ctx = ov.getContext('2d');
+    ctx.drawImage(captured, 0, 0);
+
+    // 이전 이벤트 제거
+    var newOv = ov.cloneNode(false);
+    newOv.width = ov.width;
+    newOv.height = ov.height;
+    newOv.style.width = ov.style.width;
+    newOv.style.height = ov.style.height;
+    ov.parentNode.replaceChild(newOv, ov);
+    ov = document.getElementById('ov-canvas');
+    ctx = ov.getContext('2d');
+    ctx.drawImage(captured, 0, 0);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    var dn = false;
+    function gp(e){
+      var r = ov.getBoundingClientRect();
+      var sc = ov.width / r.width;
+      var t = e.touches ? e.touches[0] : e;
+      return { x:(t.clientX-r.left)*sc, y:(t.clientY-r.top)*sc };
+    }
+    function start(e){
+      e.preventDefault(); dn=true;
+      var p=gp(e); ctx.beginPath(); ctx.moveTo(p.x,p.y);
+    }
+    function move(e){
+      if(!dn) return; e.preventDefault();
+      var p=gp(e);
+      var col=document.getElementById('ov-color').value||'#ff0000';
+      var sz=parseInt(document.getElementById('ov-size').value)||4;
+      if(ovMode_cur==='erase'){
+        ctx.globalCompositeOperation='destination-out';
+        ctx.strokeStyle='rgba(0,0,0,1)';
+        ctx.lineWidth=sz*4;
+      } else {
+        ctx.globalCompositeOperation='source-over';
+        ctx.strokeStyle=col;
+        ctx.lineWidth=sz*2;
+      }
+      ctx.lineTo(p.x,p.y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(p.x,p.y);
+    }
+    function end(){ dn=false; ctx.beginPath(); }
+
+    ov.addEventListener('mousedown', start);
+    ov.addEventListener('mousemove', move);
+    ov.addEventListener('mouseup', end);
+    ov.addEventListener('mouseleave', end);
+    ov.addEventListener('touchstart', start, {passive:false});
+    ov.addEventListener('touchmove', move, {passive:false});
+    ov.addEventListener('touchend', end, {passive:false});
+    }).catch(function(e){
+      alert('해설 캡처 실패: '+e.message);
+      document.getElementById('draw-overlay').style.display='none';
+    });
+  }); // end convertSvgToImg
+
+  ovMode('pen');
 }
 
-function setDrawMode(mode){
-  drawMode=mode;
-  document.getElementById('draw-pen-btn').style.background=mode==='pen'?'#D42027':'#f0f3f8';
-  document.getElementById('draw-pen-btn').style.color=mode==='pen'?'#fff':'#555';
-  document.getElementById('draw-erase-btn').style.background=mode==='erase'?'#555':'#f0f3f8';
-  document.getElementById('draw-erase-btn').style.color=mode==='erase'?'#fff':'#555';
-  drawCanvas.style.cursor=mode==='erase'?'cell':'crosshair';
+function ovMode(m){
+  ovMode_cur = m;
+  var pen=document.getElementById('ov-pen');
+  var era=document.getElementById('ov-erase');
+  if(pen){ pen.style.background=m==='pen'?'#D42027':'#555'; }
+  if(era){ era.style.background=m==='erase'?'#D42027':'#555'; }
 }
 
-function clearDrawCanvas(){
-  if(!drawCtx||!drawCanvas) return;
-  drawCtx.clearRect(0,0,drawCanvas.width,drawCanvas.height);
+function ovClear(){
+  // 다시 캡처해서 초기화는 복잡하니, 흰색으로 채우기만
+  var ov=document.getElementById('ov-canvas');
+  if(!ov) return;
+  // 필기만 지우고 배경은 유지 - 전체 지우기는 불가하므로 안내
+  if(!confirm('모든 필기를 지우시겠습니까?')) return;
+  // 재오픈
+  document.getElementById('draw-overlay').style.display='none';
+  setTimeout(openDrawOverlay, 100);
 }
 
-function attachDrawingToQuestion(){
-  var img=document.getElementById('sol-popup-qimg');
-  var canvas=document.getElementById('sol-draw-canvas');
-  if(!img||!canvas) return;
+function ovCancel(){
+  document.getElementById('draw-overlay').style.display='none';
+}
 
-  // 이미지 + 필기를 합성한 새 캔버스 생성
-  var merged=document.createElement('canvas');
-  merged.width=img.naturalWidth||img.offsetWidth;
-  merged.height=img.naturalHeight||img.offsetHeight;
-  var mCtx=merged.getContext('2d');
-  mCtx.drawImage(img,0,0,merged.width,merged.height);
-  mCtx.drawImage(canvas,0,0,merged.width,merged.height);
-  var b64=merged.toDataURL('image/jpeg',0.85);
-
-  // 질문 첨부 이미지로 저장
+function ovDone(){
+  var ov=document.getElementById('ov-canvas');
+  if(!ov) return;
+  var b64=ov.toDataURL('image/jpeg',0.85);
   var n=curSolNum;
   var preview=document.getElementById('q-img-preview-'+n);
-  var fileInput=document.querySelector('#sol-popup-body input[type=file]');
-
-  // 가상 file input에 b64 저장
-  if(fileInput) fileInput._b64=b64;
-
-  // 미리보기 표시
+  var fi=document.querySelector('#sol-popup-body input[type=file]');
+  if(fi) fi._b64=b64;
   if(preview){
     preview.innerHTML=
       '<div style="position:relative;display:inline-block;margin-top:4px">'+
-        '<img src="'+b64+'" style="max-width:100%;max-height:150px;border-radius:6px;border:1px solid #e8ecf4;border:2px solid #ff9500">'+
-        '<button onclick="removeQImg('+n+')" style="position:absolute;top:-6px;right:-6px;background:#ff3b5c;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;line-height:18px;text-align:center">✕</button>'+
-        '<div style="font-size:10px;color:#ff9500;font-weight:700;margin-top:2px">✏️ 필기 첨부됨</div>'+
-      '</div>';
+      '<img src="'+b64+'" style="max-width:100%;max-height:200px;border-radius:6px;border:2px solid #ff9500">'+
+      '<button onclick="removeQImg('+n+')" style="position:absolute;top:-6px;right:-6px;background:#ff3b5c;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;line-height:18px;text-align:center">✕</button>'+
+      '<div style="font-size:10px;color:#ff9500;font-weight:700;margin-top:2px">✏️ 해설+필기 첨부됨</div></div>';
   }
-
-  // 스크롤을 질문 입력창으로
-  var qinput=document.getElementById('q-input-'+n);
-  if(qinput) qinput.scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.getElementById('draw-overlay').style.display='none';
+  // 질문 입력창으로 스크롤
+  var qi=document.getElementById('q-input-'+n);
+  if(qi) setTimeout(function(){qi.scrollIntoView({behavior:'smooth',block:'nearest'});},300);
 }
+
+function attachDrawingToQuestion(){ openDrawOverlay(); }
+
 
 // 이벤트 위임으로 동적 버튼 처리
 document.addEventListener('click',function(e){
@@ -2328,5 +2288,25 @@ document.addEventListener('click',function(e){
 });
 
 </script>
+
+<!-- 전체화면 필기 오버레이 -->
+<div id="draw-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:#1a1d2e;flex-direction:column">
+  <!-- 도구바 -->
+  <div style="background:#1a1d2e;padding:8px 12px;display:flex;gap:8px;align-items:center;flex-shrink:0">
+    <button id="ov-pen" onclick="ovMode('pen')" style="padding:6px 12px;background:#D42027;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer;font-weight:700">✏️ 펜</button>
+    <button id="ov-erase" onclick="ovMode('erase')" style="padding:6px 12px;background:#555;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer">🧹 지우개</button>
+    <button onclick="ovClear()" style="padding:6px 12px;background:#555;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer">🗑</button>
+    <input type="color" id="ov-color" value="#ff0000" style="width:30px;height:30px;border:none;border-radius:6px;cursor:pointer;padding:0">
+    <input type="range" id="ov-size" min="2" max="20" value="4" style="width:70px">
+    <div style="flex:1"></div>
+    <button onclick="ovCancel()" style="padding:6px 12px;background:#555;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer">취소</button>
+    <button onclick="ovDone()" style="padding:6px 14px;background:#26d07c;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer">✓ 첨부</button>
+  </div>
+  <!-- 캔버스 -->
+  <div style="flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;background:#2a2d3e">
+    <canvas id="ov-canvas" style="display:block;touch-action:none;cursor:crosshair"></canvas>
+  </div>
+</div>
 </body>
-</html>
+</html><script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
