@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>태산학원</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\(','\)']],displayMath:[['$$','$$']]},svg:{fontCache:'global'}};</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 <!-- Firebase SDK를 head에서 먼저 로드 (동기) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -1323,54 +1325,165 @@ function renderAdminQuestions(){
     return;
   }
 
-  listEl.innerHTML=filtered.map(function(q){
-    var qTime=q.createdAt?new Date(q.createdAt.seconds*1000).toLocaleString('ko-KR'):'';
+  // 각 문제 AI 해설 캐시 가져오기
+  var cacheKeys=filtered.map(function(q){
     var numStr=q.numStr||String(q.num).padStart(4,'0');
-    return '<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid '+(q.answered?'#26d07c':'#ff9500')+'">'+
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'+
-        '<div>'+
-          '<span style="font-size:11px;font-weight:700;background:#fff3e0;color:#ff9500;padding:2px 8px;border-radius:10px;margin-right:6px">'+numStr+'번</span>'+
-          '<span style="font-size:11px;color:#8b95a7">'+q.book+'</span>'+
+    var bk=(q.book||'RPM_공통수학1').replace(/[^a-zA-Z0-9_]/g,'_');
+    return bk+'_'+numStr;
+  });
+  var solCache={};
+  var promises=cacheKeys.map(function(ck){
+    return DB.collection('solutions').doc(ck).get()
+      .then(function(doc){ if(doc.exists&&doc.data().text) solCache[ck]=doc.data().text; })
+      .catch(function(){});
+  });
+
+  Promise.all(promises).then(function(){
+    listEl.innerHTML=filtered.map(function(q){
+      var qTime=q.createdAt?new Date(q.createdAt.seconds*1000).toLocaleString('ko-KR'):'';
+      var numStr=q.numStr||String(q.num).padStart(4,'0');
+      var bk=(q.book||'RPM_공통수학1').replace(/[^a-zA-Z0-9_]/g,'_');
+      var ck=bk+'_'+numStr;
+      var solText=solCache[ck]||'';
+      var solHtml=solText?solText.replace(/[*][*](.*?)[*][*]/g,'<strong>$1</strong>').replace(/\n/g,'<br>'):'';
+      // 교재별 cropBase
+      var cropBase='https://qkrtmdfud0501-collab.github.io/rpm-math/'+
+        ((q.book||'').indexOf('대수')>-1?'crops_daesoo':'crops')+'/';
+
+      return '<div style="background:#fff;border-radius:12px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid '+(q.answered?'#26d07c':'#ff9500')+'">'+
+        // 헤더
+        '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px 8px">'+
+          '<div>'+
+            '<span style="font-size:11px;font-weight:700;background:#fff3e0;color:#ff9500;padding:2px 8px;border-radius:10px;margin-right:6px">'+numStr+'번</span>'+
+            '<span style="font-size:11px;color:#8b95a7">'+esc(q.book)+'</span>'+
+          '</div>'+
+          '<div style="text-align:right">'+
+            '<div style="font-size:11px;font-weight:700;color:#555">'+esc(q.studentName||q.studentEmail)+'</div>'+
+            '<div style="font-size:10px;color:#c0c6d4">'+qTime+'</div>'+
+          '</div>'+
         '</div>'+
-        '<span style="font-size:10px;color:#c0c6d4">'+qTime+'</span>'+
-      '</div>'+
-      '<div style="font-size:12px;font-weight:700;color:#8b95a7;margin-bottom:3px">👤 '+esc(q.studentName||q.studentEmail)+'</div>'+
-      '<div style="font-size:14px;color:#1a1d2e;margin-bottom:10px;line-height:1.5">'+esc(q.question)+'</div>'+
-      (q.answered&&q.answer
-        ?'<div style="background:#edfff5;border-radius:8px;padding:10px;border-left:3px solid #26d07c;margin-bottom:8px">'+
-            '<div style="font-size:10px;font-weight:700;color:#26d07c;margin-bottom:4px">👨‍🏫 내 답변</div>'+
-            '<div style="font-size:13px;color:#1a1d2e;line-height:1.5">'+esc(q.answer)+'</div>'+
-          '</div>'
-        :'')+
-      (!q.answered
-        ?'<div style="display:flex;gap:6px">'+
-            '<input type="text" id="ans-'+q.id+'" placeholder="답변을 입력하세요..." '+
-              'style="flex:1;border:1.5px solid #e0e4ee;border-radius:8px;padding:8px 10px;font-size:13px;outline:none;font-family:sans-serif">'+
-            '<button data-qid="'+q.id+'" onclick="submitAnswer(this.getAttribute(\'data-qid\'))" '+
-              'style="background:#26d07c;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">답변</button>'+
-          '</div>'
-        :'<div style="font-size:11px;color:#26d07c;font-weight:700">✅ 답변 완료</div>')+
-    '</div>';
-  }).join('');
+        // 문제 이미지(42%) + 해설·질문·답변(58%) 가로 배치
+        '<div style="display:flex;border-top:1px solid #f0f3f8;min-height:200px">'+
+          // 왼쪽 42%: 문제 이미지
+          '<div style="width:42%;padding:12px;border-right:1px solid #f0f3f8;flex-shrink:0;overflow-y:auto">'+
+            '<div style="font-size:10px;font-weight:700;color:#8b95a7;margin-bottom:8px">📄 문제</div>'+
+            '<img src="'+cropBase+numStr+'.jpg" style="width:100%;border-radius:6px;border:1px solid #e8ecf4" onerror="this.remove()">'+
+          '</div>'+
+          // 오른쪽 58%: AI 해설 + 질문 + 답변
+          '<div style="flex:1;display:flex;flex-direction:column;overflow:hidden">'+
+          (solHtml?
+            '<div style="padding:12px;border-bottom:1px solid #f0f3f8;overflow-y:auto;max-height:220px">'+
+              '<div style="font-size:10px;font-weight:700;color:#8b95a7;margin-bottom:6px">🤖 AI 해설</div>'+
+              '<div style="font-size:13px;color:#333;line-height:1.6">'+solHtml+'</div>'+
+            '</div>':'')+ 
+          // 질문 + 답변 입력
+          '<div style="flex:1;padding:12px;overflow-y:auto">'+
+            '<div style="background:#f8f9fc;border-radius:8px;padding:8px;margin-bottom:8px">'+
+              '<div style="font-size:10px;font-weight:700;color:#8b95a7;margin-bottom:3px">💬 학생 질문</div>'+
+              (q.question?'<div style="font-size:13px;color:#1a1d2e;line-height:1.5;margin-bottom:'+(q.questionImg?'6px':'0')+'px">'+esc(q.question)+'</div>':'')+
+              (q.questionImg?'<img src="'+q.questionImg+'" style="max-width:100%;border-radius:6px;border:1px solid #e8ecf4">':'')+
+            '</div>'+
+            (q.answered&&q.answer
+              ?'<div style="background:#edfff5;border-radius:8px;padding:8px;border-left:3px solid #26d07c">'+
+                  '<div style="font-size:10px;font-weight:700;color:#26d07c;margin-bottom:3px">👨‍🏫 내 답변</div>'+
+                  (q.answer?'<div style="font-size:13px;color:#1a1d2e;line-height:1.5;margin-bottom:'+(q.answerImg?'6px':'0')+'px">'+esc(q.answer)+'</div>':'')+
+                  (q.answerImg?'<img src="'+q.answerImg+'" style="max-width:100%;border-radius:6px;border:1px solid #e8ecf4">':'')+
+                '</div>'
+              :'<div>'+
+                  '<input type="text" id="ans-'+q.id+'" placeholder="답변을 입력하세요..." '+
+                    'style="width:100%;box-sizing:border-box;border:1.5px solid #e0e4ee;border-radius:8px;padding:8px 10px;font-size:13px;outline:none;font-family:sans-serif;margin-bottom:6px">'+
+                  '<div id="ans-img-preview-'+q.id+'"></div>'+
+                  '<div style="display:flex;gap:6px;margin-top:6px">'+
+                    '<label style="cursor:pointer;padding:8px 10px;background:#f0f3f8;border:none;border-radius:8px;font-size:12px;color:#555;white-space:nowrap">'+
+                      '📷 사진'+
+                      '<input type="file" id="ans-file-'+q.id+'" accept="image/*" style="display:none" data-qid="'+q.id+'" onchange="previewAnsImg(this,this.dataset.qid)">'+
+                    '</label>'+
+                    '<button data-qid="'+q.id+'" onclick="submitAnswer(this.dataset.qid)" '+
+                      'style="flex:1;background:#26d07c;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">답변하기</button>'+
+                  '</div>'+
+                '</div>')+
+          '</div>'+   // 질문답변 영역
+          '</div>'+   // 오른쪽 58%
+        '</div>'+     // flex 행
+      '</div>';
+    }).join('');
+    // MathJax 렌더링
+    if(window.MathJax&&MathJax.typesetPromise){
+      MathJax.typesetPromise([listEl]).catch(function(){});
+    }
+  });
+}
+
+
+// ── 이미지 압축 (admin) ──
+function compressImage(file, maxW, maxH, quality, cb){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var w=img.width, h=img.height;
+      var ratio=Math.min(maxW/w, maxH/h, 1);
+      var canvas=document.createElement('canvas');
+      canvas.width=Math.round(w*ratio);
+      canvas.height=Math.round(h*ratio);
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      var b64=canvas.toDataURL('image/jpeg', quality);
+      if(b64.length>500000 && quality>0.3){
+        compressImage(file, maxW*0.8, maxH*0.8, quality*0.8, cb);
+      } else { cb(b64); }
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function previewAnsImg(input, qId){
+  var file=input.files[0];
+  if(!file) return;
+  compressImage(file, 800, 600, 0.7, function(b64){
+    input._b64=b64;
+    var preview=document.getElementById('ans-img-preview-'+qId);
+    if(preview){
+      preview.innerHTML=
+        '<div style="position:relative;display:inline-block;margin-top:6px">'+
+          '<img src="'+b64+'" style="max-width:100%;max-height:100px;border-radius:6px;border:1px solid #e8ecf4">'+
+          '<button data-qid="'+qId+'" onclick="removeAnsImg(this.dataset.qid)" style="position:absolute;top:-6px;right:-6px;background:#ff3b5c;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;line-height:18px;text-align:center">✕</button>'+
+        '</div>';
+    }
+  });
+}
+
+function removeAnsImg(qId){
+  var preview=document.getElementById('ans-img-preview-'+qId);
+  if(preview) preview.innerHTML='';
+  var fi=document.getElementById('ans-file-'+qId);
+  if(fi){fi.value=''; fi._b64=null;}
 }
 
 function submitAnswer(qId){
   qId = String(qId);
   var input=document.getElementById('ans-'+qId);
-  if(!input||!input.value.trim()){alert('답변을 입력해주세요');return;}
-  var ansText=input.value.trim();
-  var btn=input.nextElementSibling;
-  btn.disabled=true; btn.textContent='전송 중...';
+  var ansText=input?input.value.trim():'';
+  var fileInput=document.getElementById('ans-file-'+qId);
+  var imgB64=fileInput?fileInput._b64||null:null;
 
-  DB.collection('questions').doc(qId).update({
-    answer:ansText,
+  if(!ansText&&!imgB64){alert('답변 내용이나 사진을 입력하세요');return;}
+
+  var btn=document.querySelector('[data-qid="'+qId+'"]');
+  if(btn){btn.disabled=true; btn.textContent='전송 중...';}
+
+  var data={
     answered:true,
     readByStudent:false,
     answeredAt:firebase.firestore.FieldValue.serverTimestamp()
-  }).then(function(){
+  };
+  if(ansText) data.answer=ansText;
+  if(imgB64) data.answerImg=imgB64;
+
+  DB.collection('questions').doc(qId).update(data).then(function(){
     loadAdminQuestions();
   }).catch(function(e){
-    btn.disabled=false; btn.textContent='답변';
+    if(btn){btn.disabled=false; btn.textContent='답변';}
     alert('전송 실패: '+e.message);
   });
 }

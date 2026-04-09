@@ -182,11 +182,12 @@ input:focus{border-color:#D42027}
 
 .empty{text-align:center;padding:40px 20px;color:#8b95a7;font-size:13px}
 
-/* 하단 네비 (4탭) */
-#nav{background:#fff;border-top:1px solid #e8ecf4;display:flex;flex-shrink:0}
-.nb{flex:1;border:none;background:none;cursor:pointer;padding:7px 2px 5px;display:flex;flex-direction:column;align-items:center;gap:1px;font-family:sans-serif;font-size:9px;color:#8b95a7}
+/* 하단 네비 (5탭) */
+#nav{background:#fff;border-top:1px solid #e8ecf4;display:flex;flex-shrink:0;height:54px;padding-bottom:env(safe-area-inset-bottom)}
+.nb{flex:1;border:none;background:none;cursor:pointer;padding:4px 0 3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-family:sans-serif;font-size:9px;color:#8b95a7;min-width:0;overflow:hidden}
 .nb.on{color:#ff4d1c}
-.nbi{font-size:18px;line-height:1}
+.nbi{font-size:20px;line-height:1.1;display:block}
+.nb div:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;line-height:1.2}
 
 /* ── 해설 팝업 ── */
 .popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:12px}
@@ -392,8 +393,23 @@ input:focus{border-color:#D42027}
       <button class="popup-close" id="sol-popup-close">&#10006;</button>
     </div>
     <div class="sol-split">
-      <div class="sol-left">
-        <img id="sol-popup-qimg" src="" style="display:none;width:100%;border-radius:8px;border:1px solid #e8ecf4" onerror="this.style.display='none'">
+      <div class="sol-left" style="position:relative">
+        <!-- 문제 이미지 + 필기 캔버스 -->
+        <div id="sol-draw-wrap" style="position:relative;display:none">
+          <img id="sol-popup-qimg" src="" style="width:100%;border-radius:8px;border:1px solid #e8ecf4;display:block" onerror="this.closest('#sol-draw-wrap').style.display='none'">
+          <canvas id="sol-draw-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px;cursor:crosshair;touch-action:none"></canvas>
+        </div>
+        <!-- 필기 도구 -->
+        <div id="sol-draw-tools" style="display:none;margin-top:8px">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <button id="draw-pen-btn" onclick="setDrawMode('pen')" style="padding:6px 10px;background:#D42027;color:#fff;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-weight:700">✏️ 펜</button>
+            <button id="draw-erase-btn" onclick="setDrawMode('erase')" style="padding:6px 10px;background:#f0f3f8;color:#555;border:none;border-radius:7px;font-size:12px;cursor:pointer">🧹 지우개</button>
+            <button onclick="clearDrawCanvas()" style="padding:6px 10px;background:#f0f3f8;color:#555;border:none;border-radius:7px;font-size:12px;cursor:pointer">🗑 전체 지우기</button>
+            <input type="color" id="draw-color" value="#ff0000" style="width:28px;height:28px;border:none;border-radius:6px;cursor:pointer;padding:0">
+            <input type="range" id="draw-size" min="2" max="20" value="4" style="width:60px">
+          </div>
+          <button onclick="attachDrawingToQuestion()" style="margin-top:8px;width:100%;padding:8px;background:#ff9500;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">📎 이 표시 상태로 질문에 첨부</button>
+        </div>
       </div>
       <div class="sol-right" id="sol-popup-body"></div>
     </div>
@@ -424,7 +440,7 @@ input:focus{border-color:#D42027}
   <button class="nb" id="nb-wrong"><div class="nbi">&#10006;</div><div>오답</div></button>
   <button class="nb" id="nb-stats"><div class="nbi">&#128202;</div><div>통계</div></button>
   <button class="nb" id="nb-books"><div class="nbi">&#128218;</div><div>교재</div></button>
-  <button class="nb" id="nb-myq" style="position:relative"><div class="nbi">&#128172;</div><div>질문함</div><span id="myq-badge" style="display:none;position:absolute;top:4px;right:6px;background:#ff3b5c;color:#fff;border-radius:50%;width:14px;height:14px;font-size:9px;font-weight:700;line-height:14px;text-align:center">!</span></button>
+  <button class="nb" id="nb-myq" style="position:relative"><div class="nbi">&#128172;</div><div>질문</div><span id="myq-badge" style="display:none;position:absolute;top:4px;right:6px;background:#ff3b5c;color:#fff;border-radius:50%;width:14px;height:14px;font-size:9px;font-weight:700;line-height:14px;text-align:center">!</span></button>
 </div>
 
 <script>
@@ -1427,6 +1443,12 @@ function loadYtLinksFromFirebase(){
 var curSolNum=0;
 function closesolPopup(){
   document.getElementById('sol-popup').classList.add('hide');
+  // 캔버스 초기화
+  var drawWrap=document.getElementById('sol-draw-wrap');
+  var drawTools=document.getElementById('sol-draw-tools');
+  if(drawWrap) drawWrap.style.display='none';
+  if(drawTools) drawTools.style.display='none';
+  clearDrawCanvas();
   // 유튜브 iframe src 초기화 (음성 정지)
   var iframes = document.getElementById('sol-popup-body').querySelectorAll('iframe');
   iframes.forEach(function(f){ f.src=''; });
@@ -1456,8 +1478,17 @@ function openYtSol(n){
   var url=links[n]||'';
   var numStr=String(n).padStart(4,'0');
   document.getElementById('sol-popup-title').textContent=numStr+'번 해설영상';
-  document.getElementById('sol-popup-qimg').src=getCropBase()+numStr+'.jpg';
-  document.getElementById('sol-popup-qimg').style.display='block';
+  // 이미지 + 캔버스 세팅
+  var qimg=document.getElementById('sol-popup-qimg');
+  var drawWrap=document.getElementById('sol-draw-wrap');
+  var drawTools=document.getElementById('sol-draw-tools');
+  qimg.onload=function(){
+    drawWrap.style.display='block';
+    drawTools.style.display='block';
+    initDrawCanvas();
+  };
+  qimg.onerror=function(){ drawWrap.style.display='none'; drawTools.style.display='none'; };
+  qimg.src=getCropBase()+numStr+'.jpg';
   
   var ytId='';
   if(url){
@@ -1512,8 +1543,17 @@ function openAiSol(n){
 
   // 팝업 먼저 열기
   document.getElementById('sol-popup-title').textContent=numStr+'번 AI 해설';
-  document.getElementById('sol-popup-qimg').src=getCropBase()+numStr+'.jpg';
-  document.getElementById('sol-popup-qimg').style.display='block';
+  // 이미지 + 캔버스 세팅
+  var qimg=document.getElementById('sol-popup-qimg');
+  var drawWrap=document.getElementById('sol-draw-wrap');
+  var drawTools=document.getElementById('sol-draw-tools');
+  qimg.onload=function(){
+    drawWrap.style.display='block';
+    drawTools.style.display='block';
+    initDrawCanvas();
+  };
+  qimg.onerror=function(){ drawWrap.style.display='none'; drawTools.style.display='none'; };
+  qimg.src=getCropBase()+numStr+'.jpg';
   document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">불러오는 중...</div>';
   document.getElementById('sol-popup').classList.remove('hide');
 
@@ -1777,11 +1817,18 @@ function renderAiResponse(text, fromCache){
     '<div style="margin-top:16px;border-top:1px solid #e8ecf4;padding-top:12px">'+
       '<div style="font-size:12px;font-weight:700;color:#1a1d2e;margin-bottom:8px">💬 이해가 안 되는 부분이 있나요?</div>'+
       '<div id="q-list-'+curSolNum+'" style="margin-bottom:8px"></div>'+
-      '<div style="display:flex;gap:6px">'+
+      '<div style="margin-bottom:6px">'+
         '<input type="text" id="q-input-'+curSolNum+'" placeholder="질문을 입력하세요..." '+
-          'style="flex:1;border:1.5px solid #e0e4ee;border-radius:8px;padding:8px 10px;font-size:13px;outline:none;font-family:sans-serif">'+
-        '<button onclick="submitQuestion('+curSolNum+')" '+
-          'style="background:#D42027;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">질문</button>'+
+          'style="width:100%;box-sizing:border-box;border:1.5px solid #e0e4ee;border-radius:8px;padding:8px 10px;font-size:13px;outline:none;font-family:sans-serif;margin-bottom:6px">'+
+        '<div id="q-img-preview-'+curSolNum+'" style="margin-bottom:6px"></div>'+
+        '<div style="display:flex;gap:6px;align-items:center">'+
+          '<label style="cursor:pointer;padding:8px 10px;background:#f0f3f8;border:none;border-radius:8px;font-size:12px;color:#555;font-family:sans-serif;white-space:nowrap">'+
+            '📷 사진'+
+            '<input type="file" accept="image/*" style="display:none" onchange="previewQImg(this,'+curSolNum+')">'+
+          '</label>'+
+          '<button onclick="submitQuestion('+curSolNum+')" '+
+            'style="flex:1;background:#D42027;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">질문하기</button>'+
+        '</div>'+
       '</div>'+
     '</div>';
   // MathJax 렌더링
@@ -1890,33 +1937,93 @@ function solBtnsHTML(n){
 
 
 // ── 질문 기능 ──
+
+// ── 이미지 압축 및 base64 변환 ──
+function compressImage(file, maxW, maxH, quality, cb){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var w=img.width, h=img.height;
+      var ratio=Math.min(maxW/w, maxH/h, 1);
+      var canvas=document.createElement('canvas');
+      canvas.width=Math.round(w*ratio);
+      canvas.height=Math.round(h*ratio);
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      var b64=canvas.toDataURL('image/jpeg', quality);
+      // 크기 체크 (Firestore 1MB 제한 고려, 500KB 이하로)
+      if(b64.length>500000 && quality>0.3){
+        compressImage(file, maxW*0.8, maxH*0.8, quality*0.8, cb);
+      } else {
+        cb(b64);
+      }
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// 질문 이미지 미리보기
+function previewQImg(input, n){
+  var file=input.files[0];
+  if(!file) return;
+  var preview=document.getElementById('q-img-preview-'+n);
+  if(!preview) return;
+  compressImage(file, 800, 600, 0.7, function(b64){
+    // 압축된 base64 저장
+    input._b64=b64;
+    preview.innerHTML=
+      '<div style="position:relative;display:inline-block">'+
+        '<img src="'+b64+'" style="max-width:100%;max-height:120px;border-radius:6px;border:1px solid #e8ecf4">'+
+        '<button onclick="removeQImg('+n+')" style="position:absolute;top:-6px;right:-6px;background:#ff3b5c;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;line-height:18px;text-align:center">✕</button>'+
+      '</div>';
+  });
+}
+
+function removeQImg(n){
+  var preview=document.getElementById('q-img-preview-'+n);
+  if(preview) preview.innerHTML='';
+  // clear file input
+  var fileInput=document.querySelector('#sol-popup-body input[type=file]');
+  if(fileInput){ fileInput.value=''; fileInput._b64=null; }
+}
+
 function submitQuestion(n){
   var input=document.getElementById('q-input-'+n);
-  if(!input||!input.value.trim()) return;
-  var qText=input.value.trim();
+  var qText=input?input.value.trim():'';
+  // 이미지 가져오기
+  var fileInput=document.querySelector('#sol-popup .sol-right input[type=file]');
+  var imgB64=fileInput?fileInput._b64||null:null;
+
+  if(!qText&&!imgB64){alert('질문 내용이나 사진을 입력하세요');return;}
   if(!curUser){alert('로그인이 필요합니다');return;}
   if(typeof DB==='undefined'||!DB){alert('서버 연결 오류');return;}
 
-  var btn=input.nextElementSibling;
-  btn.disabled=true; btn.textContent='전송 중...';
+  // 전송 버튼 찾기
+  var btn=document.querySelector('#sol-popup-body button[onclick*="submitQuestion"]');
+  if(btn){btn.disabled=true; btn.textContent='전송 중...';}
 
   var numStr=String(n).padStart(4,'0');
-  DB.collection('questions').add({
-    num:n,
-    numStr:numStr,
+  var data={
+    num:n, numStr:numStr,
     book:curBook||'RPM 공통수학1',
     question:qText,
     studentEmail:curUser,
     studentName:document.getElementById('tname').textContent||curUser,
-    answered:false,
-    answer:'',
+    answered:false, answer:'',
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
-  }).then(function(){
-    input.value='';
-    btn.disabled=false; btn.textContent='질문';
+  };
+  if(imgB64) data.questionImg=imgB64;
+
+  DB.collection('questions').add(data).then(function(){
+    if(input) input.value='';
+    var preview=document.getElementById('q-img-preview-'+n);
+    if(preview) preview.innerHTML='';
+    if(fileInput){fileInput.value=''; fileInput._b64=null;}
+    if(btn){btn.disabled=false; btn.textContent='질문하기';}
     loadQuestions(n);
   }).catch(function(e){
-    btn.disabled=false; btn.textContent='질문';
+    if(btn){btn.disabled=false; btn.textContent='질문하기';}
     alert('전송 실패: '+e.message);
   });
 }
@@ -1941,11 +2048,13 @@ function loadQuestions(n){
               '<span style="font-weight:700;color:#1a1d2e">📝 내 질문</span>'+
               '<span style="color:#c0c6d4;font-size:10px">'+qTime+'</span>'+
             '</div>'+
-            '<div style="color:#333;line-height:1.5;margin-bottom:'+(d.answer?'8px':'0')+'px">'+esc(d.question)+'</div>'+
-            (d.answer
+            (d.question?'<div style="color:#333;line-height:1.5;margin-bottom:4px">'+esc(d.question)+'</div>':'')+
+            (d.questionImg?'<img src="'+d.questionImg+'" style="max-width:100%;border-radius:6px;margin-bottom:6px;border:1px solid #e8ecf4">':'')+
+            (d.answer||d.answerImg
               ? '<div style="background:#edfff5;border-radius:6px;padding:8px;border-left:3px solid #26d07c">'+
                   '<div style="font-size:10px;font-weight:700;color:#26d07c;margin-bottom:3px">👨‍🏫 선생님 답변</div>'+
-                  '<div style="color:#1a1d2e;line-height:1.5">'+esc(d.answer)+'</div>'+
+                  (d.answer?'<div style="color:#1a1d2e;line-height:1.5;margin-bottom:'+(d.answerImg?'6px':'0')+'px">'+esc(d.answer)+'</div>':'')+
+                  (d.answerImg?'<img src="'+d.answerImg+'" style="max-width:100%;border-radius:6px;border:1px solid #e8ecf4">':'')+
                 '</div>'
               : '<div style="font-size:10px;color:#ff9500;font-weight:700">⏳ 답변 대기 중</div>')+
           '</div>';
@@ -1966,41 +2075,97 @@ function renderMyQuestions(){
   }
   DB.collection('questions')
     .where('studentEmail','==',curUser)
-    .orderBy('createdAt','desc')
     .get().then(function(snap){
-      if(snap.empty){listEl.innerHTML='<div class="empty">아직 질문이 없어요</div>';return;}
-      var html2='';
-      snap.forEach(function(doc){
-        var d=doc.data();
-        var qTime=d.createdAt?new Date(d.createdAt.seconds*1000).toLocaleDateString('ko-KR'):'';
-        var numStr=d.numStr||String(d.num).padStart(4,'0');
-        var isNew=d.answered&&!d.readByStudent;
-        html2+=
-          '<div style="background:#fff;border-radius:10px;padding:12px;margin-bottom:10px;box-shadow:0 2px 6px rgba(0,0,0,.06);border-left:4px solid '+(d.answered?'#26d07c':'#ff9500')+'">'+
-            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
-              '<div style="display:flex;align-items:center;gap:6px">'+
-                '<span style="font-size:11px;font-weight:700;background:#fff3e0;color:#ff9500;padding:2px 8px;border-radius:10px">'+numStr+'번</span>'+
-                '<span style="font-size:10px;color:#8b95a7">'+d.book+'</span>'+
-                (isNew?'<span style="font-size:10px;font-weight:700;color:#ff3b5c;background:#fff0f0;padding:1px 6px;border-radius:8px">NEW</span>':'') +
-              '</div>'+
-              '<span style="font-size:10px;color:#c0c6d4">'+qTime+'</span>'+
-            '</div>'+
-            '<div style="font-size:13px;color:#1a1d2e;margin-bottom:8px;line-height:1.5">'+esc(d.question)+'</div>'+
-            (d.answered&&d.answer
-              ?'<div style="background:#edfff5;border-radius:8px;padding:10px;border-left:3px solid #26d07c">'+
-                  '<div style="font-size:10px;font-weight:700;color:#26d07c;margin-bottom:4px">👨‍🏫 선생님 답변</div>'+
-                  '<div style="font-size:13px;color:#1a1d2e;line-height:1.5">'+esc(d.answer)+'</div>'+
-                '</div>'
-              :'<div style="font-size:11px;color:#ff9500;font-weight:700">⏳ 답변 대기 중...</div>')+
-          '</div>';
-        // 읽음 처리
-        if(isNew){
-          DB.collection('questions').doc(doc.id).update({readByStudent:true}).catch(function(){});
-        }
+      var docs=[];
+      snap.forEach(function(doc){ docs.push({id:doc.id, data:doc.data()}); });
+      docs.sort(function(a,b){
+        var ta=a.data.createdAt?a.data.createdAt.seconds:0;
+        var tb=b.data.createdAt?b.data.createdAt.seconds:0;
+        return tb-ta;
       });
-      listEl.innerHTML=html2;
-      // 뱃지 업데이트
-      updateMyQBadge(0);
+      if(!docs.length){listEl.innerHTML='<div class="empty">아직 질문이 없어요</div>';return;}
+
+      // 각 문제의 AI 해설 캐시를 한꺼번에 가져오기
+      var cacheKeys=docs.map(function(item){
+        var d=item.data;
+        var numStr=d.numStr||String(d.num).padStart(4,'0');
+        var bk=(d.book||'RPM_공통수학1').replace(/[^a-zA-Z0-9_]/g,'_');
+        return bk+'_'+numStr;
+      });
+      var solCache={};
+      var promises=cacheKeys.map(function(ck){
+        return DB.collection('solutions').doc(ck).get()
+          .then(function(doc){ if(doc.exists&&doc.data().text) solCache[ck]=doc.data().text; })
+          .catch(function(){});
+      });
+
+      Promise.all(promises).then(function(){
+        var html2='';
+        docs.forEach(function(item){
+          var d=item.data;
+          var qTime=d.createdAt?new Date(d.createdAt.seconds*1000).toLocaleDateString('ko-KR'):'';
+          var numStr=d.numStr||String(d.num).padStart(4,'0');
+          var bk=(d.book||'RPM_공통수학1').replace(/[^a-zA-Z0-9_]/g,'_');
+          var ck=bk+'_'+numStr;
+          var isNew=d.answered&&!d.readByStudent;
+          var solText=solCache[ck]||'';
+
+          // AI 해설 마크다운 변환
+          var solHtml=solText?solText.replace(/[*][*](.*?)[*][*]/g,'<strong>$1</strong>').replace(/[*](.*?)[*]/g,'<em>$1</em>').replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>'):'';
+
+          html2+=
+            '<div style="background:#fff;border-radius:12px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.07);border-left:4px solid '+(d.answered?'#26d07c':'#ff9500')+'">'+
+              // 헤더
+              '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px 8px">'+
+                '<div style="display:flex;align-items:center;gap:6px">'+
+                  '<span style="font-size:11px;font-weight:700;background:#fff3e0;color:#ff9500;padding:2px 8px;border-radius:10px">'+numStr+'번</span>'+
+                  '<span style="font-size:10px;color:#8b95a7">'+esc(d.book)+'</span>'+
+                  (isNew?'<span style="font-size:10px;font-weight:700;color:#ff3b5c;background:#fff0f0;padding:1px 6px;border-radius:8px">NEW</span>':'')+
+                '</div>'+
+                '<span style="font-size:10px;color:#c0c6d4">'+qTime+'</span>'+
+              '</div>'+
+              // 문제 이미지 + AI 해설 가로 배치
+              '<div style="display:flex;gap:0;border-top:1px solid #f0f3f8">'+
+                // 왼쪽: 문제 이미지
+                '<div style="width:42%;min-width:120px;padding:10px;border-right:1px solid #f0f3f8;flex-shrink:0">'+
+                  '<div style="font-size:10px;font-weight:700;color:#8b95a7;margin-bottom:6px">📄 문제</div>'+
+                  '<img src="'+getCropBase()+numStr+'.jpg" style="width:100%;border-radius:6px;border:1px solid #e8ecf4" onerror="this.remove()">'+
+                '</div>'+
+                // 오른쪽: AI 해설 + 질문/답변
+                '<div style="flex:1;padding:10px;overflow:hidden">'+
+                  (solHtml
+                    ?'<div style="font-size:10px;font-weight:700;color:#8b95a7;margin-bottom:6px">🤖 AI 해설 요약</div>'+
+                      '<div style="font-size:12px;color:#333;line-height:1.6;max-height:120px;overflow-y:auto;margin-bottom:10px"><p>'+solHtml+'</p></div>'
+                    :'')+
+                  // 내 질문
+                  '<div style="background:#f8f9fc;border-radius:8px;padding:8px;margin-bottom:6px">'+
+                    '<div style="font-size:10px;font-weight:700;color:#8b95a7;margin-bottom:3px">💬 내 질문</div>'+
+                    (d.question?'<div style="font-size:12px;color:#1a1d2e;line-height:1.5;margin-bottom:'+(d.questionImg?'6':'0')+'px">'+esc(d.question)+'</div>':'')+
+                    (d.questionImg?'<img src="'+d.questionImg+'" style="max-width:100%;border-radius:6px;border:1px solid #e8ecf4">':'')+
+                  '</div>'+
+                  // 답변
+                  (d.answered&&(d.answer||d.answerImg)
+                    ?'<div style="background:#edfff5;border-radius:8px;padding:8px;border-left:3px solid #26d07c">'+
+                        '<div style="font-size:10px;font-weight:700;color:#26d07c;margin-bottom:3px">👨‍🏫 선생님 답변</div>'+
+                        (d.answer?'<div style="font-size:12px;color:#1a1d2e;line-height:1.5;margin-bottom:'+(d.answerImg?'6':'0')+'px">'+esc(d.answer)+'</div>':'')+
+                        (d.answerImg?'<img src="'+d.answerImg+'" style="max-width:100%;border-radius:6px;border:1px solid #e8ecf4">':'')+
+                      '</div>'
+                    :'<div style="font-size:11px;color:#ff9500;font-weight:700;padding:4px 0">⏳ 답변 대기 중...</div>')+
+                '</div>'+
+              '</div>'+
+            '</div>';
+
+          if(isNew){
+            DB.collection('questions').doc(item.id).update({readByStudent:true}).catch(function(){});
+          }
+        });
+        listEl.innerHTML=html2;
+        // MathJax 렌더링
+        if(window.MathJax&&MathJax.typesetPromise){
+          MathJax.typesetPromise([listEl]).catch(function(){});
+        }
+        updateMyQBadge(0);
+      });
     }).catch(function(e){
       listEl.innerHTML='<div class="empty">불러오기 실패: '+e.message+'</div>';
     });
@@ -2008,12 +2173,16 @@ function renderMyQuestions(){
 
 function checkMyQBadge(){
   if(typeof DB==='undefined'||!DB||!curUser) return;
+  // 복합 인덱스 없이 단순 쿼리 후 클라이언트 필터
   DB.collection('questions')
     .where('studentEmail','==',curUser)
-    .where('answered','==',true)
-    .where('readByStudent','==',false)
     .get().then(function(snap){
-      updateMyQBadge(snap.size);
+      var count=0;
+      snap.forEach(function(doc){
+        var d=doc.data();
+        if(d.answered&&!d.readByStudent) count++;
+      });
+      updateMyQBadge(count);
     }).catch(function(){});
 }
 
@@ -2022,6 +2191,128 @@ function updateMyQBadge(count){
   if(!badge) return;
   if(count>0){badge.style.display='block';}
   else{badge.style.display='none';}
+}
+
+
+// ── 필기 기능 ──
+var drawMode='pen', drawCanvas=null, drawCtx=null, isDrawing=false, lastX=0, lastY=0;
+
+function initDrawCanvas(){
+  var wrap=document.getElementById('sol-draw-wrap');
+  var img=document.getElementById('sol-popup-qimg');
+  var canvas=document.getElementById('sol-draw-canvas');
+  if(!canvas||!img) return;
+  // 캔버스 크기를 이미지 실제 픽셀 크기로 맞춤
+  canvas.width=img.naturalWidth||img.offsetWidth;
+  canvas.height=img.naturalHeight||img.offsetHeight;
+  drawCanvas=canvas;
+  drawCtx=canvas.getContext('2d');
+  drawCtx.lineCap='round';
+  drawCtx.lineJoin='round';
+
+  // 기존 이벤트 제거 후 재등록
+  var newCanvas=canvas.cloneNode(true);
+  canvas.parentNode.replaceChild(newCanvas,canvas);
+  drawCanvas=newCanvas;
+  drawCtx=newCanvas.getContext('2d');
+  drawCtx.lineCap='round';
+  drawCtx.lineJoin='round';
+
+  function getPos(e){
+    var rect=drawCanvas.getBoundingClientRect();
+    var scaleX=drawCanvas.width/rect.width;
+    var scaleY=drawCanvas.height/rect.height;
+    var clientX=e.touches?e.touches[0].clientX:e.clientX;
+    var clientY=e.touches?e.touches[0].clientY:e.clientY;
+    return {x:(clientX-rect.left)*scaleX, y:(clientY-rect.top)*scaleY};
+  }
+
+  function startDraw(e){
+    e.preventDefault();
+    isDrawing=true;
+    var pos=getPos(e);
+    lastX=pos.x; lastY=pos.y;
+    drawCtx.beginPath();
+    drawCtx.moveTo(lastX,lastY);
+  }
+  function moveDraw(e){
+    e.preventDefault();
+    if(!isDrawing) return;
+    var pos=getPos(e);
+    var color=document.getElementById('draw-color').value;
+    var size=parseInt(document.getElementById('draw-size').value);
+    drawCtx.globalCompositeOperation=drawMode==='erase'?'destination-out':'source-over';
+    drawCtx.strokeStyle=color;
+    drawCtx.lineWidth=size;
+    drawCtx.lineTo(pos.x,pos.y);
+    drawCtx.stroke();
+    drawCtx.beginPath();
+    drawCtx.moveTo(pos.x,pos.y);
+    lastX=pos.x; lastY=pos.y;
+  }
+  function endDraw(e){
+    e.preventDefault();
+    isDrawing=false;
+  }
+
+  drawCanvas.addEventListener('mousedown',startDraw);
+  drawCanvas.addEventListener('mousemove',moveDraw);
+  drawCanvas.addEventListener('mouseup',endDraw);
+  drawCanvas.addEventListener('mouseleave',endDraw);
+  drawCanvas.addEventListener('touchstart',startDraw,{passive:false});
+  drawCanvas.addEventListener('touchmove',moveDraw,{passive:false});
+  drawCanvas.addEventListener('touchend',endDraw,{passive:false});
+}
+
+function setDrawMode(mode){
+  drawMode=mode;
+  document.getElementById('draw-pen-btn').style.background=mode==='pen'?'#D42027':'#f0f3f8';
+  document.getElementById('draw-pen-btn').style.color=mode==='pen'?'#fff':'#555';
+  document.getElementById('draw-erase-btn').style.background=mode==='erase'?'#555':'#f0f3f8';
+  document.getElementById('draw-erase-btn').style.color=mode==='erase'?'#fff':'#555';
+  drawCanvas.style.cursor=mode==='erase'?'cell':'crosshair';
+}
+
+function clearDrawCanvas(){
+  if(!drawCtx||!drawCanvas) return;
+  drawCtx.clearRect(0,0,drawCanvas.width,drawCanvas.height);
+}
+
+function attachDrawingToQuestion(){
+  var img=document.getElementById('sol-popup-qimg');
+  var canvas=document.getElementById('sol-draw-canvas');
+  if(!img||!canvas) return;
+
+  // 이미지 + 필기를 합성한 새 캔버스 생성
+  var merged=document.createElement('canvas');
+  merged.width=img.naturalWidth||img.offsetWidth;
+  merged.height=img.naturalHeight||img.offsetHeight;
+  var mCtx=merged.getContext('2d');
+  mCtx.drawImage(img,0,0,merged.width,merged.height);
+  mCtx.drawImage(canvas,0,0,merged.width,merged.height);
+  var b64=merged.toDataURL('image/jpeg',0.85);
+
+  // 질문 첨부 이미지로 저장
+  var n=curSolNum;
+  var preview=document.getElementById('q-img-preview-'+n);
+  var fileInput=document.querySelector('#sol-popup-body input[type=file]');
+
+  // 가상 file input에 b64 저장
+  if(fileInput) fileInput._b64=b64;
+
+  // 미리보기 표시
+  if(preview){
+    preview.innerHTML=
+      '<div style="position:relative;display:inline-block;margin-top:4px">'+
+        '<img src="'+b64+'" style="max-width:100%;max-height:150px;border-radius:6px;border:1px solid #e8ecf4;border:2px solid #ff9500">'+
+        '<button onclick="removeQImg('+n+')" style="position:absolute;top:-6px;right:-6px;background:#ff3b5c;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;line-height:18px;text-align:center">✕</button>'+
+        '<div style="font-size:10px;color:#ff9500;font-weight:700;margin-top:2px">✏️ 필기 첨부됨</div>'+
+      '</div>';
+  }
+
+  // 스크롤을 질문 입력창으로
+  var qinput=document.getElementById('q-input-'+n);
+  if(qinput) qinput.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 // 이벤트 위임으로 동적 버튼 처리
