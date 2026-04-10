@@ -518,8 +518,16 @@ DB = firebase.firestore();
 AUTH = firebase.auth();
 
 // 로그인 상태 감지
+var ADMIN_EMAIL = 'qkrtmdfud@ts.com';
+
 AUTH.onAuthStateChanged(function(user) {
   if (user) {
+    if (user.email !== ADMIN_EMAIL) {
+      // 관리자 아닌 계정 - 즉시 로그아웃
+      AUTH.signOut();
+      document.getElementById('err').textContent = '관리자 계정으로만 접속할 수 있습니다';
+      return;
+    }
     document.getElementById('login').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     document.getElementById('tname').textContent = user.email;
@@ -1661,53 +1669,60 @@ function updateCacheStats(current, total){
   }
 }
 
-async function callGeminiCache(n, numStr, cropBase, bookName, apiKey){
-  var cd = (ADMIN_BOOKS_CONFIG[bookName]&&ADMIN_BOOKS_CONFIG[bookName].units) ? null : null;
-  // 프롬프트 구성
-  var prompt = bookName+' '+numStr+'번 문제입니다.
+function callGeminiCache(n, numStr, cropBase, bookName, apiKey){
+  return new Promise(function(resolve, reject){
+    var promptText = bookName+' '+numStr+'번 문제입니다.\n[필수 지시사항]\n1. 이미지에서 문제 번호 '+numStr+'번을 찾아서 그 문제만 해설할 것\n2. 수식은 $...$로 감싸서 LaTeX로 표현\n3. 고등학생이 이해할 수 있는 쉬운 언어로\n4. 각 단계를 번호로 구분\n5. 마지막에 정답 명시';
 
-[필수 지시사항]
-1. 이미지에서 문제 번호 '+numStr+'번을 찾아서 그 문제만 해설할 것
-2. 수식은 $...$ 로 감싸서 LaTeX로 표현 (예: $\\sqrt{5}$, $\\frac{a}{b}$)
-3. 고등학생이 이해할 수 있는 쉬운 언어로
-4. 각 단계를 번호로 구분
-5. 마지막에 정답 명시';
-
-  // 이미지 로드 (같은 도메인이므로 CORS 없음)
-  var imgUrl = 'https://qkrtmdfud0501-collab.github.io/rpm-math/'+cropBase+'/'+numStr+'.jpg';
-  var parts;
-  try{
-    var resp = await fetch(imgUrl);
-    if(!resp.ok) throw new Error('HTTP '+resp.status);
-    var blob = await resp.blob();
-    var b64 = await new Promise(function(resolve){
-      var r = new FileReader();
-      r.onload = function(e){ resolve(e.target.result.split(',')[1]); };
-      r.readAsDataURL(blob);
-    });
-    parts = [{inline_data:{mime_type:'image/jpeg',data:b64}},{text:prompt}];
-  }catch(e){
-    throw new Error('이미지 로드 실패: '+e.message);
-  }
-
-  // Gemini 호출
-  var apiResp = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
-    {
-      method:'POST',
-      headers:{'Content-Type':'application/json','X-goog-api-key':apiKey},
-      body:JSON.stringify({contents:[{parts:parts}]})
+    function doGenerate(parts){
+      fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-goog-api-key':apiKey},
+        body:JSON.stringify({contents:[{parts:parts}]})
+      }).then(function(resp){
+        if(resp.status===429){ reject(new Error('RATE_LIMIT')); return; }
+        if(!resp.ok){ reject(new Error('API_'+resp.status)); return; }
+        return resp.json();
+      }).then(function(data){
+        if(!data) return;
+        var text = data.candidates&&data.candidates[0]&&data.candidates[0].content&&
+                   data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&
+                   data.candidates[0].content.parts[0].text;
+        if(text) resolve(text);
+        else reject(new Error('빈 응답'));
+      }).catch(function(e){ reject(e); });
     }
-  );
-  if(apiResp.status===429) throw new Error('RATE_LIMIT');
-  if(!apiResp.ok) throw new Error('API_'+apiResp.status);
-  var data = await apiResp.json();
-  var text = data&&data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text;
-  if(!text) throw new Error('빈 응답');
-  return text;
+
+    // student.html과 동일한 이미지 로드 방식 (crossOrigin + canvas)
+    var imgUrl = 'https://qkrtmdfud0501-collab.github.io/rpm-math/'+cropBase+'/'+numStr+'.jpg';
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    var imgTimer = setTimeout(function(){
+      img.onload = img.onerror = null;
+      doGenerate([{text:promptText}]);
+    }, 8000);
+    img.onload = function(){
+      clearTimeout(imgTimer);
+      try{
+        var canvas = document.createElement('canvas');
+        var ratio = Math.min(800/img.width, 1000/img.height, 1);
+        canvas.width = Math.round(img.width*ratio);
+        canvas.height = Math.round(img.height*ratio);
+        canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+        var b64 = canvas.toDataURL('image/jpeg',0.8).split(',')[1];
+        doGenerate([{inline_data:{mime_type:'image/jpeg',data:b64}},{text:promptText}]);
+      }catch(e){
+        doGenerate([{text:promptText}]);
+      }
+    };
+    img.onerror = function(){
+      clearTimeout(imgTimer);
+      doGenerate([{text:promptText}]);
+    };
+    img.src = imgUrl+'?t='+Date.now();
+  });
 }
 
-async function startBulkCache(){
+function startBulkCache(){
   var sel = document.getElementById('cache-book');
   var parts = sel.value.split('|');
   var bookName = parts[0], cropBase = parts[1];
@@ -1716,88 +1731,86 @@ async function startBulkCache(){
   var delay = parseFloat(document.getElementById('cache-delay').value)*1000;
 
   // Gemini 키 가져오기
-  var apiKey = '';
-  try{
-    var doc = await DB.collection('settings').doc('gemini').get();
-    if(doc.exists&&doc.data()&&doc.data().apiKey) apiKey = doc.data().apiKey;
-  }catch(e){}
-  if(!apiKey){
-    alert('설정에서 Gemini API 키를 먼저 저장하세요');
-    return;
-  }
+  DB.collection('settings').doc('gemini').get().then(function(doc){
+    var apiKey = (doc.exists&&doc.data()&&doc.data().apiKey) ? doc.data().apiKey : '';
+    if(!apiKey){ alert('설정에서 Gemini API 키를 먼저 저장하세요'); return; }
 
-  cacheRunning = true;
-  cacheDone = 0; cacheSkip = 0; cacheErr = 0;
-  cacheStartTime = Date.now();
-  var total = endN - startN + 1;
+    cacheRunning = true;
+    cacheDone = 0; cacheSkip = 0; cacheErr = 0;
+    cacheStartTime = Date.now();
 
-  document.getElementById('cache-progress-wrap').style.display='block';
-  document.getElementById('cache-log').style.display='block';
-  document.getElementById('cache-btn-start').disabled = true;
-  document.getElementById('cache-btn-stop').disabled = false;
-  document.getElementById('cache-btn-stop').style.background = '#ff3b5c';
-  document.getElementById('cache-btn-stop').style.color = '#fff';
-  cacheLog('캐싱 시작: '+bookName+' '+startN+'~'+endN+'번', '#26d07c');
+    document.getElementById('cache-progress-wrap').style.display='block';
+    document.getElementById('cache-log').style.display='block';
+    document.getElementById('cache-btn-start').disabled = true;
+    document.getElementById('cache-btn-stop').disabled = false;
+    document.getElementById('cache-btn-stop').style.background = '#ff3b5c';
+    document.getElementById('cache-btn-stop').style.color = '#fff';
+    cacheLog('캐싱 시작: '+bookName+' '+startN+'~'+endN+'번', '#26d07c');
 
-  var bookKey = bookName.replace(/[^a-zA-Z0-9_]/g,'_');
+    var bookKey = bookName.replace(/[^a-zA-Z0-9_]/g,'_');
+    processNext(startN);
 
-  for(var n = startN; n <= endN && cacheRunning; n++){
+    function processNext(n){
+
+    if(n > endN || !cacheRunning){
+      cacheRunning = false;
+      document.getElementById('cache-btn-start').disabled = false;
+      document.getElementById('cache-btn-stop').disabled = true;
+      document.getElementById('cache-cur').textContent = '완료! ✅'+cacheDone+' ⏭'+cacheSkip+' ❌'+cacheErr;
+      cacheLog('=== 캐싱 완료 ===', '#26d07c');
+      return;
+    }
     var numStr = String(n).padStart(4,'0');
     var cacheKey = bookKey+'_'+numStr;
     document.getElementById('cache-cur').textContent = n+'번 처리 중... ('+n+'/'+endN+')';
 
     // 기존 캐시 확인
-    try{
-      var cached = await DB.collection('solutions').doc(cacheKey).get();
+    DB.collection('solutions').doc(cacheKey).get().then(function(cached){
       if(cached.exists && cached.data()&&cached.data().text){
         cacheSkip++;
-        updateCacheStats(n, total);
-        continue;
+        updateCacheStats(n, endN-startN+1);
+        setTimeout(function(){ processNext(n+1); }, 200);
+        return;
       }
-    }catch(e){}
-
-    // Gemini 호출 (최대 3회 재시도)
-    var text = null;
-    for(var retry=0; retry<3; retry++){
-      try{
-        text = await callGeminiCache(n, numStr, cropBase, bookName, apiKey);
-        break;
-      }catch(e){
-        if(e.message==='RATE_LIMIT'){
-          cacheLog(numStr+' Rate Limit, 10초 대기...', '#ff9500');
-          await new Promise(function(r){setTimeout(r,10000);});
-        } else {
-          cacheLog(numStr+' 오류: '+e.message+(retry<2?', 재시도':''), '#ff3b5c');
-          if(retry<2) await new Promise(function(r){setTimeout(r,3000);});
-        }
-      }
-    }
-
-    if(text){
-      try{
-        await DB.collection('solutions').doc(cacheKey).set({
-          text:text, num:n, book:bookName,
-          createdAt:firebase.firestore.FieldValue.serverTimestamp()
-        });
-        cacheDone++;
-        cacheLog(numStr+' ✓ 저장', '#26d07c');
-      }catch(e){
-        cacheErr++;
-        cacheLog(numStr+' Firestore 실패: '+e.message, '#ff3b5c');
-      }
-    } else {
-      cacheErr++;
-    }
-
-    updateCacheStats(n, total);
-    await new Promise(function(r){setTimeout(r, delay);});
+      // Gemini 호출
+      doWithRetry(n, numStr, cacheKey, bookKey, bookName, cropBase, apiKey, delay, 0);
+    }).catch(function(){
+      doWithRetry(n, numStr, cacheKey, bookKey, bookName, cropBase, apiKey, delay, 0);
+    });
   }
 
-  cacheRunning = false;
-  document.getElementById('cache-btn-start').disabled = false;
-  document.getElementById('cache-btn-stop').disabled = true;
-  document.getElementById('cache-cur').textContent = '완료! ✅'+cacheDone+' ⏭'+cacheSkip+' ❌'+cacheErr;
-  cacheLog('=== 캐싱 완료 ===', '#26d07c');
+  function doWithRetry(n, numStr, cacheKey, bookKey, bookName, cropBase, apiKey, delay, retry){
+    callGeminiCache(n, numStr, cropBase, bookName, apiKey).then(function(text){
+      DB.collection('solutions').doc(cacheKey).set({
+        text:text, num:n, book:bookName,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function(){
+        cacheDone++;
+        cacheLog(numStr+' ✓ 저장', '#26d07c');
+        updateCacheStats(n, endN-startN+1);
+        setTimeout(function(){ processNext(n+1); }, delay);
+      }).catch(function(e){
+        cacheErr++;
+        cacheLog(numStr+' Firestore 실패: '+e.message, '#ff3b5c');
+        updateCacheStats(n, endN-startN+1);
+        setTimeout(function(){ processNext(n+1); }, delay);
+      });
+    }).catch(function(e){
+      if(e.message==='RATE_LIMIT' && retry<3){
+        cacheLog(numStr+' Rate Limit, 10초 대기...', '#ff9500');
+        setTimeout(function(){ doWithRetry(n,numStr,cacheKey,bookKey,bookName,cropBase,apiKey,delay,retry+1); }, 10000);
+      } else if(retry<2){
+        cacheLog(numStr+' 오류: '+e.message+', 재시도', '#ff3b5c');
+        setTimeout(function(){ doWithRetry(n,numStr,cacheKey,bookKey,bookName,cropBase,apiKey,delay,retry+1); }, 3000);
+      } else {
+        cacheErr++;
+        cacheLog(numStr+' 최종 실패: '+e.message, '#ff3b5c');
+        updateCacheStats(n, endN-startN+1);
+        setTimeout(function(){ processNext(n+1); }, delay);
+      }
+    });
+  }
+  }).catch(function(e){ alert('Gemini 키 로드 실패: '+e.message); });
 }
 
 function stopBulkCache(){
