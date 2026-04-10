@@ -252,6 +252,7 @@ input:focus{border-color:#D42027}
     <select id="add-book" style="width:100%;border:2px solid #e8ecf4;border-radius:10px;padding:11px 13px;font-size:14px;font-family:sans-serif;outline:none;margin-bottom:10px;color:#1a1d2e">
       <option value="RPM 공통수학1">RPM 공통수학1</option>
       <option value="RPM 대수">RPM 대수</option>
+      <option value="시발점 공통수학1">시발점 공통수학1</option>
       <option value="RPM 공통수학2">RPM 공통수학2</option>
       <option value="RPM 수학1">RPM 수학1</option>
       <option value="RPM 수학2">RPM 수학2</option>
@@ -304,6 +305,7 @@ input:focus{border-color:#D42027}
     <div id="edit-books-wrap" style="margin-bottom:10px;display:flex;flex-direction:column;gap:6px">
       <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="RPM 공통수학1"> RPM 공통수학1</label>
       <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="RPM 대수"> RPM 대수</label>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="시발점 공통수학1"> 시발점 공통수학1</label>
       <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="RPM 공통수학2"> RPM 공통수학2</label>
       <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="RPM 수학1"> RPM 수학1</label>
       <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="RPM 수학2"> RPM 수학2</label>
@@ -374,6 +376,52 @@ input:focus{border-color:#D42027}
         <div style="font-size:11px;font-weight:700;color:#8b95a7;margin-bottom:4px">API 키 발급 방법</div>
         <div style="font-size:12px;color:#555;line-height:1.7">1. <a href="https://aistudio.google.com" target="_blank" style="color:#D42027;font-weight:700">aistudio.google.com</a> 접속<br>2. 왼쪽 메뉴 "Get API key" 클릭<br>3. "Create API key" 클릭 후 복사</div>
       </div>
+
+      <!-- AI 해설 일괄 캐싱 -->
+      <div style="margin-top:24px;border-top:1px solid #e8ecf4;padding-top:20px">
+        <div style="font-size:15px;font-weight:900;margin-bottom:8px">AI 해설 일괄 캐싱</div>
+        <p style="font-size:12px;color:#8b95a7;margin-bottom:14px;line-height:1.6">선택한 교재의 모든 문제 해설을 미리 생성해 저장합니다. 학생들이 기다리지 않아도 됩니다.</p>
+        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+          <select id="cache-book" style="flex:1;border:2px solid #e8ecf4;border-radius:8px;padding:10px;font-size:13px;font-family:sans-serif;outline:none;color:#1a1d2e">
+            <option value="RPM 공통수학1|crops|1|1134">RPM 공통수학1 (1~1134번)</option>
+            <option value="RPM 대수|crops_daesoo|33|1126" selected>RPM 대수 (33~1126번)</option>
+            <option value="시발점 공통수학1|crops_sibal|1|324">시발점 공통수학1 (1~324번)</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <div style="flex:1">
+            <div style="font-size:11px;color:#8b95a7;margin-bottom:3px">시작 번호</div>
+            <input type="number" id="cache-start" style="width:100%;border:2px solid #e8ecf4;border-radius:8px;padding:9px;font-size:13px;font-family:sans-serif;outline:none;color:#1a1d2e;box-sizing:border-box">
+          </div>
+          <div style="flex:1">
+            <div style="font-size:11px;color:#8b95a7;margin-bottom:3px">끝 번호</div>
+            <input type="number" id="cache-end" style="width:100%;border:2px solid #e8ecf4;border-radius:8px;padding:9px;font-size:13px;font-family:sans-serif;outline:none;color:#1a1d2e;box-sizing:border-box">
+          </div>
+          <div style="flex:1">
+            <div style="font-size:11px;color:#8b95a7;margin-bottom:3px">딜레이(초)</div>
+            <input type="number" id="cache-delay" value="3" min="1" max="10" style="width:100%;border:2px solid #e8ecf4;border-radius:8px;padding:9px;font-size:13px;font-family:sans-serif;outline:none;color:#1a1d2e;box-sizing:border-box">
+          </div>
+        </div>
+        <!-- 진행 현황 -->
+        <div id="cache-progress-wrap" style="display:none;margin-bottom:10px">
+          <div style="display:flex;gap:12px;margin-bottom:8px;font-size:12px">
+            <span>✅ 완료: <b id="cache-done">0</b></span>
+            <span>⏭ 스킵: <b id="cache-skip">0</b></span>
+            <span>❌ 오류: <b id="cache-err">0</b></span>
+            <span>⏱ 남은: <b id="cache-eta">-</b></span>
+          </div>
+          <div style="background:#e8ecf4;border-radius:6px;height:12px;overflow:hidden">
+            <div id="cache-bar" style="background:linear-gradient(90deg,#D42027,#ff6b35);height:100%;border-radius:6px;width:0%;transition:width 0.3s"></div>
+          </div>
+          <div id="cache-cur" style="font-size:11px;color:#8b95a7;margin-top:4px">대기 중...</div>
+        </div>
+        <!-- 로그 -->
+        <div id="cache-log" style="display:none;background:#1a1d2e;border-radius:8px;padding:10px;height:150px;overflow-y:auto;font-size:11px;font-family:monospace;margin-bottom:10px"></div>
+        <div style="display:flex;gap:8px">
+          <button id="cache-btn-start" onclick="startBulkCache()" style="flex:1;background:#D42027;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif">▶ 캐싱 시작</button>
+          <button id="cache-btn-stop" onclick="stopBulkCache()" disabled style="flex:1;background:#e8ecf4;color:#8b95a7;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif">■ 중지</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -390,13 +438,15 @@ input:focus{border-color:#D42027}
 </div>
 
 <div id="questions-panel" style="display:none">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
     <div style="font-size:15px;font-weight:900">💬 학생 질문함</div>
     <div style="display:flex;gap:8px">
       <button onclick="filterQuestions('all')" id="qf-all" class="sub-tab-btn active" style="font-size:11px;padding:5px 12px">전체</button>
       <button onclick="filterQuestions('unanswered')" id="qf-unanswered" class="sub-tab-btn" style="font-size:11px;padding:5px 12px">미답변만</button>
     </div>
   </div>
+  <!-- 교재별 탭 (자동 생성) -->
+  <div id="admin-q-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div>
   <div id="questions-list"></div>
 </div>
 
@@ -428,9 +478,26 @@ var UNITS_DAESOO=[
   {id:9,name:'수열의 합',r:[947,1050],c:'#9B59B6'},
   {id:10,name:'수학적 귀납법',r:[1051,1126],c:'#27AE60'}
 ];
+var UNITS_SIBAL=[
+  {id:1, name:'STEP1 Theme 1~3',  r:[1,17],   c:'#7B5EA7'},
+  {id:2, name:'STEP1 Theme 4~6',  r:[18,51],  c:'#5C6BC0'},
+  {id:3, name:'STEP2 Theme 1~6',  r:[52,72],  c:'#3949AB'},
+  {id:4, name:'STEP1 Theme 7~8',  r:[73,92],  c:'#1976D2'},
+  {id:5, name:'STEP1 Theme 9~10', r:[93,110], c:'#0288D1'},
+  {id:6, name:'STEP1 Theme 11~13',r:[111,128],c:'#00838F'},
+  {id:7, name:'STEP1 Theme 14~16',r:[129,143],c:'#00897B'},
+  {id:8, name:'STEP1 Theme 17~18',r:[144,161],c:'#2E7D32'},
+  {id:9, name:'STEP2 Theme 7~18', r:[162,189],c:'#558B2F'},
+  {id:10,name:'STEP1 Theme 19~20',r:[190,211],c:'#F57F17'},
+  {id:11,name:'STEP1 Theme 21~22',r:[212,224],c:'#E65100'},
+  {id:12,name:'STEP2 Theme 19~22',r:[225,236],c:'#BF360C'},
+  {id:13,name:'STEP1 Theme 23~24',r:[237,259],c:'#4E342E'},
+  {id:14,name:'STEP2 Theme 23~24',r:[260,265],c:'#37474F'}
+];
 var ADMIN_BOOKS_CONFIG={
   'RPM 공통수학1':{units:UNITS_RPM1,cropBase:'https://qkrtmdfud0501-collab.github.io/rpm-math/crops/'},
-  'RPM 대수':{units:UNITS_DAESOO,cropBase:'https://qkrtmdfud0501-collab.github.io/rpm-math/crops_daesoo/'}
+  'RPM 대수':{units:UNITS_DAESOO,cropBase:'https://qkrtmdfud0501-collab.github.io/rpm-math/crops_daesoo/'},
+  '시발점 공통수학1':{units:UNITS_SIBAL,cropBase:'https://qkrtmdfud0501-collab.github.io/rpm-math/crops_sibal/'}
 };
 var UNITS=UNITS_RPM1;
 
@@ -1285,7 +1352,7 @@ function doDeleteStudent(){
 }
 
 // ── 질문함 기능 ──
-var allQuestions=[], qFilter='all';
+var allQuestions=[], qFilter='all', qBookFilter='__all__';
 
 function loadAdminQuestions(){
   var listEl=document.getElementById('questions-list');
@@ -1316,9 +1383,47 @@ function filterQuestions(f){
 
 function renderAdminQuestions(){
   var listEl=document.getElementById('questions-list');
-  var filtered=qFilter==='unanswered'
-    ?allQuestions.filter(function(q){return !q.answered;})
+  var tabsEl=document.getElementById('admin-q-tabs');
+
+  // 교재 탭 렌더링
+  if(tabsEl){
+    tabsEl.innerHTML='';
+    var books=[];
+    allQuestions.forEach(function(q){ var b=q.book||'기타'; if(books.indexOf(b)===-1) books.push(b); });
+
+    // 전체 탭
+    var allTab=document.createElement('button');
+    allTab.textContent='전체';
+    var isAll=!qBookFilter||qBookFilter==='__all__';
+    allTab.style.cssText='padding:6px 14px;border:2px solid '+(isAll?'#D42027':'#e0e4ee')+
+      ';border-radius:20px;background:'+(isAll?'#D42027':'#fff')+
+      ';color:'+(isAll?'#fff':'#8b95a7')+
+      ';font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif';
+    allTab.onclick=function(){ qBookFilter='__all__'; renderAdminQuestions(); };
+    tabsEl.appendChild(allTab);
+
+    books.forEach(function(b){
+      var cnt=allQuestions.filter(function(q){ return (q.book||'기타')===b; }).length;
+      var isActive=qBookFilter===b;
+      var btn=document.createElement('button');
+      btn.textContent=b+' ('+cnt+')';
+      btn.style.cssText='padding:6px 14px;border:2px solid '+(isActive?'#D42027':'#e0e4ee')+
+        ';border-radius:20px;background:'+(isActive?'#D42027':'#fff')+
+        ';color:'+(isActive?'#fff':'#8b95a7')+
+        ';font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif';
+      btn.onclick=function(){ qBookFilter=b; renderAdminQuestions(); };
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  // 교재 필터 적용
+  var bookFiltered=(qBookFilter&&qBookFilter!=='__all__')
+    ?allQuestions.filter(function(q){ return (q.book||'기타')===qBookFilter; })
     :allQuestions;
+
+  var filtered=qFilter==='unanswered'
+    ?bookFiltered.filter(function(q){return !q.answered;})
+    :bookFiltered;
 
   if(!filtered.length){
     listEl.innerHTML='<div style="text-align:center;padding:30px;color:#8b95a7">'+(qFilter==='unanswered'?'미답변 질문이 없습니다 🎉':'질문이 없습니다')+'</div>';
@@ -1357,9 +1462,13 @@ function renderAdminQuestions(){
             '<span style="font-size:11px;font-weight:700;background:#fff3e0;color:#ff9500;padding:2px 8px;border-radius:10px;margin-right:6px">'+numStr+'번</span>'+
             '<span style="font-size:11px;color:#8b95a7">'+esc(q.book)+'</span>'+
           '</div>'+
-          '<div style="text-align:right">'+
-            '<div style="font-size:11px;font-weight:700;color:#555">'+esc(q.studentName||q.studentEmail)+'</div>'+
-            '<div style="font-size:10px;color:#c0c6d4">'+qTime+'</div>'+
+          '<div style="display:flex;align-items:center;gap:8px">'+
+            '<div style="text-align:right">'+
+              '<div style="font-size:11px;font-weight:700;color:#555">'+esc(q.studentName||q.studentEmail)+'</div>'+
+              '<div style="font-size:10px;color:#c0c6d4">'+qTime+'</div>'+
+            '</div>'+
+            '<button data-qid="'+q.id+'" onclick="deleteQuestion(this.dataset.qid)" '+
+              'style="background:#fff5f7;color:#ff3b5c;border:1px solid #ffd0d8;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">🗑️ 삭제</button>'+
           '</div>'+
         '</div>'+
         // 문제 이미지(42%) + 해설·질문·답변(58%) 가로 배치
@@ -1491,6 +1600,213 @@ function submitAnswer(qId){
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // 로드 시 미답변 뱃지 표시
+function deleteQuestion(qId){
+  if(!confirm('이 질문을 삭제할까요? 되돌릴 수 없습니다.')) return;
+  DB.collection('questions').doc(String(qId)).delete().then(function(){
+    allQuestions = allQuestions.filter(function(q){ return q.id !== String(qId); });
+    renderAdminQuestions();
+    // 뱃지 업데이트
+    var unanswered = allQuestions.filter(function(q){ return !q.answered; }).length;
+    var badge = document.getElementById('q-badge');
+    if(badge){
+      if(unanswered>0){ badge.style.display='inline'; badge.textContent=unanswered; }
+      else{ badge.style.display='none'; }
+    }
+  }).catch(function(e){
+    alert('삭제 실패: '+e.message);
+  });
+}
+
+// ── AI 해설 일괄 캐싱 ──
+var cacheRunning = false;
+var cacheDone = 0, cacheSkip = 0, cacheErr = 0, cacheStartTime = null;
+
+// 교재 선택 시 시작/끝 번호 자동 설정
+document.addEventListener('DOMContentLoaded', function(){
+  var sel = document.getElementById('cache-book');
+  if(sel) sel.addEventListener('change', function(){ setCacheRange(); });
+  setCacheRange();
+});
+function setCacheRange(){
+  var sel = document.getElementById('cache-book');
+  if(!sel) return;
+  var parts = sel.value.split('|');
+  document.getElementById('cache-start').value = parts[2]||'1';
+  document.getElementById('cache-end').value = parts[3]||'1094';
+}
+
+function cacheLog(msg, color){
+  var el = document.getElementById('cache-log');
+  if(!el) return;
+  var d = document.createElement('div');
+  d.style.color = color||'#8b95a7';
+  d.textContent = '['+new Date().toLocaleTimeString()+'] '+msg;
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
+}
+
+function updateCacheStats(current, total){
+  document.getElementById('cache-done').textContent = cacheDone;
+  document.getElementById('cache-skip').textContent = cacheSkip;
+  document.getElementById('cache-err').textContent = cacheErr;
+  var done = cacheDone + cacheSkip + cacheErr;
+  var pct = total > 0 ? Math.min(100, (done/total*100)).toFixed(1) : 0;
+  document.getElementById('cache-bar').style.width = pct+'%';
+  if(cacheStartTime && cacheDone + cacheErr > 0){
+    var elapsed = (Date.now()-cacheStartTime)/1000;
+    var rate = (cacheDone+cacheErr)/elapsed;
+    var remain = total - done;
+    var eta = Math.round(remain/(rate||0.01)/60);
+    document.getElementById('cache-eta').textContent = eta+'분';
+  }
+}
+
+async function callGeminiCache(n, numStr, cropBase, bookName, apiKey){
+  var cd = (ADMIN_BOOKS_CONFIG[bookName]&&ADMIN_BOOKS_CONFIG[bookName].units) ? null : null;
+  // 프롬프트 구성
+  var prompt = bookName+' '+numStr+'번 문제입니다.
+
+[필수 지시사항]
+1. 이미지에서 문제 번호 '+numStr+'번을 찾아서 그 문제만 해설할 것
+2. 수식은 $...$ 로 감싸서 LaTeX로 표현 (예: $\\sqrt{5}$, $\\frac{a}{b}$)
+3. 고등학생이 이해할 수 있는 쉬운 언어로
+4. 각 단계를 번호로 구분
+5. 마지막에 정답 명시';
+
+  // 이미지 로드 (같은 도메인이므로 CORS 없음)
+  var imgUrl = 'https://qkrtmdfud0501-collab.github.io/rpm-math/'+cropBase+'/'+numStr+'.jpg';
+  var parts;
+  try{
+    var resp = await fetch(imgUrl);
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    var blob = await resp.blob();
+    var b64 = await new Promise(function(resolve){
+      var r = new FileReader();
+      r.onload = function(e){ resolve(e.target.result.split(',')[1]); };
+      r.readAsDataURL(blob);
+    });
+    parts = [{inline_data:{mime_type:'image/jpeg',data:b64}},{text:prompt}];
+  }catch(e){
+    throw new Error('이미지 로드 실패: '+e.message);
+  }
+
+  // Gemini 호출
+  var apiResp = await fetch(
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+    {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-goog-api-key':apiKey},
+      body:JSON.stringify({contents:[{parts:parts}]})
+    }
+  );
+  if(apiResp.status===429) throw new Error('RATE_LIMIT');
+  if(!apiResp.ok) throw new Error('API_'+apiResp.status);
+  var data = await apiResp.json();
+  var text = data&&data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text;
+  if(!text) throw new Error('빈 응답');
+  return text;
+}
+
+async function startBulkCache(){
+  var sel = document.getElementById('cache-book');
+  var parts = sel.value.split('|');
+  var bookName = parts[0], cropBase = parts[1];
+  var startN = parseInt(document.getElementById('cache-start').value);
+  var endN = parseInt(document.getElementById('cache-end').value);
+  var delay = parseFloat(document.getElementById('cache-delay').value)*1000;
+
+  // Gemini 키 가져오기
+  var apiKey = '';
+  try{
+    var doc = await DB.collection('settings').doc('gemini').get();
+    if(doc.exists&&doc.data()&&doc.data().apiKey) apiKey = doc.data().apiKey;
+  }catch(e){}
+  if(!apiKey){
+    alert('설정에서 Gemini API 키를 먼저 저장하세요');
+    return;
+  }
+
+  cacheRunning = true;
+  cacheDone = 0; cacheSkip = 0; cacheErr = 0;
+  cacheStartTime = Date.now();
+  var total = endN - startN + 1;
+
+  document.getElementById('cache-progress-wrap').style.display='block';
+  document.getElementById('cache-log').style.display='block';
+  document.getElementById('cache-btn-start').disabled = true;
+  document.getElementById('cache-btn-stop').disabled = false;
+  document.getElementById('cache-btn-stop').style.background = '#ff3b5c';
+  document.getElementById('cache-btn-stop').style.color = '#fff';
+  cacheLog('캐싱 시작: '+bookName+' '+startN+'~'+endN+'번', '#26d07c');
+
+  var bookKey = bookName.replace(/[^a-zA-Z0-9_]/g,'_');
+
+  for(var n = startN; n <= endN && cacheRunning; n++){
+    var numStr = String(n).padStart(4,'0');
+    var cacheKey = bookKey+'_'+numStr;
+    document.getElementById('cache-cur').textContent = n+'번 처리 중... ('+n+'/'+endN+')';
+
+    // 기존 캐시 확인
+    try{
+      var cached = await DB.collection('solutions').doc(cacheKey).get();
+      if(cached.exists && cached.data()&&cached.data().text){
+        cacheSkip++;
+        updateCacheStats(n, total);
+        continue;
+      }
+    }catch(e){}
+
+    // Gemini 호출 (최대 3회 재시도)
+    var text = null;
+    for(var retry=0; retry<3; retry++){
+      try{
+        text = await callGeminiCache(n, numStr, cropBase, bookName, apiKey);
+        break;
+      }catch(e){
+        if(e.message==='RATE_LIMIT'){
+          cacheLog(numStr+' Rate Limit, 10초 대기...', '#ff9500');
+          await new Promise(function(r){setTimeout(r,10000);});
+        } else {
+          cacheLog(numStr+' 오류: '+e.message+(retry<2?', 재시도':''), '#ff3b5c');
+          if(retry<2) await new Promise(function(r){setTimeout(r,3000);});
+        }
+      }
+    }
+
+    if(text){
+      try{
+        await DB.collection('solutions').doc(cacheKey).set({
+          text:text, num:n, book:bookName,
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
+        cacheDone++;
+        cacheLog(numStr+' ✓ 저장', '#26d07c');
+      }catch(e){
+        cacheErr++;
+        cacheLog(numStr+' Firestore 실패: '+e.message, '#ff3b5c');
+      }
+    } else {
+      cacheErr++;
+    }
+
+    updateCacheStats(n, total);
+    await new Promise(function(r){setTimeout(r, delay);});
+  }
+
+  cacheRunning = false;
+  document.getElementById('cache-btn-start').disabled = false;
+  document.getElementById('cache-btn-stop').disabled = true;
+  document.getElementById('cache-cur').textContent = '완료! ✅'+cacheDone+' ⏭'+cacheSkip+' ❌'+cacheErr;
+  cacheLog('=== 캐싱 완료 ===', '#26d07c');
+}
+
+function stopBulkCache(){
+  cacheRunning = false;
+  document.getElementById('cache-btn-stop').disabled = true;
+  document.getElementById('cache-btn-start').disabled = false;
+  cacheLog('중지됨', '#ff9500');
+}
+
 function checkUnreadQuestions(){
   if(typeof DB==='undefined'||!DB) return;
   DB.collection('questions').where('answered','==',false).get()
