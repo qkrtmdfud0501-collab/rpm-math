@@ -1674,7 +1674,7 @@ function callGeminiCache(n, numStr, cropBase, bookName, apiKey){
     var promptText = bookName+' '+numStr+'번 문제입니다.\n[필수 지시사항]\n1. 이미지에서 문제 번호 '+numStr+'번을 찾아서 그 문제만 해설할 것\n2. 수식은 $...$로 감싸서 LaTeX로 표현\n3. 고등학생이 이해할 수 있는 쉬운 언어로\n4. 각 단계를 번호로 구분\n5. 마지막에 정답 명시';
 
     function doGenerate(parts){
-      fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',{
+      fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',{
         method:'POST',
         headers:{'Content-Type':'application/json','X-goog-api-key':apiKey},
         body:JSON.stringify({contents:[{parts:parts}]})
