@@ -1,6 +1,5 @@
-const CACHE = 'taesan-v1';
+const CACHE = 'taesan-v2';
 const ASSETS = [
-  '/rpm-math/student.html',
   '/rpm-math/icon-192.png',
   '/rpm-math/icon-512.png'
 ];
@@ -21,7 +20,20 @@ self.addEventListener('activate', function(e){
   self.clients.claim();
 });
 
+self.addEventListener('message', function(e){
+  if(e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
 self.addEventListener('fetch', function(e){
+  // student.html은 항상 네트워크에서 최신 버전 가져오기
+  if(e.request.url.includes('student.html')){
+    e.respondWith(
+      fetch(e.request).catch(function(){
+        return caches.match(e.request);
+      })
+    );
+    return;
+  }
   // 이미지/크롭 파일은 캐시 안 함 (항상 최신 버전)
   if(e.request.url.includes('crops') || e.request.url.includes('firestore') || e.request.url.includes('googleapis')){
     return;
