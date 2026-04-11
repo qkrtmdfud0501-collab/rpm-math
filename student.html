@@ -459,14 +459,14 @@ const CHOICES_DAESOO={1:{c:[],a:"-2"},2:{c:[],a:"-3, 3"},3:{c:[],a:"0.3"},4:{c:[
 
 // ── 교재별 설정 ──
 function bookNameToKey(name){
+  // 시발점 워크북 계열은 Firebase __ 오류 방지를 위해 고정키 사용
   var map={
-    'RPM 공통수학1':'RPM_gongsu1',
-    'RPM 대수':'RPM_daesoo',
     '시발점 워크북 공통수학1':'sibal_wb_gongsu1',
     '시발점 워크북 대수':'sibal_wb_daesoo'
   };
   if(map[name]) return map[name];
-  return 'book_'+name.replace(/[^a-zA-Z0-9]/g,'X').replace(/^X+|X+$/g,'') || 'book_unknown';
+  // 나머지는 기존 방식 유지 (기존 캐시 호환)
+  return name.replace(/[^a-zA-Z0-9_]/g,'_');
 }
 var BOOKS_CONFIG = {
   'RPM 공통수학1': {
@@ -1968,17 +1968,19 @@ function startGeminiStream(n, numStr, key, cacheKey){
   document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">AI가 풀이를 생성하는 중...</div>';
 
   var cd=getSortedChoice(getChoices()[n]);
+  var bookName=curBook||'RPM 공통수학1';
 
-  var promptText = '';
+  var promptText=bookName+' '+numStr+'번 문제입니다.\n';
+
   if(cd&&cd.c&&cd.c.length){
     var choicesText=cd.c.map(function(c,i){return '('+(i+1)+') '+c;}).join('\n');
     var answerText=cd.c[cd.a];
-    promptText+='보기:\n'+choicesText+'\n\n정답: '+answerText+'\n\n';
+    promptText+='\n보기:\n'+choicesText+'\n\n정답: '+answerText+'\n';
   }
 
-  promptText+='[필수 지시사항]\n';
-  promptText+='1. 이미지에 있는 문제를 풀어서 해설할 것\n';
-  promptText+='2. 위 보기와 정답을 참고하여 왜 정답인지 설명할 것\n';
+  promptText+='\n[필수 지시사항]\n';
+  promptText+='1. 첨부된 이미지의 문제를 풀어서 해설할 것\n';
+  promptText+='2. 위 보기와 정답을 참고하여 왜 정답인지 단계별로 설명할 것\n';
   promptText+='3. 수식은 $...$ 로 감싸서 LaTeX로 표현 (예: $\\sqrt{5}$, $\\frac{a}{b}$)\n';
   promptText+='4. 고등학생이 이해할 수 있는 쉬운 언어로\n';
   promptText+='5. 각 단계를 번호로 구분\n';
@@ -2100,15 +2102,14 @@ function startGeminiStream(n, numStr, key, cacheKey){
     });
   }
 
-  // 이미지 포함해서 전송 (5초 타임아웃)
+  // 이미지 포함해서 전송 (이미지 없으면 오류 표시, 텍스트만 전송 금지)
   var cropUrl=CROP_BASE+numStr+'.jpg';
   var img=new Image();
   img.crossOrigin='anonymous';
   var imgTimer=setTimeout(function(){
-    // 이미지 로드 타임아웃 → 텍스트만으로 전송
     img.onload=img.onerror=null;
-    doStream([{text:promptText}]);
-  }, 5000);
+    document.getElementById('sol-popup-body').innerHTML='<div style="color:#ff3b5c;padding:20px;text-align:center">⚠️ 문제 이미지를 불러올 수 없습니다.<br>이미지가 업로드되어 있는지 확인해주세요.</div>';
+  }, 8000);
   img.onload=function(){
     clearTimeout(imgTimer);
     try{
@@ -2120,12 +2121,12 @@ function startGeminiStream(n, numStr, key, cacheKey){
       var b64=canvas.toDataURL('image/jpeg',0.8).split(',')[1];
       doStream([{inline_data:{mime_type:'image/jpeg',data:b64}},{text:promptText}]);
     }catch(e){
-      doStream([{text:promptText}]);
+      document.getElementById('sol-popup-body').innerHTML='<div style="color:#ff3b5c;padding:20px;text-align:center">⚠️ 이미지 처리 중 오류가 발생했습니다.<br>'+e.message+'</div>';
     }
   };
   img.onerror=function(){
     clearTimeout(imgTimer);
-    doStream([{text:promptText}]);
+    document.getElementById('sol-popup-body').innerHTML='<div style="color:#ff3b5c;padding:20px;text-align:center">⚠️ 문제 이미지를 불러올 수 없습니다.<br>이미지가 업로드되어 있는지 확인해주세요.</div>';
   };
   img.src=cropUrl+'&t='+Date.now();
 }

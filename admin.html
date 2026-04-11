@@ -525,14 +525,11 @@ var UNITS=UNITS_RPM1;
 
 function bookNameToKey(name){
   var map={
-    'RPM 공통수학1':'RPM_gongsu1',
-    'RPM 대수':'RPM_daesoo',
     '시발점 워크북 공통수학1':'sibal_wb_gongsu1',
     '시발점 워크북 대수':'sibal_wb_daesoo'
   };
   if(map[name]) return map[name];
-  // fallback: 영숫자만 남기고 나머지는 X로 치환 후 앞뒤 X 제거
-  return 'book_'+name.replace(/[^a-zA-Z0-9]/g,'X').replace(/^X+|X+$/g,'') || 'book_unknown';
+  return name.replace(/[^a-zA-Z0-9_]/g,'_');
 }
 var DB, AUTH;
 var students = [];
