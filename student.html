@@ -1978,7 +1978,7 @@ function startGeminiStream(n, numStr, key, cacheKey){
 
   function doStream(parts, retryCount){
     retryCount = retryCount||0;
-    fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:streamGenerateContent?alt=sse',{
+    fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse',{
       method:'POST',
       headers:{'Content-Type':'application/json','X-goog-api-key':key},
       body:JSON.stringify({contents:[{parts:parts}]})
@@ -2091,7 +2091,7 @@ function startGeminiStream(n, numStr, key, cacheKey){
   }
 
   // 이미지 포함해서 전송 (이미지 없으면 오류 표시)
-  var cropUrl=CROP_BASE+numStr+'.jpg';
+  var cropUrl=CROP_BASE+numStr+'.jpg?v='+IMG_VER+'&t='+Date.now();
   var img=new Image();
   img.crossOrigin='anonymous';
   var imgTimer=setTimeout(function(){
@@ -2109,14 +2109,18 @@ function startGeminiStream(n, numStr, key, cacheKey){
       var b64=canvas.toDataURL('image/jpeg',0.8).split(',')[1];
       doStream([{inline_data:{mime_type:'image/jpeg',data:b64}},{text:promptText}]);
     }catch(e){
-      document.getElementById('sol-popup-body').innerHTML='<div style="color:#ff3b5c;padding:20px;text-align:center">⚠️ 이미지 처리 오류: '+e.message+'</div>';
+      if(e.name==='SecurityError'){
+        document.getElementById('sol-popup-body').innerHTML='<div style="color:#ff3b5c;padding:20px;text-align:center">⚠️ 이미지 보안 오류 (CORS)<br>잠시 후 다시 시도해주세요.</div>';
+      } else {
+        document.getElementById('sol-popup-body').innerHTML='<div style="color:#ff3b5c;padding:20px;text-align:center">⚠️ 이미지 처리 오류: '+e.message+'</div>';
+      }
     }
   };
   img.onerror=function(){
     clearTimeout(imgTimer);
     document.getElementById('sol-popup-body').innerHTML='<div style="color:#ff3b5c;padding:20px;text-align:center">⚠️ 문제 이미지를 불러올 수 없습니다.<br>이미지가 업로드되어 있는지 확인해주세요.</div>';
   };
-  img.src=cropUrl+'&t='+Date.now();
+  img.src=cropUrl;
 }
 
 function renderAiResponse(text, fromCache){
