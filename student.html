@@ -1207,9 +1207,14 @@ function renderQItems(){
     el.innerHTML='<div class="qhd"><div class="qnum">'+numStr0+'</div>'+
       '<div class="qst'+stcls+'" id="qs'+n+'">'+st+'</div></div>'+
       '<div class="qimg-wrap"><img src="'+cropUrl(numStr0)+'" class="qimg" onload="this.style.display=\'block\'" onerror="if(this.src.indexOf(\'.JPG\')===-1){this.src=this.src.replace(\'.jpg\',\'.JPG\')}else{this.style.display=\'none\'}"></div>'+
-      '<div style="padding:6px 10px 0" id="qi-sol'+n+'">'+solBtnsHTML(n)+'</div>'+
-      '<div class="qch" id="qc'+n+'"></div>';
+      '<div class="qch" id="qc'+n+'"></div>'+
+      '<div style="padding:6px 10px 8px" id="qi-sol'+n+'"></div>';
     w.appendChild(el);
+    // 이미 채점된 문제는 바로 버튼 표시
+    if(rec&&rec.correct!==undefined){
+      var solEl=document.getElementById('qi-sol'+n);
+      if(solEl) solEl.innerHTML=solBtnsHTML(n);
+    }
     var cw=document.getElementById('qc'+n);
     if(cd){
       var row=document.createElement('div'); row.className='crow';
