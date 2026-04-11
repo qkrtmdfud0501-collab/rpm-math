@@ -306,6 +306,7 @@ input:focus{border-color:#D42027}
       <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="RPM 공통수학1"> RPM 공통수학1</label>
       <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="RPM 대수"> RPM 대수</label>
       <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="시발점 공통수학1"> 시발점 공통수학1</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="시발점 워크북 대수"> 시발점 워크북 대수</label>
       <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="RPM 공통수학2"> RPM 공통수학2</label>
       <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="RPM 수학1"> RPM 수학1</label>
       <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="RPM 수학2"> RPM 수학2</label>
@@ -386,6 +387,7 @@ input:focus{border-color:#D42027}
             <option value="RPM 공통수학1|crops|38|1184">RPM 공통수학1 (유형익히기~실력Up)</option>
             <option value="RPM 대수|crops_daesoo|33|1126" selected>RPM 대수 (유형익히기~실력Up)</option>
             <option value="시발점 공통수학1|crops_sibal|1|258">시발점 공통수학1 (1~258번)</option>
+            <option value="시발점 워크북 대수|crops_sibal_wb_daesoo|1|312">시발점 워크북 대수 (1~312번)</option>
           </select>
         </div>
         <div style="display:flex;gap:8px;margin-bottom:10px">
@@ -494,13 +496,41 @@ var UNITS_SIBAL=[
   {id:13,name:'STEP1 Theme 23~24',r:[237,259],c:'#4E342E'},
   {id:14,name:'STEP2 Theme 23~24',r:[260,265],c:'#37474F'}
 ];
+var UNITS_SIBAL_WB_DAESOO=[
+  {id:1,  name:'STEP1 Theme 1~4',   r:[1,39],    c:'#E57373'},
+  {id:2,  name:'STEP1 Theme 5~7',   r:[40,60],   c:'#EF5350'},
+  {id:3,  name:'STEP1 Theme 8~9',   r:[61,83],   c:'#E53935'},
+  {id:4,  name:'STEP1 Theme 10~11', r:[84,98],   c:'#C62828'},
+  {id:5,  name:'STEP2 Theme 1~11',  r:[99,117],  c:'#B71C1C'},
+  {id:6,  name:'STEP1 Theme 12~15', r:[118,142], c:'#FF8A65'},
+  {id:7,  name:'STEP1 Theme 16~19', r:[143,176], c:'#FF7043'},
+  {id:8,  name:'STEP1 Theme 20~22', r:[177,198], c:'#F4511E'},
+  {id:9,  name:'STEP2 Theme 12~22', r:[199,217], c:'#BF360C'},
+  {id:10, name:'STEP1 Theme 23~27', r:[218,244], c:'#FFB300'},
+  {id:11, name:'STEP1 Theme 28~31', r:[245,260], c:'#FB8C00'},
+  {id:12, name:'STEP1 Theme 32~33', r:[261,279], c:'#F57C00'},
+  {id:13, name:'STEP1 Theme 34~35', r:[280,291], c:'#E65100'},
+  {id:14, name:'STEP2 Theme 23~35', r:[292,312], c:'#BF360C'}
+];
 var ADMIN_BOOKS_CONFIG={
   'RPM 공통수학1':{units:UNITS_RPM1,cropBase:'https://qkrtmdfud0501-collab.github.io/rpm-math/crops/'},
   'RPM 대수':{units:UNITS_DAESOO,cropBase:'https://qkrtmdfud0501-collab.github.io/rpm-math/crops_daesoo/'},
-  '시발점 공통수학1':{units:UNITS_SIBAL,cropBase:'https://qkrtmdfud0501-collab.github.io/rpm-math/crops_sibal/'}
+  '시발점 공통수학1':{units:UNITS_SIBAL,cropBase:'https://qkrtmdfud0501-collab.github.io/rpm-math/crops_sibal/'},
+  '시발점 워크북 대수':{units:UNITS_SIBAL_WB_DAESOO,cropBase:'https://qkrtmdfud0501-collab.github.io/rpm-math/crops_sibal_wb_daesoo/'}
 };
 var UNITS=UNITS_RPM1;
 
+function bookNameToKey(name){
+  var map={
+    'RPM 공통수학1':'RPM_gongsu1',
+    'RPM 대수':'RPM_daesoo',
+    '시발점 공통수학1':'sibal_wb_gongsu1',
+    '시발점 워크북 대수':'sibal_wb_daesoo'
+  };
+  if(map[name]) return map[name];
+  // fallback: 영숫자만 남기고 나머지는 X로 치환 후 앞뒤 X 제거
+  return 'book_'+name.replace(/[^a-zA-Z0-9]/g,'X').replace(/^X+|X+$/g,'') || 'book_unknown';
+}
 var DB, AUTH;
 var students = [];
 var sortByRate = false;
@@ -1236,7 +1266,7 @@ function doEditStudent(){
     // 선택된 교재는 유지, 새 교재는 빈 records로 추가
     var newBooks = {};
     selectedBooks.forEach(function(bname){
-      var bkey = bname.replace(/[^a-zA-Z0-9_]/g,'_');
+      var bkey = bookNameToKey(bname);
       if(existing[bkey]){
         newBooks[bkey] = existing[bkey];
       } else if(Object.keys(oldRecords).length>0 && selectedBooks.length===1){
@@ -1293,7 +1323,7 @@ function doAddStudent(){
     .then(function(cred){
       var uid=cred.user.uid;
       return secondAuth.signOut().then(function(){
-        var bkey = book.replace(/[^a-zA-Z0-9_]/g,'_');
+        var bkey = bookNameToKey(book);
         var booksData = {};
         booksData[bkey] = {name:book, records:{}};
         return DB.collection('students').doc(email).set({
@@ -1441,7 +1471,7 @@ function renderAdminQuestions(){
   // 각 문제 AI 해설 캐시 가져오기
   var cacheKeys=filtered.map(function(q){
     var numStr=q.numStr||String(q.num).padStart(4,'0');
-    var bk=(q.book||'RPM_공통수학1').replace(/[^a-zA-Z0-9_]/g,'_');
+    var bk=bookNameToKey(q.book||'RPM 공통수학1');
     return bk+'_'+numStr;
   });
   var solCache={};
@@ -1455,7 +1485,7 @@ function renderAdminQuestions(){
     listEl.innerHTML=filtered.map(function(q){
       var qTime=q.createdAt?new Date(q.createdAt.seconds*1000).toLocaleString('ko-KR'):'';
       var numStr=q.numStr||String(q.num).padStart(4,'0');
-      var bk=(q.book||'RPM_공통수학1').replace(/[^a-zA-Z0-9_]/g,'_');
+      var bk=bookNameToKey(q.book||'RPM 공통수학1');
       var ck=bk+'_'+numStr;
       var solText=solCache[ck]||'';
       var solHtml=solText?solText.replace(/[*][*](.*?)[*][*]/g,'<strong>$1</strong>').replace(/\n/g,'<br>'):'';
@@ -1747,7 +1777,7 @@ function startBulkCache(){
     document.getElementById('cache-btn-stop').style.color = '#fff';
     cacheLog('캐싱 시작: '+bookName+' '+startN+'~'+endN+'번', '#26d07c');
 
-    var bookKey = bookName.replace(/[^a-zA-Z0-9_]/g,'_');
+    var bookKey = bookNameToKey(bookName);
 
     // 교재별 교과서정복하기 범위 (이 구간은 스킵)
     var SKIP_RANGES = {
