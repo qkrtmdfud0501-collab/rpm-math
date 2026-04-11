@@ -1,0 +1,25 @@
+{
+  "name": "태산학원",
+  "short_name": "태산학원",
+  "description": "태산학원 수학 학습 앱",
+  "start_url": "/rpm-math/student.html",
+  "scope": "/rpm-math/",
+  "display": "standalone",
+  "background_color": "#1a1d2e",
+  "theme_color": "#D42027",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/rpm-math/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/rpm-math/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

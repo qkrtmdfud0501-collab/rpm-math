@@ -2,8 +2,16 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <title>태산학원</title>
+<link rel="manifest" href="/rpm-math/manifest.json">
+<meta name="theme-color" content="#D42027">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="태산학원">
+<link rel="apple-touch-icon" href="/rpm-math/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/rpm-math/icon-192.png">
 <script>
 MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$']]},svg:{fontCache:'global'}};
 </script>
@@ -1199,7 +1207,7 @@ function renderQItems(){
     el.innerHTML='<div class="qhd"><div class="qnum">'+numStr0+'</div>'+
       '<div class="qst'+stcls+'" id="qs'+n+'">'+st+'</div></div>'+
       '<div class="qimg-wrap"><img src="'+cropUrl(numStr0)+'" class="qimg" onload="this.style.display=\'block\'" onerror="if(this.src.indexOf(\'.JPG\')===-1){this.src=this.src.replace(\'.jpg\',\'.JPG\')}else{this.style.display=\'none\'}"></div>'+
-      '<div style="padding:6px 10px 0" id="qi-sol'+n+'">'+(rec&&rec.correct===false?solBtnsHTML(n):'')+'</div>'+
+      '<div style="padding:6px 10px 0" id="qi-sol'+n+'">'+solBtnsHTML(n)+'</div>'+
       '<div class="qch" id="qc'+n+'"></div>';
     w.appendChild(el);
     var cw=document.getElementById('qc'+n);
@@ -1254,7 +1262,7 @@ function submitFreeAnswer(n){
   var cw=document.getElementById('qc'+n);
   if(cw) cw.innerHTML='<div style="padding:8px 10px;font-size:12px;color:'+(isOk?'#26d07c':'#ff4d1c')+';font-weight:700">'+(isOk?'정답 ✓':'오답 ✗')+(!isOk?' (정답: '+cd.a+')':'')+'</div>';
   var solEl=document.getElementById('qi-sol'+n);
-  if(solEl) solEl.innerHTML=!isOk?solBtnsHTML(n):'';
+  if(solEl) solEl.innerHTML=solBtnsHTML(n);
   saveRec(); updateHeader(); updateBookProgress(); updateGBar();
 }
 
@@ -1294,7 +1302,7 @@ function gradeAll(){
     var isOk=(s===cd.a); if(isOk)ok++;else ng++;
     records[n]={correct:isOk,userAns:cd.c[s],correctAns:cd.c[cd.a],ts:Date.now()};
     var el=document.getElementById('qi'+n); if(el){el.className='qi'+(isOk?' ok':' ng');}
-    var selEl=document.getElementById('qi-sol'+n); if(selEl){selEl.innerHTML=!isOk?solBtnsHTML(n):'';}
+    var selEl=document.getElementById('qi-sol'+n); if(selEl){selEl.innerHTML=solBtnsHTML(n);}
     var se=document.getElementById('qs'+n); if(se){se.textContent=isOk?'정답 O':'오답 X';se.className='qst'+(isOk?' ok':' ng');}
     var bs=document.querySelectorAll('.cb[data-n="'+n+'"]');
     for(var j=0;j<bs.length;j++){
@@ -2506,6 +2514,11 @@ document.addEventListener('click',function(e){
     <canvas id="ov-canvas" style="position:absolute;top:0;left:0;touch-action:none;cursor:crosshair;pointer-events:auto;z-index:10"></canvas>
   </div>
 </div>
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/rpm-math/sw.js').catch(function(){});
+}
+</script>
 </body>
 </html><script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
