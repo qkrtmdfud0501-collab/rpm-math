@@ -383,8 +383,8 @@ input:focus{border-color:#D42027}
         <p style="font-size:12px;color:#8b95a7;margin-bottom:14px;line-height:1.6">선택한 교재의 모든 문제 해설을 미리 생성해 저장합니다. 학생들이 기다리지 않아도 됩니다.</p>
         <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
           <select id="cache-book" style="flex:1;border:2px solid #e8ecf4;border-radius:8px;padding:10px;font-size:13px;font-family:sans-serif;outline:none;color:#1a1d2e">
-            <option value="RPM 공통수학1|crops|1|1134">RPM 공통수학1 (1~1134번)</option>
-            <option value="RPM 대수|crops_daesoo|33|1126" selected>RPM 대수 (33~1126번)</option>
+            <option value="RPM 공통수학1|crops|38|1184">RPM 공통수학1 (유형익히기~실력Up)</option>
+            <option value="RPM 대수|crops_daesoo|33|1126" selected>RPM 대수 (유형익히기~실력Up)</option>
             <option value="시발점 공통수학1|crops_sibal|1|258">시발점 공통수학1 (1~258번)</option>
           </select>
         </div>
@@ -417,11 +417,6 @@ input:focus{border-color:#D42027}
         </div>
         <!-- 로그 -->
         <div id="cache-log" style="display:none;background:#1a1d2e;border-radius:8px;padding:10px;height:150px;overflow-y:auto;font-size:11px;font-family:monospace;margin-bottom:10px"></div>
-        <div style="margin-bottom:8px">
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;color:#1a1d2e">
-            <input type="checkbox" id="cache-force"> <span>기존 캐시 덮어쓰기 (강제 재생성)</span>
-          </label>
-        </div>
         <div style="display:flex;gap:8px">
           <button id="cache-btn-start" onclick="startBulkCache()" style="flex:1;background:#D42027;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif">▶ 캐싱 시작</button>
           <button id="cache-btn-stop" onclick="stopBulkCache()" disabled style="flex:1;background:#e8ecf4;color:#8b95a7;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif">■ 중지</button>
@@ -1753,6 +1748,18 @@ function startBulkCache(){
     cacheLog('캐싱 시작: '+bookName+' '+startN+'~'+endN+'번', '#26d07c');
 
     var bookKey = bookName.replace(/[^a-zA-Z0-9_]/g,'_');
+
+    // 교재별 교과서정복하기 범위 (이 구간은 스킵)
+    var SKIP_RANGES = {
+      'RPM 공통수학1': [[1,37],[111,123],[196,222],[280,308],[376,393],[484,499],[567,598],[697,713],[775,811],[911,929],[1001,1022],[1093,1113]],
+      'RPM 대수':      [[1,32],[110,145],[222,239],[337,355],[457,481],[553,580],[697,718],[802,823],[947,971],[1051,1067]]
+    };
+    function isSkipRange(num, bname){
+      var ranges = SKIP_RANGES[bname] || [];
+      for(var i=0;i<ranges.length;i++) if(num>=ranges[i][0]&&num<=ranges[i][1]) return true;
+      return false;
+    }
+
     processNext(startN);
 
     function processNext(n){
@@ -1765,14 +1772,21 @@ function startBulkCache(){
       cacheLog('=== 캐싱 완료 ===', '#26d07c');
       return;
     }
+    // 교과서정복하기 구간 스킵
+    if(isSkipRange(n, bookName)){
+      cacheSkip++;
+      updateCacheStats(n, endN-startN+1);
+      setTimeout(function(){ processNext(n+1); }, 50);
+      return;
+    }
+
     var numStr = String(n).padStart(4,'0');
     var cacheKey = bookKey+'_'+numStr;
     document.getElementById('cache-cur').textContent = n+'번 처리 중... ('+n+'/'+endN+')';
 
     // 기존 캐시 확인
-    var forceOverwrite = document.getElementById('cache-force') && document.getElementById('cache-force').checked;
     DB.collection('solutions').doc(cacheKey).get().then(function(cached){
-      if(!forceOverwrite && cached.exists && cached.data()&&cached.data().text){
+      if(cached.exists && cached.data()&&cached.data().text){
         cacheSkip++;
         updateCacheStats(n, endN-startN+1);
         setTimeout(function(){ processNext(n+1); }, 200);
