@@ -2794,7 +2794,25 @@ document.addEventListener('click',function(e){
 </div>
 <script>
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/rpm-math/sw.js').catch(function(){});
+  navigator.serviceWorker.register('/rpm-math/sw.js').then(function(reg){
+    // 새 서비스워커가 있으면 즉시 활성화
+    reg.update();
+    reg.addEventListener('updatefound', function(){
+      var newWorker = reg.installing;
+      newWorker.addEventListener('statechange', function(){
+        if(newWorker.state === 'installed' && navigator.serviceWorker.controller){
+          // 새 버전 발견 시 즉시 페이지 새로고침
+          navigator.serviceWorker.controller.postMessage({type:'SKIP_WAITING'});
+          window.location.reload();
+        }
+      });
+    });
+  }).catch(function(){});
+  // 서비스워커 컨트롤러 변경 시 자동 새로고침
+  var refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    if(!refreshing){ refreshing=true; window.location.reload(); }
+  });
 }
 </script>
 </body>
