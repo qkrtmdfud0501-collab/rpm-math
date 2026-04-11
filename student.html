@@ -535,7 +535,6 @@ var BOOKS_CONFIG = {
     choices: CHOICES_SIBAL_WB_DAESOO,
     cropBase: 'https://qkrtmdfud0501-collab.github.io/rpm-math/crops_sibal_wb_daesoo/',
     totalQ: 312
-    totalQ: 71
   }
 };
 var UNITS=[
@@ -1969,17 +1968,21 @@ function startGeminiStream(n, numStr, key, cacheKey){
   document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">AI가 풀이를 생성하는 중...</div>';
 
   var cd=getSortedChoice(getChoices()[n]);
-  var promptText=(curBook||'RPM 공통수학1')+' '+numStr+'번 문제입니다.\n';
-  // 598번 특수 힌트
-  if((curBook||'').indexOf('대수')!==-1 && n===598){
-    promptText+='[중요 힌트] 이 문제의 그래프 좌표를 매우 자세히 다시 살펴보세요. 점근선이 x=-1/3, x=0, x=1/3, x=2/3 등으로 이루어져 있습니다. 그래프는 (1/3, 0)을 지나는 그래프가 아닙니다. 좌표를 정확히 읽고 처음부터 다시 풀어주세요.\n';
-  }
+
+  var promptText = '';
   if(cd&&cd.c&&cd.c.length){
     var choicesText=cd.c.map(function(c,i){return '('+(i+1)+') '+c;}).join('\n');
     var answerText=cd.c[cd.a];
-    promptText+='\n보기:\n'+choicesText+'\n\n정답: '+answerText+'\n';
+    promptText+='보기:\n'+choicesText+'\n\n정답: '+answerText+'\n\n';
   }
-  promptText+='\n\n[필수 지시사항]\n1. 이미지에서 문제 번호 '+numStr+'번을 찾아서 그 문제만 해설할 것\n2. 수식은 $...$ 로 감싸서 LaTeX로 표현 (예: $\\sqrt{5}$, $\\frac{a}{b}$)\n3. 고등학생이 이해할 수 있는 쉬운 언어로\n4. 각 단계를 번호로 구분\n5. 마지막에 정답 명시';
+
+  promptText+='[필수 지시사항]\n';
+  promptText+='1. 이미지에 있는 문제를 풀어서 해설할 것\n';
+  promptText+='2. 위 보기와 정답을 참고하여 왜 정답인지 설명할 것\n';
+  promptText+='3. 수식은 $...$ 로 감싸서 LaTeX로 표현 (예: $\\sqrt{5}$, $\\frac{a}{b}$)\n';
+  promptText+='4. 고등학생이 이해할 수 있는 쉬운 언어로\n';
+  promptText+='5. 각 단계를 번호로 구분\n';
+  promptText+='6. 마지막에 정답 명시';
 
   var CROP_BASE=getCropBase();
 

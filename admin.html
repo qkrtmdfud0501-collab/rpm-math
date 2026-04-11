@@ -423,6 +423,9 @@ input:focus{border-color:#D42027}
           <button id="cache-btn-start" onclick="startBulkCache()" style="flex:1;background:#D42027;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif">▶ 캐싱 시작</button>
           <button id="cache-btn-stop" onclick="stopBulkCache()" disabled style="flex:1;background:#e8ecf4;color:#8b95a7;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif">■ 중지</button>
         </div>
+        <div style="margin-top:8px">
+          <button onclick="deleteBookCache()" style="width:100%;background:#ff3b5c;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif">🗑 선택 교재 캐시 전체 삭제</button>
+        </div>
       </div>
     </div>
   </div>
@@ -704,20 +707,28 @@ function renderList() {
       var label = s.tot>0 ? s.rate+'%' : '미학습';
       var progPct = Math.round(s.tot/1134*100);
 
-    // Use units from student's books (merged across all books)
+    // Use units from student's books (per-book records)
     var studentUnits = [];
+    var unitBookKeyMap = {};
     (s.books||['RPM 공통수학1']).forEach(function(bk){
+      var bkey = bookNameToKey(bk);
       var cfg=ADMIN_BOOKS_CONFIG[bk];
-      if(cfg) cfg.units.forEach(function(u){ studentUnits.push(u); });
+      if(cfg) cfg.units.forEach(function(u){
+        studentUnits.push(u);
+        unitBookKeyMap[u.id] = bkey;
+      });
     });
     if(!studentUnits.length) studentUnits = UNITS_RPM1;
     var unitHtml = studentUnits.map(function(u) {
+      var bkey = unitBookKeyMap[u.id]||null;
+      var recs = bkey ? ((s.bookRecords&&s.bookRecords[bkey])||{}) : s.records;
       var total = u.r[1]-u.r[0]+1;
-      var ks = Object.keys(s.records).map(Number).filter(function(n){return n>=u.r[0]&&n<=u.r[1];});
+      var ks = Object.keys(recs).map(Number).filter(function(n){return n>=u.r[0]&&n<=u.r[1];});
       var sv = ks.length;
-      var ok = ks.filter(function(n){return s.records[n]&&s.records[n].correct===true;}).length;
-      var ng = ks.filter(function(n){return s.records[n]&&s.records[n].correct===false;}).length;
-      return '<div class="up" style="cursor:pointer" onclick="openUnitDetail(\''+s.id+'\','+u.id+')">'+
+      var ok = ks.filter(function(n){return recs[n]&&recs[n].correct===true;}).length;
+      var ng = ks.filter(function(n){return recs[n]&&recs[n].correct===false;}).length;
+      var bkeyParam = bkey ? "'"+bkey+"'" : 'null';
+      return '<div class="up" style="cursor:pointer" onclick="openUnitDetail(\''+s.id+'\','+u.id+','+bkeyParam+')">'+
         '<div class="up-name">'+u.id+'. '+u.name+'</div>'+
         '<div class="up-bar"><div class="up-fill" style="width:'+Math.round(sv/total*100)+'%;background:'+u.c+'"></div></div>'+
         '<div class="up-stat">'+sv+'/'+total+(sv>0?' ✓'+ok+' ✗'+ng:'')+'</div>'+
@@ -765,7 +776,7 @@ function renderList() {
 document.getElementById('pw').addEventListener('keydown', function(e){if(e.key==='Enter')doLogin();});
 
 // ── 단원 세부 모달 ──
-function openUnitDetail(studentId, unitId){
+function openUnitDetail(studentId, unitId, bookKey){
   var s = students.find(function(x){return x.id===studentId;});
   var u = null;
   Object.values(ADMIN_BOOKS_CONFIG).forEach(function(cfg){
@@ -774,6 +785,9 @@ function openUnitDetail(studentId, unitId){
   if(!u) u = UNITS_RPM1.find(function(x){return x.id===unitId;});
   if(!s||!u) return;
 
+  // bookKey가 있으면 해당 교재 records만, 없으면 통합 records
+  var useRecs = bookKey ? ((s.bookRecords&&s.bookRecords[bookKey])||{}) : s.records;
+
   document.getElementById('unit-modal-title').textContent = s.name+' - '+u.id+'. '+u.name;
   var body = document.getElementById('unit-modal-body');
 
@@ -781,7 +795,7 @@ function openUnitDetail(studentId, unitId){
   var probRows = '<table class="ox-table"><thead><tr><th>문제</th><th>1차</th><th>재시도</th><th>내 답</th><th>정답</th></tr></thead><tbody>';
   var hasSolved = false;
   for(var n=u.r[0]; n<=u.r[1]; n++){
-    var rec = s.records[n];
+    var rec = useRecs[n];
     if(!rec||rec.correct===undefined) continue;
     hasSolved = true;
     var isOk = rec.correct===true;
@@ -806,7 +820,7 @@ function openUnitDetail(studentId, unitId){
   }
   probRows += '</tbody></table>';
   if(!hasSolved) probRows = '';
-  var solved = Object.keys(s.records).map(Number).filter(function(n){return n>=u.r[0]&&n<=u.r[1];}).length;
+  var solved = Object.keys(useRecs).map(Number).filter(function(n){return n>=u.r[0]&&n<=u.r[1];}).length;
   var total = u.r[1]-u.r[0]+1;
 
   // 2. 이 단원에서 전체 학생 오답률 높은 문제 TOP10
@@ -814,9 +828,10 @@ function openUnitDetail(studentId, unitId){
   for(var n=u.r[0]; n<=u.r[1]; n++){
     var tried=0, wrong=0;
     students.forEach(function(st){
-      if(st.records[n]!==undefined){
+      var stRecs = bookKey ? ((st.bookRecords&&st.bookRecords[bookKey])||{}) : st.records;
+      if(stRecs[n]!==undefined){
         tried++;
-        if(st.records[n]&&st.records[n].correct===false) wrong++;
+        if(stRecs[n]&&stRecs[n].correct===false) wrong++;
       }
     });
     if(tried>0) errMap[n]={tried:tried,wrong:wrong,rate:Math.round(wrong/tried*100)};
@@ -1868,6 +1883,51 @@ function stopBulkCache(){
   document.getElementById('cache-btn-stop').disabled = true;
   document.getElementById('cache-btn-start').disabled = false;
   cacheLog('중지됨', '#ff9500');
+}
+
+function deleteBookCache(){
+  var sel = document.getElementById('cache-book-select');
+  if(!sel||!sel.value){ alert('교재를 먼저 선택하세요'); return; }
+  var parts = sel.value.split('|');
+  var bookName = parts[0];
+  var startN = parseInt(parts[2])||1;
+  var endN = parseInt(parts[3])||1;
+  var bkey = bookNameToKey(bookName);
+
+  if(!confirm(bookName+' 캐시 '+startN+'~'+endN+'번을 전부 삭제할까요?\n(이 작업은 되돌릴 수 없습니다)')) return;
+
+  var logEl = document.getElementById('cache-log');
+  logEl.style.display='block';
+  cacheLog('캐시 삭제 시작: '+bookName, '#ff3b5c');
+
+  var keys = [];
+  for(var i=startN; i<=endN; i++){
+    keys.push(bkey+'_'+String(i).padStart(4,'0'));
+  }
+
+  var deleted=0, total=keys.length;
+  var batchSize=400;
+
+  function deleteBatch(idx){
+    if(idx>=keys.length){
+      cacheLog('삭제 완료: '+deleted+'/'+total+'건', '#26d07c');
+      return;
+    }
+    var batch = DB.batch();
+    var end = Math.min(idx+batchSize, keys.length);
+    // 먼저 존재하는 doc만 삭제 (batch delete)
+    var chunk = keys.slice(idx, end);
+    var promises = chunk.map(function(ck){
+      return DB.collection('solutions').doc(ck).delete().then(function(){
+        deleted++;
+      }).catch(function(){});
+    });
+    Promise.all(promises).then(function(){
+      cacheLog('진행중: '+Math.min(end,total)+'/'+total, '#8b95a7');
+      deleteBatch(end);
+    });
+  }
+  deleteBatch(0);
 }
 
 function checkUnreadQuestions(){
