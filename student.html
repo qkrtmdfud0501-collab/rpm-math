@@ -56,6 +56,7 @@ input:focus{border-color:#D42027}
 
 /* 화면 */
 .screen{padding:12px;display:none}
+#plist{padding:8px 0}
 .screen.on{display:block}
 
 /* 배너 */
@@ -88,6 +89,8 @@ input:focus{border-color:#D42027}
 .pi{background:#fff;border-radius:9px;padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:5px;border:2px solid #e8ecf4}
 .pi.done{border-color:#b2f5d0}
 .pi.partial{border-color:#ffb800}
+.ptab{border:1.5px solid #d0d6e3;border-radius:20px;padding:5px 13px;font-size:12px;font-weight:600;background:#f4f6fb;color:#555;cursor:pointer;white-space:nowrap}
+.ptab.ptab-on{background:#D42027;border-color:#D42027;color:#fff}
 .pnum{font-size:20px;font-weight:900;color:#ff4d1c;flex-shrink:0;width:34px}
 .pinfo{flex:1;min-width:0}
 .ptitle{font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -321,6 +324,13 @@ input:focus{border-color:#D42027}
       <button class="back" id="back1">&#8592;</button>
       <div class="htitle" id="utitle"></div>
     </div>
+    <div id="page-type-tabs" style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 12px 4px;border-bottom:1px solid #eee;">
+      <button class="ptab ptab-on" data-type="all">전체</button>
+      <button class="ptab" data-type="유형">유형익히기</button>
+      <button class="ptab" data-type="시험">시험에 꼭</button>
+      <button class="ptab" data-type="서술형">서술형</button>
+      <button class="ptab" data-type="실력">실력 Up</button>
+    </div>
     <div id="plist"></div>
   </div>
 
@@ -478,14 +488,14 @@ var BOOKS_CONFIG = {
   'RPM 대수': {
     units: [
   {id:1,name:'지수',r:[33,109],c:'#FF5722'},
-  {id:2,name:'로그',r:[146,221],c:'#8E44AD'},
-  {id:3,name:'지수함수',r:[240,336],c:'#2980B9'},
-  {id:4,name:'로그함수',r:[356,456],c:'#16A085'},
-  {id:5,name:'삼각함수',r:[482,552],c:'#E67E22'},
-  {id:6,name:'삼각함수의 그래프',r:[581,696],c:'#C0392B'},
-  {id:7,name:'삼각함수의 활용',r:[727,801],c:'#1ABC9C'},
-  {id:8,name:'등차수열과 등비수열',r:[824,946],c:'#F39C12'},
-  {id:9,name:'수열의 합',r:[972,1050],c:'#9B59B6'},
+  {id:2,name:'로그',r:[110,221],c:'#8E44AD'},
+  {id:3,name:'지수함수',r:[222,336],c:'#2980B9'},
+  {id:4,name:'로그함수',r:[337,456],c:'#16A085'},
+  {id:5,name:'삼각함수',r:[457,552],c:'#E67E22'},
+  {id:6,name:'삼각함수의 그래프',r:[553,696],c:'#C0392B'},
+  {id:7,name:'삼각함수의 활용',r:[697,801],c:'#1ABC9C'},
+  {id:8,name:'등차수열과 등비수열',r:[802,946],c:'#F39C12'},
+  {id:9,name:'수열의 합',r:[947,1050],c:'#9B59B6'},
   {id:10,name:'수학적 귀납법',r:[1051,1126],c:'#27AE60'}
 ],
     choices: CHOICES_DAESOO,
@@ -1143,6 +1153,17 @@ function getCurPageMap(){
   return PAGE_MAP;
 }
 
+var curPageTypeFilter='all';
+
+function getPageType(title){
+  if(!title) return 'all';
+  if(title.indexOf('시험에 꼭')!==-1) return '시험';
+  if(title.indexOf('서술형')!==-1) return '서술형';
+  if(title.indexOf('실력')!==-1) return '실력';
+  if(title.indexOf('유형')!==-1) return '유형';
+  return '유형'; // 유형정리 등 기타는 유형으로 분류
+}
+
 function openUnit(u){
   curUnit=u;
   curPages=[];
@@ -1157,14 +1178,57 @@ function openUnit(u){
       s=e+1;
     }
   }
+  curPageTypeFilter='all';
+  // 탭 초기화
+  var tabs=document.querySelectorAll('.ptab');
+  var unitColor=u.c||'#D42027';
+  for(var t=0;t<tabs.length;t++){
+    var isOn=tabs[t].getAttribute('data-type')==='all';
+    tabs[t].classList.toggle('ptab-on',isOn);
+    tabs[t].style.setProperty('--tab-color', unitColor);
+    if(isOn){tabs[t].style.background=unitColor;tabs[t].style.borderColor=unitColor;tabs[t].style.color='#fff';}
+    else{tabs[t].style.background='';tabs[t].style.borderColor='';tabs[t].style.color='';}
+  }
+  // 탭이 있는 경우만 탭바 표시 (PAGE_MAP 있는 교재만)
+  var tabBar=document.getElementById('page-type-tabs');
+  if(tabBar) tabBar.style.display=pm.length>0?'flex':'none';
   document.getElementById('utitle').textContent=String(u.id).padStart(2,'0')+'. '+u.name;
   renderPageList(); go('unit');
 }
 
+// 탭 클릭 이벤트 바인딩 (DOMContentLoaded 후)
+document.addEventListener('DOMContentLoaded',function(){
+  var tabs=document.querySelectorAll('.ptab');
+  for(var t=0;t<tabs.length;t++){
+    (function(tab){
+      tab.addEventListener('click',function(){
+        curPageTypeFilter=this.getAttribute('data-type');
+        var all=document.querySelectorAll('.ptab');
+        var unitColor=(curUnit&&curUnit.c)||'#D42027';
+        for(var i=0;i<all.length;i++){
+          var isOn=all[i]===this;
+          all[i].classList.toggle('ptab-on',isOn);
+          if(isOn){all[i].style.background=unitColor;all[i].style.borderColor=unitColor;all[i].style.color='#fff';}
+          else{all[i].style.background='';all[i].style.borderColor='';all[i].style.color='';}
+        }
+        renderPageList();
+      });
+    })(tabs[t]);
+  }
+});
+
 function renderPageList(){
   var all=Object.keys(records).map(Number);
   var l=document.getElementById('plist'); l.innerHTML='';
+  // 필터된 페이지 인덱스 목록 (startPage에 전달할 원본 인덱스 유지)
+  var filtered=[];
   for(var i=0;i<curPages.length;i++){
+    var t=getPageType(curPages[i][2]);
+    if(curPageTypeFilter==='all'||t===curPageTypeFilter) filtered.push(i);
+  }
+  var dispIdx=0;
+  for(var fi=0;fi<filtered.length;fi++){
+    var i=filtered[fi];
     var p=curPages[i], qs=p[1][0], qe=p[1][1], title=p[2], pdf=p[0];
     var ns=[]; for(var n=qs;n<=qe;n++) ns.push(n);
     var sv=0, ok=0;
@@ -1173,7 +1237,8 @@ function renderPageList(){
     var cls='pi'+(done?' done':sv>0?' partial':'');
     var sc=done&&ok===ns.length?'#26d07c':sv>0?'#ff4d1c':'#8b95a7';
     var el=document.createElement('div'); el.className=cls;
-    el.innerHTML='<div class="pnum">P'+(i+1)+'</div>'+
+    dispIdx++;
+    el.innerHTML='<div class="pnum">P'+dispIdx+'</div>'+
       '<div class="pinfo"><div class="ptitle">'+title+'</div>'+
       '<div class="prange">'+qs+'~'+qe+'번 / '+ns.length+'문제'+(pdf?' ('+pdf+'쪽)':'')+'</div></div>'+
       '<div class="pright" style="color:'+sc+'">'+(sv>0?ok+'/'+ns.length:'-')+'</div>';
