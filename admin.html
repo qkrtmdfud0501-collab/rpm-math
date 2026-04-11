@@ -417,6 +417,11 @@ input:focus{border-color:#D42027}
         </div>
         <!-- 로그 -->
         <div id="cache-log" style="display:none;background:#1a1d2e;border-radius:8px;padding:10px;height:150px;overflow-y:auto;font-size:11px;font-family:monospace;margin-bottom:10px"></div>
+        <div style="margin-bottom:8px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;color:#1a1d2e">
+            <input type="checkbox" id="cache-force"> <span>기존 캐시 덮어쓰기 (강제 재생성)</span>
+          </label>
+        </div>
         <div style="display:flex;gap:8px">
           <button id="cache-btn-start" onclick="startBulkCache()" style="flex:1;background:#D42027;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif">▶ 캐싱 시작</button>
           <button id="cache-btn-stop" onclick="stopBulkCache()" disabled style="flex:1;background:#e8ecf4;color:#8b95a7;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif">■ 중지</button>
@@ -1765,8 +1770,9 @@ function startBulkCache(){
     document.getElementById('cache-cur').textContent = n+'번 처리 중... ('+n+'/'+endN+')';
 
     // 기존 캐시 확인
+    var forceOverwrite = document.getElementById('cache-force') && document.getElementById('cache-force').checked;
     DB.collection('solutions').doc(cacheKey).get().then(function(cached){
-      if(cached.exists && cached.data()&&cached.data().text){
+      if(!forceOverwrite && cached.exists && cached.data()&&cached.data().text){
         cacheSkip++;
         updateCacheStats(n, endN-startN+1);
         setTimeout(function(){ processNext(n+1); }, 200);
