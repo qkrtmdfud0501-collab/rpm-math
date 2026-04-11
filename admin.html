@@ -37,7 +37,7 @@ input:focus{border-color:#D42027}
 .btn:active{opacity:.85}
 .btn:disabled{background:#ccc;cursor:not-allowed;box-shadow:none}
 .err{font-size:12px;color:#D42027;text-align:center;margin-top:6px;min-height:16px}
-#dashboard{display:none;padding:16px;max-width:900px;margin:0 auto}
+#dashboard{display:none;padding:16px;max-width:1400px;margin:0 auto}
 .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
 .scard{background:#fff;border-radius:12px;padding:14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .scard .n{font-size:30px;font-weight:900;line-height:1;color:#D42027}
@@ -50,6 +50,7 @@ input:focus{border-color:#D42027}
 .sc-grid{display:grid;grid-template-columns:1fr;gap:10px}
 @media(min-width:700px){.sc-grid{grid-template-columns:repeat(2,1fr)}}
 @media(min-width:1100px){.sc-grid{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:1400px){.sc-grid{grid-template-columns:repeat(4,1fr)}}
 .sc2{background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 6px rgba(0,0,0,.05)}
 .sc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .sc-name{font-size:14px;font-weight:700}
@@ -419,12 +420,15 @@ input:focus{border-color:#D42027}
         </div>
         <!-- 로그 -->
         <div id="cache-log" style="display:none;background:#1a1d2e;border-radius:8px;padding:10px;height:150px;overflow-y:auto;font-size:11px;font-family:monospace;margin-bottom:10px"></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#1a1d2e;cursor:pointer">
+            <input type="checkbox" id="cache-overwrite" style="width:16px;height:16px;cursor:pointer">
+            기존 캐시 덮어쓰기
+          </label>
+        </div>
         <div style="display:flex;gap:8px">
           <button id="cache-btn-start" onclick="startBulkCache()" style="flex:1;background:#D42027;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif">▶ 캐싱 시작</button>
           <button id="cache-btn-stop" onclick="stopBulkCache()" disabled style="flex:1;background:#e8ecf4;color:#8b95a7;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif">■ 중지</button>
-        </div>
-        <div style="margin-top:8px">
-          <button onclick="deleteBookCache()" style="width:100%;background:#ff3b5c;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif">🗑 선택 교재 캐시 전체 삭제</button>
         </div>
       </div>
     </div>
@@ -525,6 +529,8 @@ var UNITS=UNITS_RPM1;
 
 function bookNameToKey(name){
   var map={
+    'RPM 공통수학1':'RPM_gongsu1',
+    'RPM 대수':'RPM_daesoo',
     '시발점 워크북 공통수학1':'sibal_wb_gongsu1',
     '시발점 워크북 대수':'sibal_wb_daesoo'
   };
@@ -1827,18 +1833,24 @@ function startBulkCache(){
     document.getElementById('cache-cur').textContent = n+'번 처리 중... ('+n+'/'+endN+')';
 
     // 기존 캐시 확인
-    DB.collection('solutions').doc(cacheKey).get().then(function(cached){
-      if(cached.exists && cached.data()&&cached.data().text){
-        cacheSkip++;
-        updateCacheStats(n, endN-startN+1);
-        setTimeout(function(){ processNext(n+1); }, 200);
-        return;
-      }
-      // Gemini 호출
+    var overwrite = document.getElementById('cache-overwrite') && document.getElementById('cache-overwrite').checked;
+    if(overwrite){
+      // 덮어쓰기 모드: 바로 Gemini 호출
       doWithRetry(n, numStr, cacheKey, bookKey, bookName, cropBase, apiKey, delay, 0);
-    }).catch(function(){
-      doWithRetry(n, numStr, cacheKey, bookKey, bookName, cropBase, apiKey, delay, 0);
-    });
+    } else {
+      DB.collection('solutions').doc(cacheKey).get().then(function(cached){
+        if(cached.exists && cached.data()&&cached.data().text){
+          cacheSkip++;
+          updateCacheStats(n, endN-startN+1);
+          setTimeout(function(){ processNext(n+1); }, 200);
+          return;
+        }
+        // Gemini 호출
+        doWithRetry(n, numStr, cacheKey, bookKey, bookName, cropBase, apiKey, delay, 0);
+      }).catch(function(){
+        doWithRetry(n, numStr, cacheKey, bookKey, bookName, cropBase, apiKey, delay, 0);
+      });
+    }
   }
 
   function doWithRetry(n, numStr, cacheKey, bookKey, bookName, cropBase, apiKey, delay, retry){
@@ -1883,7 +1895,7 @@ function stopBulkCache(){
 }
 
 function deleteBookCache(){
-  var sel = document.getElementById('cache-book-select');
+  var sel = document.getElementById('cache-book');
   if(!sel||!sel.value){ alert('교재를 먼저 선택하세요'); return; }
   var parts = sel.value.split('|');
   var bookName = parts[0];
