@@ -396,7 +396,7 @@ input:focus{border-color:#D42027}
     </div>
     <div class="sol-split">
       <div class="sol-left">
-        <img id="sol-popup-qimg" src="" style="display:none;width:100%;border-radius:8px;border:1px solid #e8ecf4" onerror="this.style.display='none'">
+        <img id="sol-popup-qimg" src="" style="display:none;width:100%;border-radius:8px;border:1px solid #e8ecf4" onerror="if(this.src.indexOf('.JPG')===-1){this.src=this.src.replace('.jpg','.JPG')}else{this.style.display='none'}">
       </div>
       <div class="sol-right" style="display:flex;flex-direction:column">
         <!-- 필기 도구바 (상단 고정) -->
@@ -461,7 +461,7 @@ var BOOKS_CONFIG = {
   {id:9,name:'이차부등식',r:[812,910],c:'#9B59B6'},
   {id:10,name:'경우의 수와 순열',r:[930,1000],c:'#27AE60'},
   {id:11,name:'조합',r:[1023,1092],c:'#E74C3C'},
-  {id:12,name:'행렬',r:[1114,1184],c:'#3498DB'}
+  {id:12,name:'행렬',r:[1114,1134],c:'#3498DB'}
 ],
     choices: CHOICES,
     cropBase: 'https://qkrtmdfud0501-collab.github.io/rpm-math/crops/',
@@ -507,10 +507,24 @@ var UNITS=[
   {id:9,name:'이차부등식',r:[812,910],c:'#9B59B6'},
   {id:10,name:'경우의 수와 순열',r:[930,1000],c:'#27AE60'},
   {id:11,name:'조합',r:[1023,1092],c:'#E74C3C'},
-  {id:12,name:'행렬',r:[1114,1184],c:'#3498DB'}
+  {id:12,name:'행렬',r:[1114,1134],c:'#3498DB'}
 ];
 var curCropBase='https://qkrtmdfud0501-collab.github.io/rpm-math/crops/';
+var IMG_VER="20260411";
 function getCropBase(){return curCropBase;}
+function cropUrl(numStr){return getCropBase()+numStr+".jpg?v="+IMG_VER;}
+function setImgWithFallback(imgEl, numStr){
+  var base=getCropBase()+numStr;
+  imgEl.onerror=function(){
+    if(imgEl.src.indexOf('.jpg')!==-1 && imgEl.src.indexOf('.JPG')===-1){
+      imgEl.onerror=function(){imgEl.style.display='none';};
+      imgEl.src=base+'.JPG?v='+IMG_VER;
+    } else {
+      imgEl.style.display='none';
+    }
+  };
+  imgEl.src=base+'.jpg?v='+IMG_VER;
+}
 function getChoices(){
   var cfg=BOOKS_CONFIG[curBook]||BOOKS_CONFIG['RPM 공통수학1'];
   return cfg.choices;
@@ -631,7 +645,7 @@ var PAGE_MAP=[
   [null,[1146,1153],"유형익히기 - 심화"],
   [null,[1154,1161],"시험에 꼭 나오는 문제"],
   [null,[1162,1169],"시험에 꼭 나오는 문제"],
-  [null,[1170,1184],"시험에 꼭 나오는 문제 심화"]
+  [null,[1170,1134],"시험에 꼭 나오는 문제 심화"]
 ];
 var PROB_PAGE={38:2,39:2,40:2,41:2,42:2,43:2,44:2,45:2,46:3,47:3,48:3,49:3,50:3,51:3,52:3,53:3,54:2,55:2,56:3,57:3,58:2,59:2,60:3,61:3,62:3,63:3,64:3,65:3,66:3,67:3,68:3,69:3,70:3,71:3,72:3,73:3,74:3,75:3,76:3,77:3,78:3,79:3,80:3,81:3,82:3,83:3,84:3,85:3,86:3,87:3,88:3,89:3,90:3,91:3,92:3,93:3,94:3,95:3,96:3,97:3,98:3,99:3,100:3,101:3,102:3,103:3,104:3,105:3,106:3,107:3,108:3,109:3,110:19,111:21,112:21,113:21,114:21,115:21,116:21,117:21,118:21,119:21,120:21,121:21,122:21,123:21,124:22,125:22,126:22,127:22,128:22,129:22,130:22,131:22,132:23,133:23,134:23,135:23,136:23,137:23,138:23,139:24,140:24,141:24,142:24,143:24,144:24,145:24,146:24,147:25,148:25,149:25,150:25,151:25,152:25,153:26,154:26,155:26,156:26,157:26,158:26,159:26,160:27,161:27,162:27,163:27,164:27,165:27,166:27,167:28,168:28,169:28,170:28,171:28,172:28,173:29,174:29,175:29,176:29,177:29,178:29,179:29,180:29,181:30,182:30,183:30,184:30,185:30,186:30,187:30,188:30,189:31,190:31,191:31,192:31,193:31,194:31,195:31,196:33,197:33,198:33,199:33,200:33,201:33,202:33,203:33,204:33,205:33,206:33,207:33,208:33,209:33,210:33,211:33,212:33,213:33,214:33,215:33,216:33,217:33,218:33,219:33,220:33,221:33,222:33,223:34,224:34,225:34,226:34,227:34,228:34,229:35,230:35,231:35,232:35,233:35,234:35,235:35,236:35,237:36,238:36,239:36,240:36,241:36,242:36,243:36,244:37,245:37,246:37,247:37,248:37,249:37,250:37,251:38,252:38,253:38,254:38,255:38,256:38,257:38,258:39,259:39,260:39,261:39,262:39,263:39,264:3,265:3,266:3,267:3,268:3,269:3,270:3,271:3,272:3,273:3,274:3,275:3,276:3,277:3,278:3,279:3,280:45,281:45,282:45,283:45,284:45,285:45,286:45,287:45,288:45,289:45,290:45,291:45,292:45,293:45,294:45,295:45,296:45,297:45,298:45,299:45,300:45,301:45,302:45,303:45,304:45,305:45,306:45,307:45,308:45,309:46,310:46,311:46,312:46,313:46,314:46,315:46,316:47,317:47,318:47,319:47,320:47,321:47,322:47,323:47,324:48,325:48,326:48,327:48,328:48,329:48,330:48,331:48,332:49,333:49,334:49,335:49,336:49,337:49,338:49,339:50,340:50,341:50,342:50,343:50,344:50,345:50,346:50,347:51,348:51,349:51,350:51,351:51,352:51,353:51,354:52,355:52,356:52,357:52,358:52,359:52,360:52,361:53,362:53,363:53,364:53,365:53,366:53,367:53,368:53,369:54,370:54,371:54,372:54,373:54,374:54,375:54,376:57,377:57,378:57,379:57,380:57,381:57,382:57,383:57,384:57,385:57,386:57,387:57,388:57,389:57,390:57,391:57,392:57,393:57,394:58,395:58,396:58,397:58,398:58,399:58,400:58,401:58,402:59,403:59,404:59,405:59,406:59,407:59,408:59,409:60,410:60,411:60,412:60,413:60,414:60,415:60,416:61,417:61,418:61,419:61,420:61,421:61,422:61,423:62,424:62,425:62,426:62,427:62,428:62,429:62,430:63,431:63,432:63,433:63,434:63,435:63,436:63,437:64,438:64,439:64,440:64,441:64,442:64,443:64,444:65,445:65,446:65,447:65,448:65,449:65,450:65,451:66,452:66,453:66,454:66,455:66,456:66,457:66,458:66,459:67,460:67,461:67,462:67,463:67,464:67,465:67,466:67,467:68,468:68,469:68,470:68,471:68,472:68,473:68,474:69,475:69,476:69,477:69,478:69,479:69,480:69,481:71,482:71,483:71,484:71,485:71,486:71,487:71,488:71,489:71,490:71,491:71,492:71,493:71,494:71,495:71,496:71,497:71,498:71,499:71,500:72,501:72,502:72,503:72,504:72,505:72,506:72,507:73,508:73,509:73,510:73,511:73,512:73,513:73,514:73,515:74,516:74,517:74,518:74,519:74,520:74,521:74,522:74,523:75,524:75,525:75,526:75,527:75,528:75,529:75,530:75,531:76,532:76,533:76,534:76,535:76,536:76,537:76,538:77,539:77,540:77,541:77,542:77,543:77,544:78,545:78,546:78,547:78,548:78,549:78,550:78,551:78,552:79,553:79,554:79,555:79,556:79,557:79,558:79,559:79,560:80,561:80,562:80,563:80,564:80,565:80,566:80,567:83,568:83,569:83,570:83,571:83,572:83,573:83,574:83,575:83,576:83,577:83,578:83,579:83,580:83,581:83,582:83,583:83,584:83,585:83,586:83,587:85,588:85,589:85,590:85,591:85,592:85,593:85,594:85,595:85,596:85,597:85,598:85,599:86,600:86,601:86,602:86,603:86,604:86,605:86,606:87,607:87,608:87,609:87,610:87,611:87,612:87,613:87,614:88,615:88,616:88,617:88,618:88,619:88,620:88,621:88,622:89,623:89,624:89,625:89,626:89,627:89,628:89,629:90,630:90,631:90,632:90,633:90,634:90,635:90,636:91,637:91,638:91,639:91,640:91,641:91,642:91,643:92,644:92,645:92,646:92,647:92,648:92,649:93,650:93,651:93,652:93,653:93,654:93,655:93,656:94,657:94,658:94,659:94,660:94,661:94,662:94,663:95,664:95,665:95,666:95,667:95,668:95,669:96,670:96,671:96,672:96,673:96,674:96,675:96,676:97,677:97,678:97,679:97,680:97,681:97,682:97,683:98,684:98,685:98,686:98,687:98,688:98,689:98,690:99,691:99,692:99,693:99,694:99,695:99,696:99,697:101,698:101,699:101,700:101,701:101,702:101,703:101,704:101,705:101,706:101,707:101,708:101,709:101,710:101,711:101,712:101,713:101,714:102,715:102,716:102,717:102,718:102,719:102,720:102,721:102,722:103,723:103,724:103,725:103,726:103,727:103,728:103,729:104,730:104,731:104,732:104,733:104,734:104,735:104,736:104,737:105,738:105,739:105,740:105,741:105,742:105,743:105,744:105,745:106,746:106,747:106,748:106,749:106,750:106,751:106,752:2,753:2,754:2,755:2,756:2,757:2,758:2,759:108,760:108,761:108,762:108,763:108,764:108,765:108,766:108,767:109,768:109,769:109,770:109,771:109,772:109,773:109,774:109,775:111,776:111,777:111,778:111,779:111,780:111,781:111,782:111,783:111,784:111,785:111,786:111,787:111,788:111,789:111,790:111,791:111,792:111,793:111,794:111,795:111,796:111,797:113,798:113,799:113,800:113,801:113,802:113,803:113,804:113,805:113,806:113,807:113,808:113,809:113,810:113,811:113,812:114,813:114,814:114,815:114,816:114,817:114,818:114,819:115,820:115,821:115,822:115,823:115,824:115,825:115,826:116,827:116,828:116,829:116,830:116,831:116,832:116,833:116,834:117,835:117,836:117,837:117,838:117,839:117,840:117,841:118,842:118,843:118,844:118,845:118,846:118,847:119,848:119,849:119,850:119,851:119,852:119,853:120,854:120,855:120,856:120,857:120,858:120,859:120,860:120,861:121,862:121,863:121,864:121,865:121,866:121,867:121,868:122,869:122,870:122,871:122,872:122,873:122,874:122,875:123,876:123,877:123,878:123,879:123,880:123,881:123,882:124,883:124,884:124,885:124,886:124,887:124,888:124,889:125,890:125,891:125,892:125,893:125,894:125,895:125,896:126,897:126,898:126,899:126,900:126,901:126,902:126,903:127,904:127,905:127,906:127,907:127,908:127,909:127,910:127,911:131,912:131,913:131,914:131,915:131,916:131,917:131,918:131,919:131,920:131,921:131,922:131,923:131,924:131,925:131,926:131,927:131,928:131,929:131,930:132,931:132,932:132,933:132,934:132,935:132,936:132,937:133,938:133,939:133,940:133,941:133,942:133,943:133,944:133,945:134,946:134,947:134,948:134,949:134,950:134,951:135,952:135,953:135,954:135,955:135,956:135,957:136,958:136,959:136,960:136,961:136,962:136,963:136,964:137,965:137,966:137,967:137,968:137,969:137,970:137,971:137,972:138,973:138,974:138,975:138,976:138,977:138,978:138,979:138,980:139,981:139,982:139,983:139,984:139,985:139,986:139,987:140,988:140,989:140,990:140,991:140,992:140,993:140,994:141,995:141,996:141,997:141,998:141,999:141};
 
@@ -1184,7 +1198,7 @@ function renderQItems(){
     var numStr0=String(n).padStart(4,'0');
     el.innerHTML='<div class="qhd"><div class="qnum">'+numStr0+'</div>'+
       '<div class="qst'+stcls+'" id="qs'+n+'">'+st+'</div></div>'+
-      '<div class="qimg-wrap"><img src="'+getCropBase()+numStr0+'.jpg" class="qimg" onerror="this.style.display=\'none\'"></div>'+
+      '<div class="qimg-wrap"><img src="'+cropUrl(numStr0)+'" class="qimg" onload="this.style.display=\'block\'" onerror="if(this.src.indexOf(\'.JPG\')===-1){this.src=this.src.replace(\'.jpg\',\'.JPG\')}else{this.style.display=\'none\'}"></div>'+
       '<div style="padding:6px 10px 0" id="qi-sol'+n+'">'+(rec&&rec.correct===false?solBtnsHTML(n):'')+'</div>'+
       '<div class="qch" id="qc'+n+'"></div>';
     w.appendChild(el);
@@ -1364,7 +1378,7 @@ function renderWrong(){
     }
     el.innerHTML=
       '<div class="witop"><span class="winum">'+wNumStr+'번</span><span class="wiunit">'+uname+retryBadge+'</span></div>'+
-      '<div class="qimg-wrap"><img src="'+getCropBase()+wNumStr+'.jpg" class="qimg" onerror="this.style.display=\'none\'"></div>'+
+      '<div class="qimg-wrap"><img src="'+cropUrl(wNumStr)+'" class="qimg" onerror="if(this.src.indexOf(\'.JPG\')===-1){this.src=this.src.replace(\'.jpg\',\'.JPG\')}else{this.style.display=\'none\'}"></div>'+
       '<div class="wians">내 답: <span class="wm">'+esc(r.userAns||'?')+'</span></div>'+
       retrySection+
       '<div class="retry-panel" id="retry-panel-'+n+'">'+
@@ -1582,7 +1596,7 @@ function openYtSol(n){
   var numStr=String(n).padStart(4,'0');
   document.getElementById('sol-popup-title').textContent=numStr+'번 해설영상';
   var qimg=document.getElementById('sol-popup-qimg');
-  qimg.src=getCropBase()+numStr+'.jpg';
+  qimg.src=cropUrl(numStr);
   qimg.style.display='block';
   
   var ytId='', ytStart='';
@@ -1655,54 +1669,51 @@ function openAiSol(n){
   // 팝업 열기
   document.getElementById('sol-popup-title').textContent=numStr+'번 AI 해설';
   var qimg=document.getElementById('sol-popup-qimg');
-  qimg.src=getCropBase()+numStr+'.jpg';
+  qimg.src=cropUrl(numStr);
   qimg.style.display='block';
   document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">불러오는 중...</div>';
   document.getElementById('sol-popup').classList.remove('hide');
 
-  // 1. 키 확보
-  function getKey(cb){
+  // 1. Firestore 캐시 먼저 확인 (API 키 불필요)
+  var cacheKey=(curBook||'RPM_공통수학1').replace(/[^a-zA-Z0-9_]/g,'_')+'_'+numStr;
+  var db=typeof DB!=='undefined'&&DB;
+  if(db){
+    DB.collection('solutions').doc(cacheKey).get()
+      .then(function(doc){
+        if(doc.exists&&doc.data()&&doc.data().text){
+          // 캐시 있음 → 바로 표시
+          document.getElementById('sol-popup-body').innerHTML='';
+          renderAiResponse(doc.data().text,true);
+        } else {
+          // 캐시 없음 → API 키 확보 후 Gemini 호출
+          getKeyAndStream();
+        }
+      }).catch(function(){ getKeyAndStream(); });
+  } else {
+    getKeyAndStream();
+  }
+
+  function getKeyAndStream(){
     var k=geminiKeyCache||localStorage.getItem('gemini_key')||'';
-    if(k){ cb(k); return; }
-    var db=typeof DB!=='undefined'&&DB;
-    if(!db){ cb(null); return; }
+    if(k){ startGeminiStream(n,numStr,k,cacheKey); return; }
     document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">키 확인 중...</div>';
     DB.collection('settings').doc('gemini').get()
       .then(function(doc){
         if(doc.exists&&doc.data()&&doc.data().apiKey){
           geminiKeyCache=doc.data().apiKey;
           localStorage.setItem('gemini_key',geminiKeyCache);
-          cb(geminiKeyCache);
-        } else { cb(null); }
-      }).catch(function(){ cb(null); });
+          startGeminiStream(n,numStr,geminiKeyCache,cacheKey);
+        } else {
+          closesolPopup();
+          document.getElementById('api-key-input').value='';
+          document.getElementById('api-err').textContent='선생님이 아직 API 키를 등록하지 않았습니다';
+          document.getElementById('api-popup').classList.remove('hide');
+        }
+      }).catch(function(){
+        closesolPopup();
+        document.getElementById('api-popup').classList.remove('hide');
+      });
   }
-
-  getKey(function(key){
-    if(!key){
-      closesolPopup();
-      document.getElementById('api-key-input').value='';
-      document.getElementById('api-err').textContent='선생님이 아직 API 키를 등록하지 않았습니다';
-      document.getElementById('api-popup').classList.remove('hide');
-      return;
-    }
-
-    // 2. Firestore 캐시 확인
-    var cacheKey=(curBook||'RPM_공통수학1').replace(/[^a-zA-Z0-9_]/g,'_')+'_'+numStr;
-    var db=typeof DB!=='undefined'&&DB;
-    if(db){
-      DB.collection('solutions').doc(cacheKey).get()
-        .then(function(doc){
-          if(doc.exists&&doc.data()&&doc.data().text){
-            document.getElementById('sol-popup-body').innerHTML='';
-            renderAiResponse(doc.data().text,true);
-          } else {
-            startGeminiStream(n,numStr,key,cacheKey);
-          }
-        }).catch(function(){ startGeminiStream(n,numStr,key,cacheKey); });
-    } else {
-      startGeminiStream(n,numStr,key,null);
-    }
-  });
 }
 
 
@@ -1861,7 +1872,7 @@ function startGeminiStream(n, numStr, key, cacheKey){
     clearTimeout(imgTimer);
     doStream([{text:promptText}]);
   };
-  img.src=cropUrl+'?t='+Date.now();
+  img.src=cropUrl+'&t='+Date.now();
 }
 
 function renderAiResponse(text, fromCache){

@@ -151,7 +151,7 @@ input:focus{border-color:#D42027}
 /* 학생 관리 모달 */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
 .modal-bg.hide{display:none}
-.modal{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:380px;box-shadow:0 8px 40px rgba(0,0,0,.2)}
+.modal{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:460px;box-shadow:0 8px 40px rgba(0,0,0,.2)}
 .modal h3{font-size:16px;font-weight:900;margin-bottom:16px}
 .modal label{display:block;font-size:11px;font-weight:700;color:#8b95a7;margin-bottom:4px;margin-top:10px}
 .modal input{width:100%;border:2px solid #e8ecf4;border-radius:8px;padding:10px;font-size:14px;font-family:sans-serif;outline:none;margin-bottom:2px}
@@ -302,16 +302,16 @@ input:focus{border-color:#D42027}
       </optgroup>
     </select>
     <label>배정 교재 (복수 선택 가능)</label>
-    <div id="edit-books-wrap" style="margin-bottom:10px;display:flex;flex-direction:column;gap:6px">
-      <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="RPM 공통수학1"> RPM 공통수학1</label>
-      <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="RPM 대수"> RPM 대수</label>
-      <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="시발점 공통수학1"> 시발점 공통수학1</label>
-      <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="RPM 공통수학2"> RPM 공통수학2</label>
-      <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="RPM 수학1"> RPM 수학1</label>
-      <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="RPM 수학2"> RPM 수학2</label>
-      <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="RPM 확률과통계"> RPM 확률과통계</label>
-      <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="RPM 미적분"> RPM 미적분</label>
-      <label style="display:flex;align-items:center;gap:8px;font-weight:400;color:#1a1d2e;font-size:13px"><input type="checkbox" value="RPM 기하"> RPM 기하</label>
+    <div id="edit-books-wrap" style="margin-bottom:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;justify-items:start">
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="RPM 공통수학1"> RPM 공통수학1</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="RPM 대수"> RPM 대수</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="시발점 공통수학1"> 시발점 공통수학1</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="RPM 공통수학2"> RPM 공통수학2</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="RPM 수학1"> RPM 수학1</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="RPM 수학2"> RPM 수학2</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="RPM 확률과통계"> RPM 확률과통계</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="RPM 미적분"> RPM 미적분</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="RPM 기하"> RPM 기하</label>
     </div>
     <div class="modal-err" id="edit-err"></div>
     <div class="modal-btns">
@@ -385,7 +385,7 @@ input:focus{border-color:#D42027}
           <select id="cache-book" style="flex:1;border:2px solid #e8ecf4;border-radius:8px;padding:10px;font-size:13px;font-family:sans-serif;outline:none;color:#1a1d2e">
             <option value="RPM 공통수학1|crops|1|1134">RPM 공통수학1 (1~1134번)</option>
             <option value="RPM 대수|crops_daesoo|33|1126" selected>RPM 대수 (33~1126번)</option>
-            <option value="시발점 공통수학1|crops_sibal|1|324">시발점 공통수학1 (1~324번)</option>
+            <option value="시발점 공통수학1|crops_sibal|1|258">시발점 공통수학1 (1~258번)</option>
           </select>
         </div>
         <div style="display:flex;gap:8px;margin-bottom:10px">
@@ -604,7 +604,7 @@ function loadStudents() {
         email: d.email || doc.id,
         name: d.name || (d.email ? d.email.split('@')[0] : doc.id),
         grade: d.grade || '',
-        books: bookNames.length>0 ? bookNames : (d.book ? [d.book] : []),
+        books: bookNames.length>0 ? bookNames.map(function(bk){ return booksData[bk].name||bk; }) : (d.book ? [d.book] : []),
         records: recs,
         bookRecords: bookRecordsMap,
         tot: tot,
