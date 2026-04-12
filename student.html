@@ -2930,18 +2930,24 @@ function callGeminiSimFull(n, numStr, b64, key, btn){
   var prompt=[
     '이미지의 '+bookName+' '+numStr+'번 문제를 분석하고, 동일한 수학적 발상과 풀이 전략이 필요한 유사문제 1개를 만들어라.',
     '',
-    '규칙:',
-    '1. 숫자만 바꾸는 것 금지. 문제의 구조와 핵심 발상이 같아야 함.',
-    '2. 분수는 (a/b) 형식으로 표기. LaTeX 금지.',
-    '3. 루트는 √ 기호 사용. 제곱은 ^2 표기.',
-    '4. 보기는 반드시 5개.',
+    '【수식 표기 규칙 - 반드시 준수】',
+    '- LaTeX 절대 사용 금지 ($, \\frac, \\sqrt 등 모두 금지)',
+    '- 분수: a/b 형식 (예: 1/2, (a+1)/3)',
+    '- 루트: ⁿ√a 형식 (예: √a, ³√a, ⁴√a)',
+    '- 거듭제곱: 위첨자 유니코드 사용 (예: a², a³, 2⁴, x⁻¹) ^ 기호 사용 금지',
+    '- 곱셈: × 기호 사용',
+    '- 나눗셈: ÷ 기호 사용',
+    '',
+    '【문제 생성 규칙】',
+    '- 숫자만 바꾸는 것 금지. 문제 구조와 핵심 발상이 같아야 함.',
+    '- 보기는 반드시 5개, 간결하게 (예: ① 1  ② a  ③ a^2)',
     '',
     '아래 JSON만 출력하라. 설명 불필요:',
     '{',
     '  "topic": "핵심 수학 개념",',
     '  "strategy": "이 유형의 핵심 풀이 발상 한 줄",',
-    '  "question": "문제 내용 (특수문자 최소화)",',
-    '  "choices": ["① 보기1", "② 보기2", "③ 보기3", "④ 보기4", "⑤ 보기5"],',
+    '  "question": "문제 내용",',
+    '  "choices": ["① 값", "② 값", "③ 값", "④ 값", "⑤ 값"],',
     '  "answer": 0,',
     '  "hint": "단계별 풀이 힌트"',
     '}'
@@ -2956,8 +2962,12 @@ function callGeminiSimFull(n, numStr, b64, key, btn){
     ]}]})
   }).then(function(r){return r.json();})
   .then(function(data){
+    console.log('[SimFull] API 응답:', JSON.stringify(data).slice(0,500));
     var text=(data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text)||'';
-    if(!text) throw new Error('빈 응답');
+    if(!text){
+      console.log('[SimFull] 빈 응답 - finishReason:', data.candidates&&data.candidates[0]&&data.candidates[0].finishReason);
+      throw new Error('빈 응답: '+(data.candidates&&data.candidates[0]&&data.candidates[0].finishReason||'unknown'));
+    }
     // JSON 블록 추출 (가장 바깥 { } 찾기)
     var start=text.indexOf('{');
     var end=text.lastIndexOf('}');
