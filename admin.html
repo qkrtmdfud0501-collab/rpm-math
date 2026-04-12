@@ -1746,7 +1746,7 @@ function callGeminiCache(n, numStr, cropBase, bookName, apiKey){
     img.crossOrigin = 'anonymous';
     var imgTimer = setTimeout(function(){
       img.onload = img.onerror = null;
-      doGenerate([{text:promptText}]);
+      reject(new Error('IMG_TIMEOUT'));
     }, 8000);
     img.onload = function(){
       clearTimeout(imgTimer);
@@ -1759,12 +1759,12 @@ function callGeminiCache(n, numStr, cropBase, bookName, apiKey){
         var b64 = canvas.toDataURL('image/jpeg',0.8).split(',')[1];
         doGenerate([{inline_data:{mime_type:'image/jpeg',data:b64}},{text:promptText}]);
       }catch(e){
-        doGenerate([{text:promptText}]);
+        reject(new Error('IMG_CANVAS_FAIL'));
       }
     };
     img.onerror = function(){
       clearTimeout(imgTimer);
-      doGenerate([{text:promptText}]);
+      reject(new Error('IMG_LOAD_FAIL'));
     };
     img.src = imgUrl+'?t='+Date.now();
   });
@@ -1873,6 +1873,12 @@ function startBulkCache(){
       if(e.message==='RATE_LIMIT' && retry<3){
         cacheLog(numStr+' Rate Limit, 10초 대기...', '#ff9500');
         setTimeout(function(){ doWithRetry(n,numStr,cacheKey,bookKey,bookName,cropBase,apiKey,delay,retry+1); }, 10000);
+      } else if(e.message==='IMG_LOAD_FAIL'||e.message==='IMG_TIMEOUT'||e.message==='IMG_CANVAS_FAIL'){
+        cacheErr++;
+        cacheLog(numStr+' ⚠️ 이미지 로드 실패 (스킵)', '#ff9500');
+        updateCacheStats(n, endN-startN+1);
+        setTimeout(function(){ processNext(n+1); }, delay);
+        return;
       } else if(retry<2){
         cacheLog(numStr+' 오류: '+e.message+', 재시도', '#ff3b5c');
         setTimeout(function(){ doWithRetry(n,numStr,cacheKey,bookKey,bookName,cropBase,apiKey,delay,retry+1); }, 3000);

@@ -428,6 +428,17 @@ input:focus{border-color:#D42027}
   </div>
 </div>
 
+<!-- 유사문제 팝업 -->
+<div class="popup-overlay hide" id="sim-popup">
+  <div class="popup-card" style="max-height:85vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="popup-title" id="sim-popup-title" style="margin-bottom:0">유사문제</div>
+      <button class="popup-close" id="sim-popup-close">&#10006;</button>
+    </div>
+    <div id="sim-popup-body"><div class="ai-loading">생성 중...</div></div>
+  </div>
+</div>
+
 <!-- AI API 키 설정 팝업 -->
 <div class="popup-overlay hide" id="api-popup">
   <div class="popup-box" style="border-radius:20px;max-width:480px;height:auto;max-height:90vh">
@@ -1855,6 +1866,12 @@ document.getElementById('sol-popup').addEventListener('click',function(e){
 document.getElementById('api-popup-close').addEventListener('click',function(){
   document.getElementById('api-popup').classList.add('hide');
 });
+document.getElementById('sim-popup-close').addEventListener('click',function(){
+  document.getElementById('sim-popup').classList.add('hide');
+});
+document.getElementById('sim-popup').addEventListener('click',function(e){
+  if(e.target===this) this.classList.add('hide');
+});
 document.getElementById('api-popup').addEventListener('click',function(e){
   if(e.target===this) this.classList.add('hide');
 });
@@ -2307,6 +2324,7 @@ function solBtnsHTML(n){
   return '<div class="sol-btns">'+
     '<button class="sol-btn yt" data-yt="'+n+'">&#9654; 해설영상</button>'+
     '<button class="sol-btn ai" data-ai="'+n+'">AI 해설</button>'+
+    '<button class="sol-btn sim" data-sim="'+n+'" style="background:#7B5EA7;color:#fff">✨ 유사문제</button>'+
   '</div>';
 }
 
@@ -2763,11 +2781,137 @@ document.addEventListener('click',function(e){
   var aiBtn=e.target.closest('[data-ai]');
   var retryBtn=e.target.closest('[data-retry]');
   var submitRetryBtn=e.target.closest('[data-submit-retry]');
+  var simBtn=e.target.closest('[data-sim]');
   if(retryBtn) openRetryPanel(parseInt(retryBtn.getAttribute('data-retry')));
   if(submitRetryBtn) submitRetry(parseInt(submitRetryBtn.getAttribute('data-submit-retry')));
   if(ytBtn) openYtSol(parseInt(ytBtn.getAttribute('data-yt')));
   if(aiBtn) openAiSol(parseInt(aiBtn.getAttribute('data-ai')));
+  if(simBtn) openSimSol(parseInt(simBtn.getAttribute('data-sim')));
 });
+
+// ── 유사문제 생성 ──
+function openSimSol(n){
+  var numStr=String(n).padStart(4,'0');
+  document.getElementById('sim-popup-title').textContent=numStr+'번 유사문제';
+  document.getElementById('sim-popup-body').innerHTML='<div class="ai-loading">✨ 유사문제 생성 중...</div>';
+  document.getElementById('sim-popup').classList.remove('hide');
+
+  var k=geminiKeyCache||localStorage.getItem('gemini_key')||'';
+  if(!k){
+    document.getElementById('sim-popup').classList.add('hide');
+    document.getElementById('api-key-input').value='';
+    document.getElementById('api-popup').classList.remove('hide');
+    return;
+  }
+
+  var CROP_BASE=getCropBase();
+  var img=new Image();
+  img.crossOrigin='anonymous';
+  var imgTimer=setTimeout(function(){
+    img.onload=img.onerror=null;
+    document.getElementById('sim-popup-body').innerHTML='<div style="color:#ff3b5c;text-align:center;padding:20px">⚠️ 문제 이미지를 불러올 수 없습니다.</div>';
+  },8000);
+  img.onload=function(){
+    clearTimeout(imgTimer);
+    try{
+      var canvas=document.createElement('canvas');
+      var ratio=Math.min(800/img.width,1000/img.height,1);
+      canvas.width=Math.round(img.width*ratio);
+      canvas.height=Math.round(img.height*ratio);
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      var b64=canvas.toDataURL('image/jpeg',0.8).split(',')[1];
+      callGeminiSim(n,numStr,b64,k);
+    }catch(e){
+      document.getElementById('sim-popup-body').innerHTML='<div style="color:#ff3b5c;text-align:center;padding:20px">⚠️ 이미지 처리 오류</div>';
+    }
+  };
+  img.onerror=function(){
+    clearTimeout(imgTimer);
+    if(img.src.indexOf('.JPG')===-1){
+      img.src=CROP_BASE+numStr+'.JPG?v='+IMG_VER+'&t='+Date.now();
+    } else {
+      document.getElementById('sim-popup-body').innerHTML='<div style="color:#ff3b5c;text-align:center;padding:20px">⚠️ 문제 이미지를 불러올 수 없습니다.</div>';
+    }
+  };
+  img.src=CROP_BASE+numStr+'.jpg?v='+IMG_VER+'&t='+Date.now();
+}
+
+function callGeminiSim(n, numStr, b64, key){
+  var bookName=curBook||'RPM 공통수학1';
+  var prompt=bookName+' '+numStr+'번 문제입니다.
+'+
+    '이 문제를 분석하고, 동일한 개념과 난이도의 유사문제를 1개 만들어주세요.
+
+'+
+    '반드시 아래 JSON 형식으로만 응답하세요 (다른 텍스트 없이):
+'+
+    '{\n'+
+    '  "topic": "문제 주제",\n'+
+    '  "question": "문제 내용 (분수는 a/b, 거듭제곱은 a^b 형식 텍스트로)",\n'+
+    '  "choices": ["① 보기1", "② 보기2", "③ 보기3", "④ 보기4", "⑤ 보기5"],\n'+
+    '  "answer": 0,\n'+
+    '  "hint": "단계별 풀이 힌트"\n'+
+    '}\n\n'+
+    'answer는 정답 보기의 인덱스(0~4). 수식은 LaTeX 없이 일반 텍스트로 작성.';
+
+  fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-goog-api-key':key},
+    body:JSON.stringify({contents:[{parts:[
+      {inline_data:{mime_type:'image/jpeg',data:b64}},
+      {text:prompt}
+    ]}]})
+  }).then(function(r){return r.json();})
+  .then(function(data){
+    var text=(data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text)||'';
+    var clean=text.replace(/```json|```/g,'').trim();
+    var parsed=JSON.parse(clean);
+    renderSimProblem(parsed);
+  }).catch(function(e){
+    document.getElementById('sim-popup-body').innerHTML='<div style="color:#ff3b5c;text-align:center;padding:20px">⚠️ 생성 실패: '+e.message+'</div>';
+  });
+}
+
+function renderSimProblem(p){
+  var choicesHtml=p.choices.map(function(c,i){
+    return '<div class="sim-choice" data-ci="'+i+'" onclick="simSelect(this,'+i+')" style="background:#f8f9fc;border:1.5px solid #e8ecf4;border-radius:8px;padding:10px 14px;font-size:13px;cursor:pointer;margin-bottom:7px;display:flex;align-items:center;gap:10px">'+
+      '<div style="width:22px;height:22px;border-radius:50%;background:#e8ecf4;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">'+(i+1)+'</div>'+
+      '<div>'+c+'</div>'+
+    '</div>';
+  }).join('');
+
+  var html=
+    '<div style="display:inline-block;background:#f0e8ff;color:#7B5EA7;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;margin-bottom:10px">'+p.topic+'</div>'+
+    '<div style="background:#f8f9fc;border-radius:10px;padding:14px;border-left:4px solid #7B5EA7;margin-bottom:14px;font-size:14px;line-height:1.8">'+p.question+'</div>'+
+    '<div id="sim-choices">'+choicesHtml+'</div>'+
+    '<div style="display:flex;gap:8px;margin-top:4px">'+
+      '<button onclick="simCheck('+p.answer+')" style="flex:1;background:#1a1d2e;color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif">정답 확인</button>'+
+      '<button onclick="simHint()" style="flex:1;background:#F39C12;color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif">힌트 보기</button>'+
+    '</div>'+
+    '<div id="sim-hint" style="display:none;background:#fff9ec;border-radius:10px;padding:14px;margin-top:10px;font-size:13px;line-height:1.7;border-left:4px solid #F39C12">💡 '+p.hint+'</div>';
+
+  document.getElementById('sim-popup-body').innerHTML=html;
+}
+
+var simSelected=null;
+function simSelect(el,i){
+  simSelected=i;
+  document.querySelectorAll('.sim-choice').forEach(function(c){c.style.borderColor='#e8ecf4';c.style.background='#f8f9fc';});
+  el.style.borderColor='#7B5EA7';
+  el.style.background='#f5f0ff';
+}
+function simCheck(correct){
+  if(simSelected===null){alert('보기를 선택하세요');return;}
+  document.querySelectorAll('.sim-choice').forEach(function(c){
+    var i=parseInt(c.getAttribute('data-ci'));
+    if(i===correct){c.style.borderColor='#26d07c';c.style.background='#f0fff8';}
+    else if(i===simSelected){c.style.borderColor='#ff3b5c';c.style.background='#fff5f7';}
+  });
+}
+function simHint(){
+  var h=document.getElementById('sim-hint');
+  if(h) h.style.display='block';
+}
 
 </script>
 
