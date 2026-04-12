@@ -2841,7 +2841,7 @@ function renderSimList(){
     var numStr=String(n).padStart(4,'0');
     var uname='';
     for(var j=0;j<UNITS.length;j++){if(n>=UNITS[j].r[0]&&n<=UNITS[j].r[1]){uname=UNITS[j].name;break;}}
-    html+='<div onclick="openSimSolve('+n+')" style="background:#fff;border-radius:10px;padding:10px 8px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);border:2px solid transparent;transition:border-color .15s" onmouseover="this.style.borderColor='#7B5EA7'" onmouseout="this.style.borderColor='transparent'">'+
+    html+='<div onclick="openSimSolve('+n+')" style="background:#fff;border-radius:10px;padding:10px 8px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);border:2px solid transparent;transition:border-color .15s" onmouseover="this.style.borderColor=\'#7B5EA7\'" onmouseout="this.style.borderColor=\'transparent\'">'+
       '<div style="font-size:13px;font-weight:900;color:#1a1d2e">'+numStr+'</div>'+
       '<div style="font-size:9px;color:#8b95a7;margin-top:2px;line-height:1.2">'+uname+'</div>'+
     '</div>';
