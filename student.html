@@ -2928,29 +2928,35 @@ function generateSimProblem(){
 function callGeminiSimFull(n, numStr, b64, key, btn){
   var bookName=curBook||'RPM 공통수학1';
   var prompt=[
-    '이미지의 '+bookName+' '+numStr+'번 문제를 분석하고, 동일한 수학적 발상과 풀이 전략이 필요한 유사문제 1개를 만들어라.',
+    '당신은 수능/모의고사 수학 출제 전문가입니다.',
+    '이미지의 '+bookName+' '+numStr+'번 문제를 보고 다음 조건으로 새 문제를 만드세요.',
+    '',
+    '【문제 생성 조건 - 가장 중요】',
+    '① 단순 숫자 변경 절대 금지. 완전히 다른 상황/맥락의 문제여야 함.',
+    '② 이 문제를 풀기 위해 필요한 핵심 수학적 발상(아이디어)이 동일해야 함.',
+    '③ 난이도는 원본보다 약간 어렵게. 모의고사 3~4점짜리 스타일.',
+    '④ 문제 조건이 2~3개 이상 복합적으로 얽혀있어야 함.',
     '',
     '【수식 표기 규칙 - 반드시 준수】',
-    '- LaTeX 절대 사용 금지 ($, \\frac, \\sqrt 등 모두 금지)',
-    '- 분수: a/b 형식 (예: 1/2, (a+1)/3)',
-    '- 루트: ⁿ√a 형식 (예: √a, ³√a, ⁴√a)',
-    '- 거듭제곱: 위첨자 유니코드 사용 (예: a², a³, 2⁴, x⁻¹) ^ 기호 사용 금지',
-    '- 곱셈: × 기호 사용',
-    '- 나눗셈: ÷ 기호 사용',
+    '- LaTeX 절대 사용 금지 ($, \\frac, \\sqrt 등)',
+    '- 분수: a/b 형식',
+    '- 루트: √a, ²√a, ³√a 형식',
+    '- 거듭제곱: 위첨자 유니코드 (a², a³, 2⁴, x⁻¹) — ^ 기호 금지',
+    '- 곱셈 ×, 나눗셈 ÷',
     '',
-    '【문제 생성 규칙】',
-    '- 숫자만 바꾸는 것 금지. 문제 구조와 핵심 발상이 같아야 함.',
-    '- 보기는 반드시 5개, 간결하게 (예: ① 1  ② a  ③ a^2)',
-    '',
-    '아래 JSON만 출력하라. 설명 불필요:',
+    '아래 JSON만 출력. 다른 텍스트 없이:',
     '{',
     '  "topic": "핵심 수학 개념",',
-    '  "strategy": "이 유형의 핵심 풀이 발상 한 줄",',
-    '  "question": "문제 내용",',
+    '  "strategy": "원본 문제와 동일한 핵심 풀이 발상 한 줄",',
+    '  "question": "문제 전체 내용 (조건 충분히 서술)",',
     '  "choices": ["① 값", "② 값", "③ 값", "④ 값", "⑤ 값"],',
     '  "answer": 0,',
-    '  "hint": "단계별 풀이 힌트"',
-    '}'
+    '  "hint": "핵심 발상부터 시작하는 단계별 풀이",',
+    '  "graph": ["y=2^x", "y=log(x)/log(2)"]',
+    '}',
+    '',
+    'graph 필드: 문제에 그래프가 필요하면 Desmos에 넣을 수식 배열 (필요없으면 빈 배열 [])',
+    'Desmos 수식 형식: y=2^x, y=log(x)/log(2), x^2+y^2=4 등'
   ].join('\n');
 
   fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',{
@@ -3003,6 +3009,7 @@ function renderSimFull(p){
     '</div>'+
     (p.strategy?'<div style="background:#f0e8ff;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#7B5EA7;border-left:3px solid #7B5EA7">💡 핵심 발상: '+p.strategy+'</div>':'')+
     '<div style="background:#f8f9fc;border-radius:10px;padding:14px;border-left:4px solid #7B5EA7;margin-bottom:14px;font-size:14px;line-height:1.9">'+p.question+'</div>'+
+    (p.graph&&p.graph.length?'<div id="desmos-wrap" style="margin-bottom:14px;border-radius:10px;overflow:hidden;border:1px solid #e8ecf4"><div id="desmos-calc" style="width:100%;height:260px"></div></div>':'')+
     '<div>'+choicesHtml+'</div>'+
     '<div style="display:flex;gap:8px;margin-top:6px">'+
       '<button onclick="simFullCheck('+p.answer+')" style="flex:1;background:#1a1d2e;color:#fff;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif">정답 확인</button>'+
@@ -3012,6 +3019,30 @@ function renderSimFull(p){
 
   document.getElementById('sim-solve-body').innerHTML=html;
   if(window.MathJax) MathJax.typesetPromise([document.getElementById('sim-solve-body')]);
+
+  // Desmos 그래프 렌더링
+  if(p.graph && p.graph.length){
+    loadDesmos(function(){
+      var el = document.getElementById('desmos-calc');
+      if(!el) return;
+      var calc = Desmos.GraphingCalculator(el, {
+        expressions:false, settingsMenu:false, zoomButtons:true,
+        border:false, keypad:false, lockViewport:false
+      });
+      p.graph.forEach(function(expr, i){
+        var colors = ['#7B5EA7','#D42027','#16A085','#E67E22','#2980B9'];
+        calc.setExpression({id:'g'+i, latex:expr, color:colors[i%colors.length]});
+      });
+    });
+  }
+}
+
+function loadDesmos(cb){
+  if(window.Desmos){ cb(); return; }
+  var s=document.createElement('script');
+  s.src='https://www.desmos.com/api/v1.8/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6';
+  s.onload=cb;
+  document.head.appendChild(s);
 }
 
 function simFullSelect(el,i){
