@@ -1385,7 +1385,7 @@ document.getElementById('nextbtn').addEventListener('click',nextPage);
 document.getElementById('nb-home').addEventListener('click',function(){renderHome();go('home');});
 document.getElementById('nb-wrong').addEventListener('click',function(){renderWrong();go('wrong');});
 document.getElementById('nb-sim').addEventListener('click',function(){renderSimList();go('sim');});
-document.getElementById('nb-stats').addEventListener('click',function(){renderStats();go('stats');});
+// nb-stats 탭 제거됨 (유사문제 탭으로 대체)
 document.getElementById('nb-books').addEventListener('click',function(){
   var assignedBooks = window.curStudentBooks||[curBook];
   var booksDataByName = {};
@@ -2957,8 +2957,14 @@ function callGeminiSimFull(n, numStr, b64, key, btn){
     '  "graph": ["y=2^x", "y=log(x)/log(2)"]',
     '}',
     '',
-    'graph 필드: 문제에 그래프가 필요하면 Desmos에 넣을 수식 배열 (필요없으면 빈 배열 [])',
-    'Desmos 수식 형식: y=2^x, y=log(x)/log(2), x^2+y^2=4 등'
+    'graph 필드: 문제에 그래프가 필요하면 Desmos calculator latex 수식 배열, 필요없으면 빈 배열 []',
+    '반드시 Desmos가 인식하는 정확한 latex 형식으로:',
+    '- 지수함수: y=2^{x+1}, y=3^{x}-2',
+    '- 로그함수: y=\\log_2(x+1)-2  (밑이 있는 로그)',
+    '- 일반 로그: y=\\ln(x)',
+    '- 원: x^2+y^2=r^2',
+    '- 절댓값: y=\\left|x\\right|',
+    '수식이 틀리면 그래프가 안 그려지므로 정확히 작성할 것'
   ].join('\n');
 
   fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',{
@@ -3024,17 +3030,23 @@ function renderSimFull(p){
 
   // Desmos 그래프 렌더링
   if(p.graph && p.graph.length){
+    console.log('[Desmos] graph 필드:', p.graph);
     loadDesmos(function(){
-      var el = document.getElementById('desmos-calc');
-      if(!el) return;
-      var calc = Desmos.GraphingCalculator(el, {
-        expressions:false, settingsMenu:false, zoomButtons:true,
-        border:false, keypad:false, lockViewport:false
-      });
-      p.graph.forEach(function(expr, i){
-        var colors = ['#7B5EA7','#D42027','#16A085','#E67E22','#2980B9'];
-        calc.setExpression({id:'g'+i, latex:expr, color:colors[i%colors.length]});
-      });
+      setTimeout(function(){
+        var el = document.getElementById('desmos-calc');
+        if(!el){ console.log('[Desmos] 엘리먼트 없음'); return; }
+        try{
+          var calc = Desmos.GraphingCalculator(el, {
+            expressions:false, settingsMenu:false, zoomButtons:true,
+            border:false, keypad:false, lockViewport:false
+          });
+          p.graph.forEach(function(expr, i){
+            var colors = ['#7B5EA7','#D42027','#16A085','#E67E22','#2980B9'];
+            console.log('[Desmos] 수식 추가:', expr);
+            calc.setExpression({id:'g'+i, latex:expr, color:colors[i%colors.length]});
+          });
+        }catch(e){ console.log('[Desmos] 오류:', e.message); }
+      }, 300);
     });
   }
 }
