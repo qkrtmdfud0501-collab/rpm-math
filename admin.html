@@ -389,6 +389,8 @@ input:focus{border-color:#D42027}
             <option value="RPM 대수|crops_daesoo|33|1126" selected>RPM 대수 (유형익히기~실력Up)</option>
             <option value="시발점 워크북 공통수학1|crops_sibal|1|258">시발점 워크북 공통수학1 (1~258번)</option>
             <option value="시발점 워크북 대수|crops_sibal_wb_daesoo|1|312">시발점 워크북 대수 (1~312번)</option>
+            <option value="헥사곤 공통수학1|crops_hexa_gongsu1|1|999">헥사곤 공통수학1</option>
+            <option value="헥사곤 대수|crops_hexa_daesoo|1|999">헥사곤 대수</option>
           </select>
         </div>
         <div style="display:flex;gap:8px;margin-bottom:10px">
@@ -532,7 +534,9 @@ function bookNameToKey(name){
     'RPM 공통수학1':'RPM_gongsu1',
     'RPM 대수':'RPM_daesoo',
     '시발점 워크북 공통수학1':'sibal_wb_gongsu1',
-    '시발점 워크북 대수':'sibal_wb_daesoo'
+    '시발점 워크북 대수':'sibal_wb_daesoo',
+    '헥사곤 공통수학1':'hexa_gongsu1',
+    '헥사곤 대수':'hexa_daesoo'
   };
   if(map[name]) return map[name];
   return name.replace(/[^a-zA-Z0-9_]/g,'_');
