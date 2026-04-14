@@ -1783,77 +1783,77 @@ function renderWrong(){
   var l=document.getElementById('wlist'); l.innerHTML='';
   if(!wrong.length){l.innerHTML='<div class="empty">오답이 없어요! 잘하고 있어요.</div>';return;}
 
-  // 단원별 그룹핑
-  var groups=[];
-  for(var j=0;j<UNITS.length;j++){
-    var u=UNITS[j];
+  // 단원별 그룹핑 - 단원탭과 동일한 카드 스타일
+  for(var ui=0;ui<UNITS.length;ui++){
+    var u=UNITS[ui];
     var uWrong=wrong.filter(function(n){return n>=u.r[0]&&n<=u.r[1];});
-    if(uWrong.length>0) groups.push({unit:u,nums:uWrong});
+    if(!uWrong.length) continue;
+
+    var retryOkCount=uWrong.filter(function(n){return records[n]&&records[n].retry&&records[n].retry.correct===true;}).length;
+    var wrongCount=uWrong.length;
+
+    var el=document.createElement('div');
+    el.className='uc';
+    el.style.cursor='pointer';
+    el.innerHTML=
+      '<div class="ubadge" style="background:'+u.c+'">'+String(u.id).padStart(2,'0')+'</div>'+
+      '<div class="ui">'+
+        '<div class="uname">'+u.name+'</div>'+
+        '<div class="urange">오답 '+wrongCount+'문제'+(retryOkCount>0?' · 재시도 성공 '+retryOkCount+'개':'')+'</div>'+
+        '<div class="ubar"><div class="ubf" style="width:'+Math.round(retryOkCount/wrongCount*100)+'%;background:'+u.c+'"></div></div>'+
+      '</div>'+
+      '<div class="ur">'+
+        '<div class="upct" style="color:#ff3b5c">'+wrongCount+'</div>'+
+        '<div class="ucnt">오답</div>'+
+      '</div>';
+    (function(unitWrong, unitColor, unitName){
+      el.addEventListener('click', function(){openWrongUnit(unitWrong, unitColor, unitName);});
+    })(uWrong, u.c, u.name);
+    l.appendChild(el);
   }
-  var ungrouped=wrong.filter(function(n){return !UNITS.some(function(u){return n>=u.r[0]&&n<=u.r[1];});});
-  if(ungrouped.length>0) groups.push({unit:{name:'기타',c:'#8b95a7',id:99},nums:ungrouped});
+}
 
-  for(var gi=0;gi<groups.length;gi++){
-    var g=groups[gi];
-    var u=g.unit;
-    var wrongInUnit=g.nums.length;
-    var retryOkCount=g.nums.filter(function(n){return records[n]&&records[n].retry&&records[n].retry.correct===true;}).length;
+function openWrongUnit(wrongNums, color, unitName){
+  var l=document.getElementById('wlist');
+  l.innerHTML='';
 
-    // 단원 헤더
-    var groupId='wgroup-'+gi;
-    var hdr=document.createElement('div');
-    hdr.className='wrong-group-hdr';
-    hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:#1a1d2e;border-radius:10px;margin-bottom:6px;cursor:pointer;border-left:4px solid '+(u.c||'#8b95a7')+';';
-    hdr.innerHTML=
-      '<div style="display:flex;align-items:center;gap:8px">'+
-        '<span style="font-size:13px;font-weight:700;color:#f0f4ff">'+u.name+'</span>'+
-        '<span style="font-size:11px;background:#ff3b5c22;color:#ff3b5c;padding:2px 7px;border-radius:20px;font-weight:700">'+wrongInUnit+'문제</span>'+
-        (retryOkCount>0?'<span style="font-size:11px;background:#26d07c22;color:#26d07c;padding:2px 7px;border-radius:20px">재시도 '+retryOkCount+'✓</span>':'')+'</div>'+
-      '<span class="wrong-group-arrow" style="font-size:12px;color:#8b95a7;transition:transform .2s">▼</span>';
-    hdr.setAttribute('data-target',groupId);
-    hdr.onclick=function(){
-      var tid=this.getAttribute('data-target');
-      var body=document.getElementById(tid);
-      var arrow=this.querySelector('.wrong-group-arrow');
-      if(body.style.display==='none'){body.style.display='';arrow.style.transform='';}
-      else{body.style.display='none';arrow.style.transform='rotate(-90deg)';}
-    };
-    l.appendChild(hdr);
+  // 뒤로가기 헤더
+  var hdr=document.createElement('div');
+  hdr.style.cssText='display:flex;align-items:center;gap:10px;padding:8px 0 14px;';
+  hdr.innerHTML=
+    '<button onclick="renderWrong()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#f0f4ff;padding:0 4px">←</button>'+
+    '<span style="font-size:14px;font-weight:700;color:#f0f4ff">'+unitName+'</span>'+
+    '<span style="font-size:11px;background:#ff3b5c22;color:#ff3b5c;padding:2px 8px;border-radius:20px;font-weight:700">오답 '+wrongNums.length+'문제</span>';
+  l.appendChild(hdr);
 
-    // 단원 내 문제들
-    var body=document.createElement('div');
-    body.id=groupId;
-    body.style.cssText='margin-bottom:16px;';
-
-    for(var i=0;i<g.nums.length;i++){
-      var n=g.nums[i], r=records[n];
-      var el=document.createElement('div'); el.className='wi';
-      var wNumStr=String(n).padStart(4,'0');
-      var hasRetry=r.retry!==undefined;
-      var retryOk=hasRetry&&r.retry.correct===true;
-      var retryBadge=hasRetry?('<span class="retry-badge '+(retryOk?'ok':'ng')+'">재시도 '+(retryOk?'✓ 맞음':'✗ 틀림')+'</span>'):'';
-      var retrySection='';
-      if(!hasRetry){
-        retrySection='<button class="retry-btn" data-retry="'+n+'">🔄 다시 풀어보기</button>';
-      } else if(!retryOk){
-        retrySection='<div style="font-size:11px;color:#8b95a7;margin-top:6px;text-align:center">재시도 답: <span style="color:#ff3b5c;font-weight:700">'+esc(r.retry.userAns||'?')+'</span> · 더 이상 재시도 불가</div>';
-      } else {
-        retrySection='<div style="font-size:11px;color:#26d07c;margin-top:6px;text-align:center">🎉 재시도 성공!</div>';
-      }
-      el.innerHTML=
-        '<div class="witop"><span class="winum">'+wNumStr+'번</span>'+retryBadge+'</div>'+
-        '<div class="qimg-wrap"><img src="'+cropUrl(wNumStr)+'" class="qimg" onerror="if(this.src.indexOf(\'.JPG\')===-1){this.src=this.src.replace(\'.jpg\',\'.JPG\')}else{this.style.display=\'none\'}"></div>'+
-        '<div class="wians">내 답: <span class="wm">'+esc(r.userAns||'?')+'</span></div>'+
-        retrySection+
-        '<div class="retry-panel" id="retry-panel-'+n+'">'+
-          '<div style="font-size:12px;font-weight:700;margin-bottom:6px;color:#ff8c00">다시 선택해보세요:</div>'+
-          '<div id="retry-choices-'+n+'"></div>'+
-          '<button class="retry-btn" style="background:#1a1d2e;margin-top:6px" data-submit-retry="'+n+'">채점하기</button>'+
-        '</div>'+
-        solBtnsHTML(n);
-      body.appendChild(el);
+  // 문제 카드들
+  for(var i=0;i<wrongNums.length;i++){
+    var n=wrongNums[i], r=records[n];
+    var el=document.createElement('div'); el.className='wi';
+    var wNumStr=String(n).padStart(4,'0');
+    var hasRetry=r.retry!==undefined;
+    var retryOk=hasRetry&&r.retry.correct===true;
+    var retryBadge=hasRetry?('<span class="retry-badge '+(retryOk?'ok':'ng')+'">재시도 '+(retryOk?'✓ 맞음':'✗ 틀림')+'</span>'):'';
+    var retrySection='';
+    if(!hasRetry){
+      retrySection='<button class="retry-btn" data-retry="'+n+'">🔄 다시 풀어보기</button>';
+    } else if(!retryOk){
+      retrySection='<div style="font-size:11px;color:#8b95a7;margin-top:6px;text-align:center">재시도 답: <span style="color:#ff3b5c;font-weight:700">'+esc(r.retry.userAns||'?')+'</span> · 더 이상 재시도 불가</div>';
+    } else {
+      retrySection='<div style="font-size:11px;color:#26d07c;margin-top:6px;text-align:center">🎉 재시도 성공!</div>';
     }
-    l.appendChild(body);
+    el.innerHTML=
+      '<div class="witop"><span class="winum">'+wNumStr+'번</span>'+retryBadge+'</div>'+
+      '<div class="qimg-wrap"><img src="'+cropUrl(wNumStr)+'" class="qimg" onerror="if(this.src.indexOf(\'.JPG\')===-1){this.src=this.src.replace(\'.jpg\',\'.JPG\')}else{this.style.display=\'none\'}"></div>'+
+      '<div class="wians">내 답: <span class="wm">'+esc(r.userAns||'?')+'</span></div>'+
+      retrySection+
+      '<div class="retry-panel" id="retry-panel-'+n+'">'+
+        '<div style="font-size:12px;font-weight:700;margin-bottom:6px;color:#ff8c00">다시 선택해보세요:</div>'+
+        '<div id="retry-choices-'+n+'"></div>'+
+        '<button class="retry-btn" style="background:#1a1d2e;margin-top:6px" data-submit-retry="'+n+'">채점하기</button>'+
+      '</div>'+
+      solBtnsHTML(n);
+    l.appendChild(el);
   }
 }
 
