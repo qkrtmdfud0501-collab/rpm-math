@@ -1842,7 +1842,7 @@ function renderWrong(){
       }
       el.innerHTML=
         '<div class="witop"><span class="winum">'+wNumStr+'번</span>'+retryBadge+'</div>'+
-        '<div class="qimg-wrap"><img src="'+cropUrl(wNumStr)+'" class="qimg" onerror="if(this.src.indexOf('.JPG')===-1){this.src=this.src.replace('.jpg','.JPG')}else{this.style.display='none'}"></div>'+
+        '<div class="qimg-wrap"><img src="'+cropUrl(wNumStr)+'" class="qimg" onerror="if(this.src.indexOf(\'.JPG\')===-1){this.src=this.src.replace(\'.jpg\',\'.JPG\')}else{this.style.display=\'none\'}"></div>'+
         '<div class="wians">내 답: <span class="wm">'+esc(r.userAns||'?')+'</span></div>'+
         retrySection+
         '<div class="retry-panel" id="retry-panel-'+n+'">'+
