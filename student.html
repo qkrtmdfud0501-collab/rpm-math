@@ -2103,8 +2103,8 @@ function openYtSol(n){
   var numStr=String(n).padStart(4,'0');
   document.getElementById('sol-popup-title').textContent=numStr+'번 해설영상';
   var qimg=document.getElementById('sol-popup-qimg');
-  qimg.src=cropUrl(numStr);
   qimg.style.display='block';
+  setImgWithFallback(qimg, numStr);
   
   var ytId='', ytStart='';
   if(url){
@@ -2176,8 +2176,8 @@ function openAiSol(n){
   // 팝업 열기
   document.getElementById('sol-popup-title').textContent=numStr+'번 AI 해설';
   var qimg=document.getElementById('sol-popup-qimg');
-  qimg.src=cropUrl(numStr);
   qimg.style.display='block';
+  setImgWithFallback(qimg, numStr);
   document.getElementById('sol-popup-body').innerHTML='<div class="ai-loading">불러오는 중...</div>';
   document.getElementById('sol-popup').classList.remove('hide');
 
