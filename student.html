@@ -2354,7 +2354,8 @@ function startGeminiStream(n, numStr, key, cacheKey){
   }
 
   // 이미지 포함해서 전송 (이미지 없으면 오류 표시)
-  var cropUrl=CROP_BASE+numStr+'.jpg?v='+IMG_VER+'&t='+Date.now();
+  var imgName=isHexaDaesoo()?String(parseInt(numStr,10)).padStart(3,'0'):numStr;
+  var cropUrl=CROP_BASE+imgName+'.jpg?v='+IMG_VER+'&t='+Date.now();
   var img=new Image();
   img.crossOrigin='anonymous';
   var imgTimer=setTimeout(function(){
@@ -2382,7 +2383,7 @@ function startGeminiStream(n, numStr, key, cacheKey){
   img.onerror=function(){
     clearTimeout(imgTimer);
     if(img.src.indexOf('.JPG')===-1){
-      img.src=CROP_BASE+numStr+'.JPG?v='+IMG_VER+'&t='+Date.now();
+      img.src=CROP_BASE+imgName+'.JPG?v='+IMG_VER+'&t='+Date.now();
     } else {
       document.getElementById('sol-popup-body').innerHTML='<div style="color:#ff3b5c;padding:20px;text-align:center">⚠️ 문제 이미지를 불러올 수 없습니다.<br>이미지가 업로드되어 있는지 확인해주세요.</div>';
     }
