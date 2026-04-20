@@ -2381,10 +2381,18 @@ function startGeminiStream(n, numStr, key, cacheKey){
     }
   };
   img.onerror=function(){
-    clearTimeout(imgTimer);
     if(img.src.indexOf('.JPG')===-1){
-      img.src=CROP_BASE+imgName+'.JPG?v='+IMG_VER+'&t='+Date.now();
+      // .jpg 실패 → .JPG 재시도 (새 Image 객체로)
+      var img2=new Image();
+      img2.crossOrigin='anonymous';
+      img2.onload=img.onload;
+      img2.onerror=function(){
+        clearTimeout(imgTimer);
+        document.getElementById('sol-popup-body').innerHTML='<div style="color:#ff3b5c;padding:20px;text-align:center">⚠️ 문제 이미지를 불러올 수 없습니다.<br>이미지가 업로드되어 있는지 확인해주세요.</div>';
+      };
+      img2.src=CROP_BASE+imgName+'.JPG?v='+IMG_VER+'&t='+Date.now();
     } else {
+      clearTimeout(imgTimer);
       document.getElementById('sol-popup-body').innerHTML='<div style="color:#ff3b5c;padding:20px;text-align:center">⚠️ 문제 이미지를 불러올 수 없습니다.<br>이미지가 업로드되어 있는지 확인해주세요.</div>';
     }
   };
