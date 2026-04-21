@@ -308,6 +308,9 @@ input:focus{border-color:#D42027}
       <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="RPM 대수"> RPM 대수</label>
       <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="시발점 워크북 공통수학1"> 시발점 워크북 공통수학1</label>
       <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="시발점 워크북 대수"> 시발점 워크북 대수</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="헥사곤 공통수학1"> 헥사곤 공통수학1</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="수매씽 대수"> 수매씽 대수</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="헥사곤 대수"> 헥사곤 대수</label>
       <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="RPM 공통수학2"> RPM 공통수학2</label>
       <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="RPM 수학1"> RPM 수학1</label>
       <label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1d2e;font-size:13px;white-space:nowrap;cursor:pointer"><input type="checkbox" value="RPM 수학2"> RPM 수학2</label>
@@ -385,11 +388,12 @@ input:focus{border-color:#D42027}
         <p style="font-size:12px;color:#8b95a7;margin-bottom:14px;line-height:1.6">선택한 교재의 모든 문제 해설을 미리 생성해 저장합니다. 학생들이 기다리지 않아도 됩니다.</p>
         <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
           <select id="cache-book" style="flex:1;border:2px solid #e8ecf4;border-radius:8px;padding:10px;font-size:13px;font-family:sans-serif;outline:none;color:#1a1d2e">
-            <option value="RPM 공통수학1|crops|38|1184">RPM 공통수학1 (유형익히기~실력Up)</option>
-            <option value="RPM 대수|crops_daesoo|33|1126" selected>RPM 대수 (유형익히기~실력Up)</option>
-            <option value="시발점 워크북 공통수학1|crops_sibal|1|258">시발점 워크북 공통수학1 (1~258번)</option>
-            <option value="시발점 워크북 대수|crops_sibal_wb_daesoo|1|312">시발점 워크북 대수 (1~312번)</option>
+            <option value="RPM 공통수학1|crops|38|1184">RPM 공통수학1</option>
+            <option value="RPM 대수|crops_daesoo|33|1126" selected>RPM 대수</option>
+            <option value="시발점 워크북 공통수학1|crops_sibal|1|258">시발점 워크북 공통수학1</option>
+            <option value="시발점 워크북 대수|crops_sibal_wb_daesoo|1|312">시발점 워크북 대수</option>
             <option value="헥사곤 공통수학1|crops_hexa_gongsu1|1|999">헥사곤 공통수학1</option>
+            <option value="수매씽 대수|crops_sumaething_daesoo|1|289">수매씽 대수</option>
             <option value="헥사곤 대수|crops_hexa_daesoo|1|999">헥사곤 대수</option>
           </select>
         </div>
@@ -535,6 +539,7 @@ function bookNameToKey(name){
     'RPM 대수':'RPM_daesoo',
     '시발점 워크북 공통수학1':'sibal_wb_gongsu1',
     '시발점 워크북 대수':'sibal_wb_daesoo',
+    '수매씽 대수':'sumaething_daesoo',
     '헥사곤 공통수학1':'hexa_gongsu1',
     '헥사곤 대수':'hexa_daesoo'
   };
@@ -1726,7 +1731,7 @@ function callGeminiCache(n, numStr, cropBase, bookName, apiKey){
     var promptText = bookName+' '+numStr+'번 문제입니다.\n[필수 지시사항]\n1. 이미지에서 문제 번호 '+numStr+'번을 찾아서 그 문제만 해설할 것\n2. 수식은 $...$로 감싸서 LaTeX로 표현\n3. 고등학생이 이해할 수 있는 쉬운 언어로\n4. 각 단계를 번호로 구분\n5. 마지막에 정답 명시';
 
     function doGenerate(parts){
-      fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',{
+      fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',{
         method:'POST',
         headers:{'Content-Type':'application/json','X-goog-api-key':apiKey},
         body:JSON.stringify({contents:[{parts:parts}]})
