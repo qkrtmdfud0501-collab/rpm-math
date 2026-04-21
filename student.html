@@ -2259,13 +2259,8 @@ function startGeminiStream(n, numStr, key, cacheKey){
       body:JSON.stringify({contents:[{parts:parts}]})
     }).then(function(response){
       if(response.status===400||response.status===403){
-        // 키 무효화 - localStorage + 캐시 모두 초기화
         localStorage.removeItem('gemini_key');
         geminiKeyCache='';
-        // Firebase에서도 삭제
-        if(typeof DB!=='undefined'&&DB){
-          DB.collection('settings').doc('gemini').delete().catch(function(){});
-        }
         throw new Error('API_KEY_INVALID');
       }
       if(response.status===429){
